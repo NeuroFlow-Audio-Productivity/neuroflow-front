@@ -1,0 +1,153 @@
+<script setup lang="ts">
+import { computed, onMounted, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+
+import AuthShell from '@/components/auth/AuthShell.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const { t } = useI18n()
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+
+const routeToken = computed(() => String(route.params.token ?? ''))
+const routeEmail = computed(() => {
+  const email = route.query.email
+
+  return typeof email === 'string' ? email : ''
+})
+
+const form = reactive({
+  token: routeToken.value,
+  email: routeEmail.value,
+  password: '',
+  password_confirmation: '',
+})
+
+const isSubmitting = computed(() => auth.status === 'loading')
+
+const fieldError = (field: string) => auth.fieldErrors[field]?.[0]
+
+const loadTokenPayload = async () => {
+  if (!form.token) return
+
+  try {
+    const response = await auth.loadResetPasswordToken(form.token, routeEmail.value)
+
+    if (typeof response.data.email === 'string') {
+      form.email = response.data.email
+    }
+  } catch {
+    // The form remains editable if the API cannot preflight the token.
+  }
+}
+
+const submit = async () => {
+  try {
+    await auth.resetPassword(form)
+    await router.push({
+      name: 'login',
+      query: {
+        reset: 'complete',
+        email: form.email,
+      },
+    })
+  } catch {
+    // The store keeps API errors available for the form.
+  }
+}
+
+onMounted(() => {
+  void loadTokenPayload()
+})
+</script>
+
+<template>
+  <AuthShell
+    :eyebrow="t('auth.reset.eyebrow')"
+    :title="t('auth.reset.title')"
+    :subtitle="t('auth.reset.subtitle')"
+    :alternate-label="t('auth.actions.signIn')"
+    alternate-to="/auth/login"
+  >
+    <form class="space-y-5" @submit.prevent="submit">
+      <div>
+        <h2 class="text-2xl font-semibold text-white">{{ t('auth.reset.formTitle') }}</h2>
+        <p class="mt-2 text-sm leading-6 text-white/62">{{ t('auth.reset.formSubtitle') }}</p>
+      </div>
+
+      <div
+        v-if="auth.successMessage"
+        class="rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+      >
+        {{ auth.successMessage }}
+      </div>
+
+      <div
+        v-if="auth.error"
+        class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
+      >
+        {{ auth.error }}
+      </div>
+
+      <label class="block">
+        <span class="text-sm font-semibold text-white/78">{{ t('auth.fields.email') }}</span>
+        <InputText
+          v-model="form.email"
+          class="mt-2 !w-full"
+          type="email"
+          autocomplete="email"
+          :invalid="Boolean(fieldError('email'))"
+        />
+        <span v-if="fieldError('email')" class="mt-2 block text-sm text-red-200">
+          {{ fieldError('email') }}
+        </span>
+      </label>
+
+      <label class="block">
+        <span class="text-sm font-semibold text-white/78">{{ t('auth.fields.password') }}</span>
+        <Password
+          v-model="form.password"
+          class="mt-2 block"
+          input-class="!w-full"
+          toggle-mask
+          autocomplete="new-password"
+          :invalid="Boolean(fieldError('password'))"
+        />
+        <span v-if="fieldError('password')" class="mt-2 block text-sm text-red-200">
+          {{ fieldError('password') }}
+        </span>
+      </label>
+
+      <label class="block">
+        <span class="text-sm font-semibold text-white/78">
+          {{ t('auth.fields.passwordConfirmation') }}
+        </span>
+        <Password
+          v-model="form.password_confirmation"
+          class="mt-2 block"
+          input-class="!w-full"
+          :feedback="false"
+          toggle-mask
+          autocomplete="new-password"
+          :invalid="Boolean(fieldError('password_confirmation'))"
+        />
+        <span v-if="fieldError('password_confirmation')" class="mt-2 block text-sm text-red-200">
+          {{ fieldError('password_confirmation') }}
+        </span>
+      </label>
+
+      <Button
+        type="submit"
+        :label="t('auth.actions.resetPassword')"
+        icon="pi pi-lock"
+        :loading="isSubmitting"
+        class="!w-full !justify-center !border-0 !bg-[#6ee7d8] !py-3 !font-semibold !text-[#06100e] hover:!brightness-110"
+      />
+    </form>
+  </AuthShell>
+</template>
