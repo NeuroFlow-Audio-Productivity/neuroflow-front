@@ -302,7 +302,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="neuro-page dark min-h-screen overflow-hidden text-[#f7fbf8]" :style="pageStyle">
-    <section class="relative isolate overflow-hidden px-4 pb-20 pt-4 sm:px-6 lg:px-8">
+    <section class="relative isolate overflow-clip px-4 pb-20 pt-4 sm:px-6 lg:px-8">
       <canvas ref="canvasRef" aria-hidden="true" class="absolute inset-0 -z-20 h-full w-full" />
       <div aria-hidden="true" class="hero-vignette absolute inset-0 -z-10" />
       <div aria-hidden="true" class="section-flow-bg section-flow-bg--modes" />
