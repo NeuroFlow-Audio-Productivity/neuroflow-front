@@ -163,9 +163,9 @@ onBeforeUnmount(() => {
 }
 
 .language-trigger--open {
-  border-color: color-mix(in srgb, #6ee7d8, white 10%);
-  background: color-mix(in srgb, #6ee7d8, transparent 86%);
-  color: #6ee7d8;
+  border-color: color-mix(in srgb, var(--mode-accent), white 10%);
+  background: color-mix(in srgb, var(--mode-accent), transparent 86%);
+  color: var(--mode-accent);
 }
 
 .language-trigger--open i {
@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
   height: 8.25rem;
   overflow-y: scroll;
   overscroll-behavior: contain;
-  scrollbar-color: #6ee7d8 rgba(255, 255, 255, 0.08);
+  scrollbar-color: var(--mode-accent) rgba(255, 255, 255, 0.08);
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
 }
 
 .language-list::-webkit-scrollbar-thumb {
-  background: #6ee7d8;
+  background: var(--mode-accent);
   border-radius: 999px;
 }
 
@@ -227,7 +227,7 @@ onBeforeUnmount(() => {
 }
 
 .language-option--active {
-  background: #6ee7d8;
-  color: #06100e;
+  background: var(--mode-accent);
+  color: var(--mode-ink);
 }
 </style>

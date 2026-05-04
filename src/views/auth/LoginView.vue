@@ -60,7 +60,7 @@ const submit = async () => {
 
       <div
         v-if="resetCompleted"
-        class="rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+        class="theme-success-panel rounded-[8px] border px-4 py-3 text-sm leading-6"
       >
         {{ t('auth.login.resetComplete') }}
       </div>
@@ -109,7 +109,7 @@ const submit = async () => {
       <div class="flex items-center justify-end">
         <RouterLink
           to="/auth/forgot-password"
-          class="text-sm font-semibold text-[#6ee7d8] transition hover:text-[#d9fff8]"
+          class="theme-accent-link text-sm font-semibold"
         >
           {{ t('auth.actions.forgotPassword') }}
         </RouterLink>
@@ -121,12 +121,12 @@ const submit = async () => {
         icon="pi pi-arrow-right"
         icon-pos="right"
         :loading="isSubmitting"
-        class="!w-full !justify-center !border-0 !bg-[#6ee7d8] !py-3 !font-semibold !text-[#06100e] hover:!brightness-110"
+        class="theme-primary-button !w-full !justify-center !py-3 !font-semibold"
       />
 
       <p class="text-center text-sm text-white/62">
         {{ t('auth.login.noAccount') }}
-        <RouterLink class="font-semibold text-[#6ee7d8] hover:text-[#d9fff8]" to="/auth/register">
+        <RouterLink class="theme-accent-link font-semibold" to="/auth/register">
           {{ t('auth.actions.createAccount') }}
         </RouterLink>
       </p>

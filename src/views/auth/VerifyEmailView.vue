@@ -93,7 +93,7 @@ onMounted(() => {
 
       <div
         v-else-if="verified"
-        class="rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+        class="theme-success-panel rounded-[8px] border px-4 py-3 text-sm leading-6"
       >
         {{ auth.successMessage }}
       </div>
@@ -107,7 +107,7 @@ onMounted(() => {
 
       <RouterLink
         to="/auth/login"
-        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#6ee7d8] px-6 font-semibold text-[#06100e] transition hover:brightness-110"
+        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--mode-accent)] px-6 font-semibold text-[var(--mode-ink)] transition hover:brightness-110"
       >
         <i class="pi pi-arrow-right" aria-hidden="true" />
         <span>{{ t('auth.actions.signIn') }}</span>
@@ -122,7 +122,7 @@ onMounted(() => {
 
       <div
         v-if="auth.successMessage"
-        class="rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+        class="theme-success-panel rounded-[8px] border px-4 py-3 text-sm leading-6"
       >
         {{ auth.successMessage }}
       </div>
@@ -153,7 +153,7 @@ onMounted(() => {
         :label="t('auth.actions.resendVerification')"
         icon="pi pi-send"
         :loading="isSubmitting"
-        class="!w-full !justify-center !border-0 !bg-[#6ee7d8] !py-3 !font-semibold !text-[#06100e] hover:!brightness-110"
+        class="theme-primary-button !w-full !justify-center !py-3 !font-semibold"
       />
     </form>
   </AuthShell>

@@ -82,7 +82,7 @@ onMounted(() => {
 
       <div
         v-if="auth.successMessage"
-        class="rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+        class="theme-success-panel rounded-[8px] border px-4 py-3 text-sm leading-6"
       >
         {{ auth.successMessage }}
       </div>
@@ -151,7 +151,7 @@ onMounted(() => {
         :label="t('auth.actions.resetPassword')"
         icon="pi pi-lock"
         :loading="isSubmitting"
-        class="!w-full !justify-center !border-0 !bg-[#6ee7d8] !py-3 !font-semibold !text-[#06100e] hover:!brightness-110"
+        class="theme-primary-button !w-full !justify-center !py-3 !font-semibold"
       />
     </form>
   </AuthShell>

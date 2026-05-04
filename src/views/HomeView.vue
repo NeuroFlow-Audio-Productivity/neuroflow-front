@@ -6,21 +6,15 @@ import ProgressBar from 'primevue/progressbar'
 import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
 import AppNavbar from '@/components/AppNavbar.vue'
-
-type ModeKey = 'focus' | 'relax' | 'sleep'
-
-type ModeConfig = {
-  key: ModeKey
-  frequency: string
-  accent: string
-  soft: string
-  ink: string
-  progress: number
-  icon: string
-}
+import {
+  useVisualThemeStore,
+  visualModeConfigs,
+  type VisualModeConfig,
+  type VisualModeKey,
+} from '@/stores/visualTheme'
 
 type Mode = {
-  key: ModeKey
+  key: VisualModeKey
   label: string
   title: string
   subtitle: string
@@ -41,36 +35,7 @@ type PillarConfig = {
 }
 
 const { t } = useI18n()
-
-const modeConfigs: ModeConfig[] = [
-  {
-    key: 'focus',
-    frequency: '14 Hz',
-    accent: '#6ee7d8',
-    soft: '#d9fff8',
-    ink: '#09231f',
-    progress: 72,
-    icon: 'pi pi-bolt',
-  },
-  {
-    key: 'relax',
-    frequency: '6 Hz',
-    accent: '#f6c177',
-    soft: '#fff0d6',
-    ink: '#2f1c08',
-    progress: 48,
-    icon: 'pi pi-sparkles',
-  },
-  {
-    key: 'sleep',
-    frequency: '2 Hz',
-    accent: '#b9a7ff',
-    soft: '#ebe6ff',
-    ink: '#17102f',
-    progress: 31,
-    icon: 'pi pi-moon',
-  },
-]
+const visualTheme = useVisualThemeStore()
 
 const pillarConfigs: PillarConfig[] = [
   {
@@ -87,7 +52,7 @@ const pillarConfigs: PillarConfig[] = [
   },
 ]
 
-const modeFromConfig = (mode: ModeConfig): Mode => ({
+const modeFromConfig = (mode: VisualModeConfig): Mode => ({
   ...mode,
   label: t(`modes.${mode.key}.label`),
   title: t(`modes.${mode.key}.title`),
@@ -95,7 +60,7 @@ const modeFromConfig = (mode: ModeConfig): Mode => ({
   description: t(`modes.${mode.key}.description`),
 })
 
-const modes = computed<Mode[]>(() => modeConfigs.map(modeFromConfig))
+const modes = computed<Mode[]>(() => visualModeConfigs.map(modeFromConfig))
 
 const pillars = computed(() =>
   pillarConfigs.map((pillar) => ({
@@ -114,24 +79,21 @@ const modeOptions = computed(() =>
   })),
 )
 
-const selectedMode = ref<ModeKey>('focus')
+const selectedMode = computed<VisualModeKey>({
+  get: () => visualTheme.selectedMode,
+  set: (mode) => visualTheme.setMode(mode),
+})
 const isPlaying = ref(true)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const bars = Array.from({ length: 34 }, (_, index) => index)
 
 const activeMode = computed<Mode>(
   () =>
-    modes.value.find((mode) => mode.key === selectedMode.value) ?? modeFromConfig(modeConfigs[0]!),
+    modes.value.find((mode) => mode.key === selectedMode.value) ??
+    modeFromConfig(visualTheme.activeMode),
 )
 
-const pageStyle = computed(
-  () =>
-    ({
-      '--mode-accent': activeMode.value.accent,
-      '--mode-soft': activeMode.value.soft,
-      '--mode-ink': activeMode.value.ink,
-    }) as Record<string, string>,
-)
+const pageStyle = computed(() => visualTheme.cssVars)
 
 const barStyle = (index: number) => {
   const ratio = Math.sin(index * 0.72) * 0.5 + Math.cos(index * 0.21) * 0.5
@@ -303,7 +265,7 @@ onBeforeUnmount(() => {
             <div class="mt-7 flex w-full max-w-[22rem] flex-col gap-3 sm:max-w-none sm:flex-row">
               <RouterLink
                 to="/auth/register"
-                class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-0 bg-[var(--mode-accent)] px-6 font-semibold text-[#06100e] transition hover:brightness-110 sm:w-auto"
+                class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-0 bg-[var(--mode-accent)] px-6 font-semibold text-[var(--mode-ink)] transition hover:brightness-110 sm:w-auto"
               >
                 <i class="pi pi-play" aria-hidden="true" />
                 <span>{{ t('hero.start') }}</span>
@@ -386,7 +348,7 @@ onBeforeUnmount(() => {
       <div id="modos" class="relative mx-auto max-w-7xl pt-14 sm:pt-20">
         <div class="grid gap-8 lg:grid-cols-[0.78fr_1fr] lg:items-end">
           <div>
-            <p class="text-sm font-semibold uppercase text-[#6ee7d8]">
+            <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
               {{ t('modesSection.eyebrow') }}
             </p>
             <h2 class="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
@@ -424,7 +386,7 @@ onBeforeUnmount(() => {
     <section id="privacidade" class="bg-[#06100e] px-4 py-16 text-white sm:px-6 lg:px-8">
       <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.72fr_1fr] lg:items-center">
         <div>
-          <p class="text-sm font-semibold uppercase text-[#6ee7d8]">
+          <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
             {{ t('privacy.eyebrow') }}
           </p>
           <h2 class="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
@@ -483,7 +445,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div>
-          <p class="text-sm font-semibold uppercase text-[#6ee7d8]">
+          <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
             {{ t('process.eyebrow') }}
           </p>
           <h2 class="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
@@ -496,7 +458,7 @@ onBeforeUnmount(() => {
               class="flex gap-4 rounded-[8px] border border-white/10 bg-white/[0.045] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)]"
             >
               <span
-                class="grid size-9 shrink-0 place-items-center rounded-full bg-[#d9fff8] text-sm font-semibold text-[#09231f]"
+                class="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--mode-soft)] text-sm font-semibold text-[var(--mode-ink)]"
               >
                 {{ index + 1 }}
               </span>
@@ -512,7 +474,7 @@ onBeforeUnmount(() => {
         class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 border-t border-white/10 pt-10 md:flex-row md:items-center"
       >
         <div>
-          <p class="text-sm font-semibold uppercase text-[#b9a7ff]">
+          <p class="text-sm font-semibold uppercase text-[rgb(var(--mode-companion-rgb))]">
             {{ t('openSource.eyebrow') }}
           </p>
           <h2 class="mt-3 max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
@@ -527,7 +489,7 @@ onBeforeUnmount(() => {
           :label="t('openSource.repo')"
           icon="pi pi-github"
           rounded
-          class="!border-[#6ee7d8]/40 !bg-[#6ee7d8]/10 !px-6 !py-3 !font-semibold !text-[#d9fff8] hover:!bg-[#6ee7d8]/18"
+          class="theme-soft-button !px-6 !py-3 !font-semibold"
         />
       </div>
     </section>
@@ -542,7 +504,7 @@ onBeforeUnmount(() => {
       color-mix(in srgb, var(--mode-accent), transparent 88%),
       transparent 34rem
     ),
-    radial-gradient(circle at 0% 48%, rgba(110, 231, 216, 0.08), transparent 34rem),
+    radial-gradient(circle at 0% 48%, rgba(var(--mode-glow-rgb), 0.08), transparent 34rem),
     linear-gradient(180deg, #06100e 0%, #081512 46%, #06100e 100%);
 }
 
@@ -582,7 +544,7 @@ onBeforeUnmount(() => {
       color-mix(in srgb, var(--mode-accent), transparent 86%),
       transparent 31%
     ),
-    radial-gradient(circle at 82% 48%, rgba(185, 167, 255, 0.11), transparent 32%),
+    radial-gradient(circle at 82% 48%, rgba(var(--mode-companion-rgb), 0.11), transparent 32%),
     linear-gradient(
       180deg,
       rgba(6, 16, 14, 0) 0%,
@@ -600,7 +562,7 @@ onBeforeUnmount(() => {
       color-mix(in srgb, var(--mode-accent), transparent 87%),
       transparent 32%
     ),
-    radial-gradient(circle at 84% 55%, rgba(110, 231, 216, 0.09), transparent 30%),
+    radial-gradient(circle at 84% 55%, rgba(var(--mode-glow-rgb), 0.09), transparent 30%),
     linear-gradient(
       180deg,
       rgba(6, 16, 14, 0) 0%,
@@ -660,13 +622,18 @@ onBeforeUnmount(() => {
 
 .sound-lab {
   background:
-    radial-gradient(circle at 80% 20%, rgba(185, 167, 255, 0.36), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(var(--mode-companion-rgb), 0.36), transparent 28%),
     radial-gradient(
       circle at 8% 90%,
       color-mix(in srgb, var(--mode-accent), transparent 72%),
       transparent 28%
     ),
-    linear-gradient(135deg, #07100e 0%, #11352e 52%, #211338 100%);
+    linear-gradient(
+      135deg,
+      #07100e 0%,
+      color-mix(in srgb, var(--mode-accent), #07100e 68%) 52%,
+      color-mix(in srgb, rgb(var(--mode-companion-rgb)), #07100e 72%) 100%
+    );
 }
 
 .mode-switch :deep(.p-togglebutton) {

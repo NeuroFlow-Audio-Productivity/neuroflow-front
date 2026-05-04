@@ -43,7 +43,7 @@ const resendVerification = async () => {
       class="mx-auto grid min-h-[calc(100svh-5.5rem)] max-w-7xl items-center gap-8 py-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.68fr)]"
     >
       <div>
-        <p class="text-sm font-semibold uppercase text-[#6ee7d8]">
+        <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
           {{ t('auth.dashboard.eyebrow') }}
         </p>
         <h1 class="mt-4 text-5xl font-semibold leading-none text-white sm:text-6xl lg:text-7xl">
@@ -80,7 +80,7 @@ const resendVerification = async () => {
 
         <div
           v-if="auth.successMessage"
-          class="mt-5 rounded-[8px] border border-[#6ee7d8]/30 bg-[#6ee7d8]/10 px-4 py-3 text-sm leading-6 text-[#d9fff8]"
+          class="theme-success-panel mt-5 rounded-[8px] border px-4 py-3 text-sm leading-6"
         >
           {{ auth.successMessage }}
         </div>
@@ -99,7 +99,7 @@ const resendVerification = async () => {
             :label="t('auth.actions.resendVerification')"
             icon="pi pi-send"
             :loading="auth.status === 'loading'"
-            class="!justify-center !border-[#6ee7d8]/40 !bg-[#6ee7d8]/10 !text-[#d9fff8] hover:!bg-[#6ee7d8]/18"
+            class="theme-soft-button !justify-center"
             @click="resendVerification"
           />
           <Button
@@ -120,8 +120,8 @@ const resendVerification = async () => {
 <style scoped>
 .dashboard-page {
   background:
-    radial-gradient(circle at 68% 12%, rgba(110, 231, 216, 0.16), transparent 34rem),
-    radial-gradient(circle at 0% 58%, rgba(185, 167, 255, 0.12), transparent 34rem),
+    radial-gradient(circle at 68% 12%, rgba(var(--mode-glow-rgb), 0.16), transparent 34rem),
+    radial-gradient(circle at 0% 58%, rgba(var(--mode-companion-rgb), 0.12), transparent 34rem),
     linear-gradient(180deg, #06100e 0%, #081512 48%, #06100e 100%);
 }
 

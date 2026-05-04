@@ -162,7 +162,7 @@ watch(
           class="hidden h-10 max-w-56 items-center gap-2 rounded-full border border-white/12 bg-white/10 px-2.5 pr-3 text-sm font-semibold text-white transition hover:bg-white/16 md:inline-flex"
         >
           <span
-            class="grid size-7 shrink-0 place-items-center rounded-full bg-[#6ee7d8] text-[0.7rem] font-bold text-[#06100e]"
+            class="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--mode-accent)] text-[0.7rem] font-bold text-[var(--mode-ink)]"
             aria-hidden="true"
           >
             {{ initials }}
@@ -190,7 +190,7 @@ watch(
             :aria-label="t('nav.profileItems')"
           >
             <span
-              class="grid size-7 place-items-center rounded-full bg-[#6ee7d8] text-[0.68rem] font-bold text-[#06100e]"
+              class="grid size-7 place-items-center rounded-full bg-[var(--mode-accent)] text-[0.68rem] font-bold text-[var(--mode-ink)]"
               aria-hidden="true"
             >
               {{ initials }}
@@ -265,7 +265,7 @@ watch(
           </RouterLink>
           <RouterLink
             to="/auth/register"
-            class="hidden h-10 items-center gap-2 rounded-full border border-[#6ee7d8]/40 bg-[#6ee7d8]/14 px-4 text-sm font-semibold text-[#d9fff8] transition hover:bg-[#6ee7d8]/22 lg:inline-flex"
+            class="theme-soft-button hidden h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition lg:inline-flex"
           >
             <i class="pi pi-user-plus" aria-hidden="true" />
             <span>{{ t('auth.actions.createAccount') }}</span>

@@ -129,12 +129,12 @@ const submit = async () => {
         :label="t('auth.actions.createAccount')"
         icon="pi pi-user-plus"
         :loading="isSubmitting"
-        class="!w-full !justify-center !border-0 !bg-[#6ee7d8] !py-3 !font-semibold !text-[#06100e] hover:!brightness-110"
+        class="theme-primary-button !w-full !justify-center !py-3 !font-semibold"
       />
 
       <p class="text-center text-sm text-white/62">
         {{ t('auth.register.hasAccount') }}
-        <RouterLink class="font-semibold text-[#6ee7d8] hover:text-[#d9fff8]" to="/auth/login">
+        <RouterLink class="theme-accent-link font-semibold" to="/auth/login">
           {{ t('auth.actions.signIn') }}
         </RouterLink>
       </p>

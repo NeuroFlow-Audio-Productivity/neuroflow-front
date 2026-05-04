@@ -29,7 +29,7 @@ const barStyle = (index: number) => ({
         class="mx-auto grid min-h-[calc(100svh-5.5rem)] max-w-7xl items-center gap-10 py-10 lg:grid-cols-[minmax(0,0.88fr)_minmax(360px,0.62fr)]"
       >
         <div class="max-w-3xl">
-          <p class="text-sm font-semibold uppercase text-[#6ee7d8]">{{ eyebrow }}</p>
+          <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">{{ eyebrow }}</p>
           <h1 class="mt-4 text-5xl font-semibold leading-none text-white sm:text-6xl lg:text-7xl">
             {{ title }}
           </h1>
@@ -45,7 +45,7 @@ const barStyle = (index: number) => ({
               <span
                 v-for="bar in bars"
                 :key="bar"
-                class="auth-wave-bar flex-1 rounded-full bg-[#6ee7d8]/80"
+                class="auth-wave-bar flex-1 rounded-full bg-[var(--mode-accent)]/80"
                 :style="barStyle(bar)"
               />
             </div>
@@ -65,14 +65,14 @@ const barStyle = (index: number) => ({
 <style scoped>
 .auth-page {
   background:
-    radial-gradient(circle at 68% 12%, rgba(110, 231, 216, 0.16), transparent 34rem),
-    radial-gradient(circle at 0% 58%, rgba(185, 167, 255, 0.12), transparent 34rem),
+    radial-gradient(circle at 68% 12%, rgba(var(--mode-glow-rgb), 0.16), transparent 34rem),
+    radial-gradient(circle at 0% 58%, rgba(var(--mode-companion-rgb), 0.12), transparent 34rem),
     linear-gradient(180deg, #06100e 0%, #081512 48%, #06100e 100%);
 }
 
 .auth-vignette {
   background:
-    radial-gradient(circle at 16% 82%, rgba(110, 231, 216, 0.2), transparent 25%),
+    radial-gradient(circle at 16% 82%, rgba(var(--mode-glow-rgb), 0.2), transparent 25%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(6, 16, 14, 0.96) 92%);
 }
 

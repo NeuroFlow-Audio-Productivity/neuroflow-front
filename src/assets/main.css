@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 
 :root {
+  --mode-accent: #6ee7d8;
+  --mode-soft: #d9fff8;
+  --mode-ink: #09231f;
+  --mode-glow-rgb: 110, 231, 216;
+  --mode-companion-rgb: 185, 167, 255;
   color-scheme: dark;
   font-family:
     Inter,
@@ -70,4 +75,47 @@ a {
 .auth-password input {
   display: block;
   width: 100%;
+}
+
+.theme-text-accent {
+  color: var(--mode-accent);
+}
+
+.theme-text-soft {
+  color: var(--mode-soft);
+}
+
+.theme-primary-button {
+  border-color: transparent !important;
+  background: var(--mode-accent) !important;
+  color: var(--mode-ink) !important;
+}
+
+.theme-primary-button:hover {
+  filter: brightness(1.1);
+}
+
+.theme-soft-button {
+  border-color: color-mix(in srgb, var(--mode-accent), transparent 60%) !important;
+  background: color-mix(in srgb, var(--mode-accent), transparent 88%) !important;
+  color: var(--mode-soft) !important;
+}
+
+.theme-soft-button:hover {
+  background: color-mix(in srgb, var(--mode-accent), transparent 82%) !important;
+}
+
+.theme-success-panel {
+  border-color: color-mix(in srgb, var(--mode-accent), transparent 70%);
+  background: color-mix(in srgb, var(--mode-accent), transparent 90%);
+  color: var(--mode-soft);
+}
+
+.theme-accent-link {
+  color: var(--mode-accent);
+  transition: color 160ms ease;
+}
+
+.theme-accent-link:hover {
+  color: var(--mode-soft);
 }
