@@ -64,6 +64,7 @@ const authMessages = {
         resetLink: 'Unable to send the password reset link.',
         resetToken: 'Unable to load this password reset token.',
         passwordReset: 'Unable to reset this password.',
+        profileItems: 'Unable to load your profile navigation.',
         localSessionCleared: 'The local session was cleared.',
         invalidSignature: 'This verification link is invalid or expired.',
         unauthenticated: 'Your session is not authenticated.',
@@ -182,6 +183,7 @@ const authMessages = {
         resetLink: 'パスワード再設定リンクを送信できません。',
         resetToken: 'このパスワード再設定トークンを読み込めません。',
         passwordReset: 'このパスワードを再設定できません。',
+        profileItems: 'プロフィールのナビゲーションを読み込めません。',
         localSessionCleared: 'ローカルセッションを削除しました。',
         invalidSignature: 'この確認リンクは無効、または期限切れです。',
         unauthenticated: 'セッションは認証されていません。',
@@ -298,6 +300,7 @@ const authMessages = {
         resetLink: 'Não foi possível enviar o link de redefinição de senha.',
         resetToken: 'Não foi possível carregar este token de redefinição de senha.',
         passwordReset: 'Não foi possível redefinir esta senha.',
+        profileItems: 'Não foi possível carregar a navegação do seu perfil.',
         localSessionCleared: 'A sessão local foi encerrada.',
         invalidSignature: 'Este link de verificação é inválido ou expirou.',
         unauthenticated: 'Sua sessão não está autenticada.',
@@ -414,6 +417,7 @@ const authMessages = {
         resetLink: 'No se pudo enviar el enlace de restablecimiento.',
         resetToken: 'No se pudo cargar este token de restablecimiento.',
         passwordReset: 'No se pudo restablecer esta contraseña.',
+        profileItems: 'No se pudo cargar la navegación de tu perfil.',
         localSessionCleared: 'La sesión local fue cerrada.',
         invalidSignature: 'Este enlace de verificación es inválido o expiró.',
         unauthenticated: 'Tu sesión no está autenticada.',
@@ -491,6 +495,9 @@ export const messages = {
       modes: 'Modes',
       privacy: 'Privacy',
       howItWorks: 'How it works',
+      dashboard: 'Dashboard',
+      profileItems: 'Profile navigation',
+      account: 'Account',
     },
     hero: {
       tags: {
@@ -584,6 +591,9 @@ export const messages = {
       modes: 'モード',
       privacy: 'プライバシー',
       howItWorks: '仕組み',
+      dashboard: 'ダッシュボード',
+      profileItems: 'プロフィールナビゲーション',
+      account: 'アカウント',
     },
     hero: {
       tags: {
@@ -677,6 +687,9 @@ export const messages = {
       modes: 'Modos',
       privacy: 'Privacidade',
       howItWorks: 'Como funciona',
+      dashboard: 'Dashboard',
+      profileItems: 'Navegação do perfil',
+      account: 'Conta',
     },
     hero: {
       tags: {
@@ -770,6 +783,9 @@ export const messages = {
       modes: 'Modos',
       privacy: 'Privacidad',
       howItWorks: 'Cómo funciona',
+      dashboard: 'Dashboard',
+      profileItems: 'Navegación del perfil',
+      account: 'Cuenta',
     },
     hero: {
       tags: {

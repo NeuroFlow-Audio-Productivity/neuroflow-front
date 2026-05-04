@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 
-import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
+import AppNavbar from '@/components/AppNavbar.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -37,31 +37,7 @@ const resendVerification = async () => {
   <main
     class="dashboard-page dark min-h-screen overflow-hidden px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8"
   >
-    <header
-      class="mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-full border border-white/10 bg-black/45 px-3 py-2 shadow-[0_20px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl"
-    >
-      <RouterLink to="/" class="flex min-w-0 items-center gap-3 text-white">
-        <span
-          class="grid size-9 shrink-0 place-items-center rounded-full border border-white/15 bg-white/8"
-          aria-hidden="true"
-        >
-          <span class="logo-mark" />
-        </span>
-        <span class="text-base font-semibold">NeuroFlow</span>
-      </RouterLink>
-
-      <div class="flex items-center gap-2">
-        <LocaleSwitcher />
-        <button
-          class="grid size-10 place-items-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/16"
-          type="button"
-          :aria-label="t('auth.actions.signOut')"
-          @click="logout"
-        >
-          <i class="pi pi-sign-out" aria-hidden="true" />
-        </button>
-      </div>
-    </header>
+    <AppNavbar />
 
     <section
       class="mx-auto grid min-h-[calc(100svh-5.5rem)] max-w-7xl items-center gap-8 py-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.68fr)]"
@@ -149,31 +125,4 @@ const resendVerification = async () => {
     linear-gradient(180deg, #06100e 0%, #081512 48%, #06100e 100%);
 }
 
-.logo-mark {
-  position: relative;
-  width: 18px;
-  height: 18px;
-}
-
-.logo-mark,
-.logo-mark::before,
-.logo-mark::after {
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  border-radius: 999px;
-}
-
-.logo-mark::before,
-.logo-mark::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-}
-
-.logo-mark::before {
-  transform: rotate(60deg);
-}
-
-.logo-mark::after {
-  transform: rotate(-60deg);
-}
 </style>

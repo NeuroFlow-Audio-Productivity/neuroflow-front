@@ -3,6 +3,7 @@ import type {
   LoginPayload,
   LoginResponse,
   MessageResponse,
+  ProfileItemsResponse,
   RegisterPayload,
   ResendVerificationPayload,
   ResetPasswordPayload,
@@ -168,6 +169,11 @@ export const authApi = {
 
   currentUser: (token: string) =>
     request<User>('/user', {
+      token,
+    }),
+
+  profileItems: (token: string) =>
+    request<ProfileItemsResponse>('/items', {
       token,
     }),
 }

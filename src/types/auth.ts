@@ -1,5 +1,22 @@
+export type Profile = {
+  id: number
+  name: string
+  slug: string
+  created_at: string
+  updated_at: string
+}
+
+export type ProfileItem = {
+  id: number
+  name: string
+  route: string
+  created_at: string
+  updated_at: string
+}
+
 export type User = {
   id: number
+  profile?: Profile | null
   name: string
   email: string
   email_verified_at: string | null
@@ -31,6 +48,10 @@ export type LoginResponse = {
 
 export type MessageResponse = {
   message: string
+}
+
+export type ProfileItemsResponse = {
+  data: ProfileItem[]
 }
 
 export type UserPayloadResponse = {

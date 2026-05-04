@@ -5,7 +5,7 @@ import Button from 'primevue/button'
 import ProgressBar from 'primevue/progressbar'
 import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
-import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
+import AppNavbar from '@/components/AppNavbar.vue'
 
 type ModeKey = 'focus' | 'relax' | 'sleep'
 
@@ -278,62 +278,7 @@ onBeforeUnmount(() => {
       <div aria-hidden="true" class="section-flow-bg section-flow-bg--modes" />
 
       <div class="relative flex min-h-[86svh] flex-col">
-        <header
-          class="site-header mx-auto flex max-w-7xl items-center justify-start gap-3 rounded-full border border-white/10 bg-black/45 px-3 py-2 shadow-[0_20px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:justify-between sm:gap-0"
-        >
-          <a href="#" class="flex min-w-0 items-center gap-3 text-white">
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-full border border-white/15 bg-white/8"
-              aria-hidden="true"
-            >
-              <span class="logo-mark" />
-            </span>
-            <span class="text-base font-semibold">NeuroFlow</span>
-          </a>
-
-          <nav
-            class="hidden items-center gap-1 text-sm text-white/70 md:flex"
-            :aria-label="t('nav.label')"
-          >
-            <a
-              class="rounded-full px-4 py-2 transition hover:bg-white/10 hover:text-white"
-              href="#modos"
-            >
-              {{ t('nav.modes') }}
-            </a>
-            <a
-              class="rounded-full px-4 py-2 transition hover:bg-white/10 hover:text-white"
-              href="#privacidade"
-            >
-              {{ t('nav.privacy') }}
-            </a>
-            <a
-              class="rounded-full px-4 py-2 transition hover:bg-white/10 hover:text-white"
-              href="#como-funciona"
-            >
-              {{ t('nav.howItWorks') }}
-            </a>
-          </nav>
-
-          <div class="flex items-center gap-2">
-            <LocaleSwitcher />
-
-            <RouterLink
-              to="/auth/login"
-              class="hidden h-10 items-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/16 sm:inline-flex"
-            >
-              <i class="pi pi-user" aria-hidden="true" />
-              <span>{{ t('auth.actions.signIn') }}</span>
-            </RouterLink>
-            <RouterLink
-              to="/auth/register"
-              class="grid size-10 place-items-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/16 sm:hidden"
-              :aria-label="t('auth.actions.createAccount')"
-            >
-              <i class="pi pi-user-plus" aria-hidden="true" />
-            </RouterLink>
-          </div>
-        </header>
+        <AppNavbar marketing-links />
 
         <div
           class="mx-auto grid w-[calc(100vw-2rem)] max-w-7xl flex-1 items-center gap-8 py-6 sm:w-full md:grid-cols-[minmax(0,1fr)_minmax(330px,0.64fr)] md:py-8"
@@ -601,121 +546,6 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, #06100e 0%, #081512 46%, #06100e 100%);
 }
 
-.site-header {
-  width: calc(100vw - 2rem);
-}
-
-.language-menu {
-  position: relative;
-  z-index: 40;
-  flex-shrink: 0;
-}
-
-.language-trigger {
-  display: inline-flex;
-  height: 2.5rem;
-  min-width: 5.75rem;
-  cursor: pointer;
-  list-style: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0 0.78rem 0 0.95rem;
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
-  transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.language-trigger::-webkit-details-marker {
-  display: none;
-}
-
-.language-menu[open] .language-trigger {
-  border-color: color-mix(in srgb, var(--mode-accent), white 10%);
-  background: color-mix(in srgb, var(--mode-accent), transparent 86%);
-  color: var(--mode-accent);
-}
-
-.language-menu[open] .language-trigger i {
-  transform: rotate(180deg);
-}
-
-.language-list {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
-  width: 8rem;
-  height: 8.25rem;
-  overflow-y: scroll;
-  overscroll-behavior: contain;
-  scrollbar-color: var(--mode-accent) rgba(255, 255, 255, 0.08);
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  touch-action: pan-y;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(7, 16, 14, 0.96);
-  padding: 0.35rem;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(18px);
-  z-index: 80;
-}
-
-.language-list::-webkit-scrollbar {
-  width: 0.42rem;
-}
-
-.language-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-}
-
-.language-list::-webkit-scrollbar-thumb {
-  background: var(--mode-accent);
-  border-radius: 999px;
-}
-
-.language-option {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  padding: 0.52rem 0.72rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-align: left;
-  transition:
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.language-option:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-.language-option--active {
-  background: var(--mode-accent);
-  color: #06100e;
-}
-
-@media (min-width: 640px) {
-  .site-header {
-    width: 100%;
-  }
-}
-
 .hero-vignette {
   background:
     radial-gradient(
@@ -777,34 +607,6 @@ onBeforeUnmount(() => {
       rgba(11, 23, 20, 0.82) 46%,
       rgba(6, 16, 14, 0) 100%
     );
-}
-
-.logo-mark {
-  position: relative;
-  width: 18px;
-  height: 18px;
-}
-
-.logo-mark,
-.logo-mark::before,
-.logo-mark::after {
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  border-radius: 999px;
-}
-
-.logo-mark::before,
-.logo-mark::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-}
-
-.logo-mark::before {
-  transform: rotate(60deg);
-}
-
-.logo-mark::after {
-  transform: rotate(-60deg);
 }
 
 .player-shell {

@@ -6,6 +6,7 @@ import { translateValidationErrors, validationSummary } from '@/services/validat
 import type {
   ForgotPasswordPayload,
   LoginPayload,
+  ProfileItem,
   RegisterPayload,
   ResendVerificationPayload,
   ResetPasswordPayload,
@@ -14,6 +15,7 @@ import type {
 } from '@/types/auth'
 
 type AuthStatus = 'idle' | 'loading' | 'ready'
+type ProfileItemsStatus = 'idle' | 'loading' | 'ready'
 type VerificationQuery = Record<
   string,
   string | number | boolean | null | undefined | Array<string | null>
@@ -58,6 +60,9 @@ export const useAuthStore = defineStore('auth', {
     tokenType: readTokenType(),
     user: readUser(),
     status: 'idle' as AuthStatus,
+    profileItems: [] as ProfileItem[],
+    profileItemsStatus: 'idle' as ProfileItemsStatus,
+    profileItemsError: null as string | null,
     bootstrapped: false,
     error: null as string | null,
     fieldErrors: {} as ValidationErrors,
@@ -95,6 +100,9 @@ export const useAuthStore = defineStore('auth', {
       this.token = null
       this.tokenType = 'Bearer'
       this.user = null
+      this.profileItems = []
+      this.profileItemsStatus = 'idle'
+      this.profileItemsError = null
       this.persistSession()
     },
 
@@ -131,6 +139,11 @@ export const useAuthStore = defineStore('auth', {
 
       try {
         await this.fetchCurrentUser()
+        try {
+          await this.fetchProfileItems()
+        } catch {
+          // Profile menu loading should not invalidate an otherwise healthy session.
+        }
       } catch {
         this.clearSession()
       }
@@ -146,6 +159,54 @@ export const useAuthStore = defineStore('auth', {
       return user
     },
 
+    async fetchProfileItems(force = false) {
+      if (!this.token) {
+        this.profileItems = []
+        this.profileItemsStatus = 'idle'
+        this.profileItemsError = null
+
+        return []
+      }
+
+      if (!force && this.profileItemsStatus === 'ready') {
+        return this.profileItems
+      }
+
+      if (this.profileItemsStatus === 'loading') {
+        return this.profileItems
+      }
+
+      this.profileItemsStatus = 'loading'
+      this.profileItemsError = null
+
+      try {
+        const response = await authApi.profileItems(this.token)
+
+        this.profileItems = response.data
+        this.profileItemsStatus = 'ready'
+
+        return this.profileItems
+      } catch (error) {
+        this.profileItems = []
+        this.profileItemsStatus = 'ready'
+
+        if (error instanceof ApiError) {
+          this.profileItemsError = translateApiMessage(error.message, {
+            fallbackKey: 'auth.api.errors.profileItems',
+            status: error.status,
+          })
+
+          if (error.status === 401) {
+            this.clearSession()
+          }
+        } else {
+          this.profileItemsError = translateApiKey('auth.api.errors.profileItems')
+        }
+
+        throw error
+      }
+    },
+
     async login(payload: LoginPayload) {
       this.resetFeedback()
       this.status = 'loading'
@@ -159,6 +220,9 @@ export const useAuthStore = defineStore('auth', {
         this.token = response.access_token
         this.tokenType = response.token_type
         this.user = response.user
+        this.profileItems = []
+        this.profileItemsStatus = 'idle'
+        this.profileItemsError = null
         this.setSuccess(response.message, 'auth.api.success.login')
         this.persistSession()
 

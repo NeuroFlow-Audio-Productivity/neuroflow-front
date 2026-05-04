@@ -16,7 +16,7 @@ const fieldLabel = (field: string) => {
 
   if (key) return translate(key)
 
-  return field.replaceAll('_', ' ')
+  return field.replace(/_/g, ' ')
 }
 
 const extractLimit = (message: string) => message.match(/\b(\d+)\b/)?.[1] ?? ''
