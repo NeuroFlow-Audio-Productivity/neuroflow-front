@@ -25,6 +25,13 @@ export const translateValidationMessage = (message: string, field: string) => {
   const normalized = message.toLowerCase()
   const label = fieldLabel(field)
 
+  if (
+    (normalized.includes('credentials') && normalized.includes('do not match')) ||
+    normalized.includes('provided credentials are incorrect')
+  ) {
+    return translate('auth.api.errors.credentials')
+  }
+
   if (normalized.includes('required')) {
     return translate('auth.validation.required', { field: label })
   }

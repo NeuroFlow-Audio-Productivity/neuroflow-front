@@ -94,52 +94,57 @@ onMounted(() => {
         {{ auth.error }}
       </div>
 
-      <label class="block">
-        <span class="text-sm font-semibold text-white/78">{{ t('auth.fields.email') }}</span>
+      <div class="auth-field">
+        <label class="auth-field-label" for="reset-email">{{ t('auth.fields.email') }}</label>
         <InputText
+          id="reset-email"
           v-model="form.email"
-          class="mt-2 !w-full"
+          class="!w-full"
           type="email"
           autocomplete="email"
           :invalid="Boolean(fieldError('email'))"
         />
-        <span v-if="fieldError('email')" class="mt-2 block text-sm text-red-200">
+        <span v-if="fieldError('email')" class="auth-field-error">
           {{ fieldError('email') }}
         </span>
-      </label>
+      </div>
 
-      <label class="block">
-        <span class="text-sm font-semibold text-white/78">{{ t('auth.fields.password') }}</span>
+      <div class="auth-field">
+        <label class="auth-field-label" for="reset-password">
+          {{ t('auth.fields.password') }}
+        </label>
         <Password
+          input-id="reset-password"
           v-model="form.password"
-          class="mt-2 block"
+          class="auth-password"
           input-class="!w-full"
           toggle-mask
           autocomplete="new-password"
           :invalid="Boolean(fieldError('password'))"
         />
-        <span v-if="fieldError('password')" class="mt-2 block text-sm text-red-200">
+        <span v-if="fieldError('password')" class="auth-field-error">
           {{ fieldError('password') }}
         </span>
-      </label>
+      </div>
 
-      <label class="block">
-        <span class="text-sm font-semibold text-white/78">
+      <div class="auth-field">
+        <label class="auth-field-label" for="reset-password-confirmation">
           {{ t('auth.fields.passwordConfirmation') }}
-        </span>
+        </label>
         <Password
+          input-id="reset-password-confirmation"
           v-model="form.password_confirmation"
-          class="mt-2 block"
+          class="auth-password"
           input-class="!w-full"
           :feedback="false"
           toggle-mask
           autocomplete="new-password"
           :invalid="Boolean(fieldError('password_confirmation'))"
         />
-        <span v-if="fieldError('password_confirmation')" class="mt-2 block text-sm text-red-200">
+        <span v-if="fieldError('password_confirmation')" class="auth-field-error">
           {{ fieldError('password_confirmation') }}
         </span>
-      </label>
+      </div>
 
       <Button
         type="submit"
