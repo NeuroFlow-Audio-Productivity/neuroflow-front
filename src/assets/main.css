@@ -41,3 +41,33 @@ a {
 #app {
   min-height: 100vh;
 }
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.auth-field-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.auth-field-error {
+  display: block;
+  color: #fecaca;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.auth-password,
+.auth-password.p-password,
+.auth-password .p-password,
+.auth-password input {
+  display: block;
+  width: 100%;
+}
