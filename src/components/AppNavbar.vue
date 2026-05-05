@@ -142,13 +142,13 @@ watch(
       class="hidden items-center gap-1 text-sm text-white/70 md:flex"
       :aria-label="t('nav.label')"
     >
-      <a class="navbar-link" href="#modos">
+      <a class="navbar-link" href="#modes">
         {{ t('nav.modes') }}
       </a>
-      <a class="navbar-link" href="#privacidade">
+      <a class="navbar-link" href="#privacy">
         {{ t('nav.privacy') }}
       </a>
-      <a class="navbar-link" href="#como-funciona">
+      <a class="navbar-link" href="#how-it-works">
         {{ t('nav.howItWorks') }}
       </a>
     </nav>

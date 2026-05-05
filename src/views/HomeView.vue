@@ -272,7 +272,7 @@ onBeforeUnmount(() => {
               </RouterLink>
               <Button
                 as="a"
-                href="#como-funciona"
+                href="#how-it-works"
                 :label="t('hero.engine')"
                 icon="pi pi-arrow-down"
                 rounded
@@ -283,7 +283,7 @@ onBeforeUnmount(() => {
           </div>
 
           <aside
-            class="player-shell hidden rounded-[8px] border border-white/12 bg-[#07100e]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl md:block"
+            class="player-shell hidden min-w-0 rounded-[8px] border border-white/12 bg-[#07100e]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl md:block"
             :aria-label="t('player.preview')"
           >
             <div class="flex items-center justify-between gap-4">
@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
               :aria-label="t('player.selectMode')"
             />
 
-            <div class="mt-7 rounded-[8px] border border-white/10 bg-white/[0.035] p-5">
+            <div class="mt-7 min-w-0 overflow-hidden rounded-[8px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <p class="text-sm text-[var(--mode-accent)]">{{ activeMode.frequency }}</p>
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
                 </span>
               </div>
 
-              <div class="mt-8 flex h-28 items-end gap-1.5" aria-hidden="true">
+              <div class="wave-meter mt-8 flex h-28 min-w-0 items-end overflow-hidden" aria-hidden="true">
                 <span
                   v-for="bar in bars"
                   :key="bar"
@@ -345,7 +345,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div id="modos" class="relative mx-auto max-w-7xl pt-14 sm:pt-20">
+      <div id="modes" class="relative mx-auto max-w-7xl pt-14 sm:pt-20">
         <div class="grid gap-8 lg:grid-cols-[0.78fr_1fr] lg:items-end">
           <div>
             <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
@@ -383,7 +383,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="privacidade" class="bg-[#06100e] px-4 py-16 text-white sm:px-6 lg:px-8">
+    <section id="privacy" class="bg-[#06100e] px-4 py-16 text-white sm:px-6 lg:px-8">
       <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.72fr_1fr] lg:items-center">
         <div>
           <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
@@ -409,7 +409,7 @@ onBeforeUnmount(() => {
     </section>
 
     <section
-      id="como-funciona"
+      id="how-it-works"
       class="relative overflow-hidden px-4 py-20 text-white sm:px-6 lg:px-8"
     >
       <div aria-hidden="true" class="section-flow-bg section-flow-bg--process" />
@@ -602,8 +602,12 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.wave-meter {
+  gap: clamp(0.125rem, 0.55vw, 0.375rem);
+}
+
 .wave-bar {
-  min-width: 5px;
+  min-width: 0;
   animation-name: breathe;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
