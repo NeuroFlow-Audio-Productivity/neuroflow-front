@@ -502,8 +502,13 @@ const userMessages = {
     },
     settings: {
       eyebrow: 'Settings',
-      title: 'Account settings',
-      subtitle: 'Update the account details available to your profile.',
+      title: 'Settings',
+      subtitle: 'Manage your account details now, with room for more settings later.',
+      accountTitle: 'Account',
+      accountSubtitle: 'Update the account details available to your profile.',
+      customizationTitle: 'Customization',
+      customizationSubtitle: 'Choose the color palette used across NeuroFlow.',
+      colorPalette: 'Color palette',
     },
     create: {
       eyebrow: 'Admin',
@@ -565,8 +570,13 @@ const userMessages = {
     },
     settings: {
       eyebrow: '設定',
-      title: 'アカウント設定',
-      subtitle: 'プロフィールで許可されているアカウント情報を更新します。',
+      title: '設定',
+      subtitle: 'アカウント情報を管理し、今後の設定もここに追加できます。',
+      accountTitle: 'アカウント',
+      accountSubtitle: 'プロフィールで許可されているアカウント情報を更新します。',
+      customizationTitle: 'カスタマイズ',
+      customizationSubtitle: 'NeuroFlow 全体で使うカラーパレットを選択します。',
+      colorPalette: 'カラーパレット',
     },
     create: {
       eyebrow: '管理者',
@@ -628,8 +638,13 @@ const userMessages = {
     },
     settings: {
       eyebrow: 'Configurações',
-      title: 'Configurações da conta',
-      subtitle: 'Atualize os dados da conta disponíveis para o seu perfil.',
+      title: 'Configurações',
+      subtitle: 'Gerencie os dados da conta agora, com espaço para novas configurações depois.',
+      accountTitle: 'Conta',
+      accountSubtitle: 'Atualize os dados da conta disponíveis para o seu perfil.',
+      customizationTitle: 'Customização',
+      customizationSubtitle: 'Escolha a paleta de cores usada em todo o NeuroFlow.',
+      colorPalette: 'Paleta de cores',
     },
     create: {
       eyebrow: 'Admin',
@@ -691,8 +706,13 @@ const userMessages = {
     },
     settings: {
       eyebrow: 'Configuración',
-      title: 'Configuración de cuenta',
-      subtitle: 'Actualiza los datos de cuenta disponibles para tu perfil.',
+      title: 'Configuración',
+      subtitle: 'Gestiona los datos de cuenta ahora, con espacio para más ajustes después.',
+      accountTitle: 'Cuenta',
+      accountSubtitle: 'Actualiza los datos de cuenta disponibles para tu perfil.',
+      customizationTitle: 'Personalización',
+      customizationSubtitle: 'Elige la paleta de color usada en todo NeuroFlow.',
+      colorPalette: 'Paleta de color',
     },
     create: {
       eyebrow: 'Admin',
@@ -781,6 +801,20 @@ export const messages = {
       pause: 'Pause preview',
       play: 'Play preview',
       selectMode: 'Select mode',
+    },
+    palettes: {
+      focus: {
+        label: 'Focus',
+      },
+      relax: {
+        label: 'Relax',
+      },
+      sleep: {
+        label: 'Sleep',
+      },
+      deepSpace: {
+        label: 'Deep space',
+      },
     },
     modes: {
       focus: {
@@ -881,6 +915,20 @@ export const messages = {
       play: 'プレビューを再生',
       selectMode: 'モードを選択',
     },
+    palettes: {
+      focus: {
+        label: '集中',
+      },
+      relax: {
+        label: 'リラックス',
+      },
+      sleep: {
+        label: '睡眠',
+      },
+      deepSpace: {
+        label: '深宇宙',
+      },
+    },
     modes: {
       focus: {
         label: '集中',
@@ -980,6 +1028,20 @@ export const messages = {
       play: 'Tocar prévia',
       selectMode: 'Selecionar modo',
     },
+    palettes: {
+      focus: {
+        label: 'Foco',
+      },
+      relax: {
+        label: 'Relaxar',
+      },
+      sleep: {
+        label: 'Sono',
+      },
+      deepSpace: {
+        label: 'Espaço profundo',
+      },
+    },
     modes: {
       focus: {
         label: 'Foco',
@@ -1078,6 +1140,20 @@ export const messages = {
       pause: 'Pausar vista previa',
       play: 'Reproducir vista previa',
       selectMode: 'Seleccionar modo',
+    },
+    palettes: {
+      focus: {
+        label: 'Foco',
+      },
+      relax: {
+        label: 'Relajar',
+      },
+      sleep: {
+        label: 'Sueño',
+      },
+      deepSpace: {
+        label: 'Espacio profundo',
+      },
     },
     modes: {
       focus: {

@@ -33,7 +33,12 @@ const initials = computed(() => {
   const lastPart = parts[parts.length - 1]
   const letters = parts.length > 1 ? [parts[0], lastPart] : [parts[0]]
 
-  return letters.map((part) => part?.[0] ?? '').join('').toUpperCase() || 'NF'
+  return (
+    letters
+      .map((part) => part?.[0] ?? '')
+      .join('')
+      .toUpperCase() || 'NF'
+  )
 })
 
 const alternateIcon = computed(() =>
@@ -64,6 +69,21 @@ const normalizedItemRoute = (route: string) => {
 const hasUsersProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/users'),
 )
+
+const profileItemLabel = (name: string, route: string) => {
+  if (usesNativeHref(route)) return name
+
+  const labelKeyByRoute: Record<string, string> = {
+    '/dashboard': 'nav.dashboard',
+    '/settings': 'nav.settings',
+    '/settings/account': 'nav.settings',
+    '/users': 'nav.users',
+  }
+
+  const labelKey = labelKeyByRoute[normalizedItemRoute(route)]
+
+  return labelKey ? t(labelKey) : name
+}
 
 const ensureProfileItems = async () => {
   await auth.hydrate()
@@ -122,17 +142,17 @@ watch(
             v-if="usesNativeHref(item.route)"
             class="navbar-link"
             :href="item.route"
-            :title="item.name"
+            :title="profileItemLabel(item.name, item.route)"
           >
-            {{ item.name }}
+            {{ profileItemLabel(item.name, item.route) }}
           </a>
           <RouterLink
             v-else
             class="navbar-link"
             :to="normalizedItemRoute(item.route)"
-            :title="item.name"
+            :title="profileItemLabel(item.name, item.route)"
           >
-            {{ item.name }}
+            {{ profileItemLabel(item.name, item.route) }}
           </RouterLink>
         </template>
       </template>
@@ -165,7 +185,7 @@ watch(
 
       <template v-if="auth.isAuthenticated">
         <RouterLink
-          to="/settings"
+          to="/settings/account"
           class="hidden h-10 max-w-56 items-center gap-2 rounded-full border border-white/12 bg-white/10 px-2.5 pr-3 text-sm font-semibold text-white transition hover:bg-white/16 md:inline-flex"
         >
           <span
@@ -213,7 +233,7 @@ watch(
             </div>
 
             <nav class="mt-2 grid gap-1" :aria-label="t('nav.profileItems')">
-              <RouterLink class="mobile-profile-link" to="/settings">
+              <RouterLink class="mobile-profile-link" to="/settings/account">
                 <i class="pi pi-cog text-sm" aria-hidden="true" />
                 <span>{{ t('nav.settings') }}</span>
               </RouterLink>
@@ -232,14 +252,14 @@ watch(
                     class="mobile-profile-link"
                     :href="item.route"
                   >
-                    {{ item.name }}
+                    {{ profileItemLabel(item.name, item.route) }}
                   </a>
                   <RouterLink
                     v-else
                     class="mobile-profile-link"
                     :to="normalizedItemRoute(item.route)"
                   >
-                    {{ item.name }}
+                    {{ profileItemLabel(item.name, item.route) }}
                   </RouterLink>
                 </template>
               </template>

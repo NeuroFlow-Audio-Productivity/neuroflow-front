@@ -8,6 +8,7 @@ import Password from 'primevue/password'
 import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import SettingsSectionNav from '@/components/settings/SettingsSectionNav.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { userApi, type StoreUserPayload, type UpdateUserPayload } from '@/services/userApi'
@@ -316,6 +317,8 @@ watch(
         </p>
       </div>
 
+      <SettingsSectionNav v-if="isSettings" class="mt-6" />
+
       <form
         class="mt-6 rounded-[8px] border border-white/12 bg-[#07100e]/86 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:p-6"
         @submit.prevent="submit"
@@ -325,9 +328,19 @@ watch(
         </div>
 
         <template v-else>
+          <div v-if="isSettings" class="border-b border-white/10 pb-5">
+            <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
+              {{ t('users.settings.accountTitle') }}
+            </p>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-white/62">
+              {{ t('users.settings.accountSubtitle') }}
+            </p>
+          </div>
+
           <div
             v-if="successMessage"
             class="theme-success-panel rounded-[8px] border px-4 py-3 text-sm leading-6"
+            :class="{ 'mt-5': isSettings }"
           >
             {{ successMessage }}
           </div>
@@ -335,7 +348,7 @@ watch(
           <div
             v-if="error"
             class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
-            :class="{ 'mt-4': successMessage }"
+            :class="{ 'mt-4': successMessage, 'mt-5': isSettings && !successMessage }"
           >
             {{ error }}
           </div>

@@ -8,6 +8,7 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
 import VerifyEmailView from '@/views/auth/VerifyEmailView.vue'
+import SettingsCustomizationView from '@/views/settings/SettingsCustomizationView.vue'
 import UserFormView from '@/views/users/UserFormView.vue'
 import UserIndexView from '@/views/users/UserIndexView.vue'
 import UserShowView from '@/views/users/UserShowView.vue'
@@ -66,9 +67,19 @@ const router = createRouter({
     },
     {
       path: '/settings',
-      name: 'settings',
+      redirect: { name: 'settings-account' },
+    },
+    {
+      path: '/settings/account',
+      name: 'settings-account',
       component: UserFormView,
       props: { mode: 'settings' },
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/settings/customization',
+      name: 'settings-customization',
+      component: SettingsCustomizationView,
       meta: { requiresAuth: true },
     },
     {

@@ -79,17 +79,24 @@ const modeOptions = computed(() =>
   })),
 )
 
-const selectedMode = computed<VisualModeKey>({
-  get: () => visualTheme.selectedMode,
-  set: (mode) => visualTheme.setMode(mode),
+const isLandingPalette = (value: string): value is VisualModeKey =>
+  visualModeConfigs.some((mode) => mode.key === value)
+
+const selectedMode = computed<VisualModeKey | null>({
+  get: () => (isLandingPalette(visualTheme.selectedPalette) ? visualTheme.selectedPalette : null),
+  set: (mode) => {
+    if (!mode) return
+
+    visualTheme.setMode(mode)
+    visualTheme.setPalette(mode)
+  },
 })
-const isPlaying = ref(true)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const bars = Array.from({ length: 34 }, (_, index) => index)
 
 const activeMode = computed<Mode>(
   () =>
-    modes.value.find((mode) => mode.key === selectedMode.value) ??
+    modes.value.find((mode) => mode.key === visualTheme.selectedMode) ??
     modeFromConfig(visualTheme.activeMode),
 )
 
@@ -144,7 +151,7 @@ onMounted(() => {
     const width = canvas.clientWidth
     const height = canvas.clientHeight
     const mode = activeMode.value
-    const pulse = isPlaying.value ? time / 1000 : 0
+    const pulse = time / 1000
 
     context.clearRect(0, 0, width, height)
 
@@ -291,14 +298,6 @@ onBeforeUnmount(() => {
                 <p class="text-sm text-white/55">{{ t('player.sessionActive') }}</p>
                 <h2 class="mt-1 truncate text-2xl font-semibold">{{ activeMode.title }}</h2>
               </div>
-              <button
-                class="grid size-12 shrink-0 place-items-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/16"
-                type="button"
-                :aria-label="isPlaying ? t('player.pause') : t('player.play')"
-                @click="isPlaying = !isPlaying"
-              >
-                <i :class="isPlaying ? 'pi pi-pause' : 'pi pi-play'" />
-              </button>
             </div>
 
             <SelectButton
@@ -306,12 +305,14 @@ onBeforeUnmount(() => {
               :options="modeOptions"
               option-label="label"
               option-value="value"
-              :allow-empty="false"
+              :allow-empty="true"
               class="mode-switch mt-5 w-full"
               :aria-label="t('player.selectMode')"
             />
 
-            <div class="mt-7 min-w-0 overflow-hidden rounded-[8px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+            <div
+              class="mt-7 min-w-0 overflow-hidden rounded-[8px] border border-white/10 bg-white/[0.035] p-4 sm:p-5"
+            >
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <p class="text-sm text-[var(--mode-accent)]">{{ activeMode.frequency }}</p>
@@ -326,7 +327,10 @@ onBeforeUnmount(() => {
                 </span>
               </div>
 
-              <div class="wave-meter mt-8 flex h-28 min-w-0 items-end overflow-hidden" aria-hidden="true">
+              <div
+                class="wave-meter mt-8 flex h-28 min-w-0 items-end overflow-hidden"
+                aria-hidden="true"
+              >
                 <span
                   v-for="bar in bars"
                   :key="bar"
