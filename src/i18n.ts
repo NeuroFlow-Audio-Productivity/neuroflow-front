@@ -27,6 +27,8 @@ const authMessages = {
       email: 'Email',
       password: 'Password',
       passwordConfirmation: 'Confirm password',
+      profile: 'Profile',
+      emailVerifiedAt: 'Email verification',
     },
     validation: {
       required: 'The {field} field is required.',
@@ -146,6 +148,8 @@ const authMessages = {
       email: 'メール',
       password: 'パスワード',
       passwordConfirmation: 'パスワード確認',
+      profile: 'プロフィール',
+      emailVerifiedAt: 'メール確認',
     },
     validation: {
       required: '{field}は必須です。',
@@ -263,6 +267,8 @@ const authMessages = {
       email: 'Email',
       password: 'Senha',
       passwordConfirmation: 'Confirmar senha',
+      profile: 'Perfil',
+      emailVerifiedAt: 'Verificação de email',
     },
     validation: {
       required: 'O campo {field} é obrigatório.',
@@ -380,6 +386,8 @@ const authMessages = {
       email: 'Email',
       password: 'Contraseña',
       passwordConfirmation: 'Confirmar contraseña',
+      profile: 'Perfil',
+      emailVerifiedAt: 'Verificación de email',
     },
     validation: {
       required: 'El campo {field} es obligatorio.',
@@ -484,9 +492,265 @@ const authMessages = {
   },
 } as const
 
+const userMessages = {
+  en: {
+    index: {
+      eyebrow: 'Admin',
+      title: 'Users',
+      subtitle: 'Manage accounts, profiles, and verification status from one protected view.',
+      empty: 'No users were returned by the API.',
+    },
+    settings: {
+      eyebrow: 'Settings',
+      title: 'Account settings',
+      subtitle: 'Update the account details available to your profile.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Create user',
+      subtitle: 'Create an account and assign its application profile.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Edit user',
+      subtitle: 'Update this account and its admin-managed fields.',
+    },
+    show: {
+      eyebrow: 'Admin',
+      title: 'User details',
+      subtitle: 'Review account identity, profile, and timestamps.',
+    },
+    fields: {
+      id: 'ID',
+      profile: 'Profile',
+      status: 'Status',
+      createdAt: 'Created',
+      updatedAt: 'Updated',
+      newPassword: 'New password',
+      verificationStatus: 'Verification status',
+      verifiedAt: 'Verified at',
+      verified: 'Verified',
+      unverified: 'Unverified',
+    },
+    actions: {
+      create: 'Create user',
+      view: 'View',
+      edit: 'Edit',
+      delete: 'Delete',
+      save: 'Save changes',
+      back: 'Back to users',
+      settings: 'Settings',
+    },
+    feedback: {
+      created: 'User created successfully.',
+      saved: 'User saved successfully.',
+      deleted: 'User deleted successfully.',
+    },
+    errors: {
+      loadUsers: 'Unable to load users.',
+      loadUser: 'Unable to load this user.',
+      loadProfiles: 'Unable to load profiles.',
+      save: 'Unable to save this user.',
+      delete: 'Unable to delete this user.',
+      missingUser: 'The selected user could not be resolved.',
+    },
+    confirmDelete: 'Delete {name}?',
+  },
+  ja: {
+    index: {
+      eyebrow: '管理者',
+      title: 'ユーザー',
+      subtitle: 'アカウント、プロフィール、確認状態を保護された画面で管理します。',
+      empty: 'API からユーザーが返されませんでした。',
+    },
+    settings: {
+      eyebrow: '設定',
+      title: 'アカウント設定',
+      subtitle: 'プロフィールで許可されているアカウント情報を更新します。',
+    },
+    create: {
+      eyebrow: '管理者',
+      title: 'ユーザー作成',
+      subtitle: 'アカウントを作成し、アプリケーションプロフィールを割り当てます。',
+    },
+    edit: {
+      eyebrow: '管理者',
+      title: 'ユーザー編集',
+      subtitle: 'このアカウントと管理者用フィールドを更新します。',
+    },
+    show: {
+      eyebrow: '管理者',
+      title: 'ユーザー詳細',
+      subtitle: 'アカウント識別情報、プロフィール、日時を確認します。',
+    },
+    fields: {
+      id: 'ID',
+      profile: 'プロフィール',
+      status: '状態',
+      createdAt: '作成日',
+      updatedAt: '更新日',
+      newPassword: '新しいパスワード',
+      verificationStatus: '確認状態',
+      verifiedAt: '確認日時',
+      verified: '確認済み',
+      unverified: '未確認',
+    },
+    actions: {
+      create: 'ユーザー作成',
+      view: '表示',
+      edit: '編集',
+      delete: '削除',
+      save: '変更を保存',
+      back: 'ユーザーへ戻る',
+      settings: '設定',
+    },
+    feedback: {
+      created: 'ユーザーを作成しました。',
+      saved: 'ユーザーを保存しました。',
+      deleted: 'ユーザーを削除しました。',
+    },
+    errors: {
+      loadUsers: 'ユーザーを読み込めません。',
+      loadUser: 'このユーザーを読み込めません。',
+      loadProfiles: 'プロフィールを読み込めません。',
+      save: 'このユーザーを保存できません。',
+      delete: 'このユーザーを削除できません。',
+      missingUser: '選択したユーザーを解決できません。',
+    },
+    confirmDelete: '{name} を削除しますか？',
+  },
+  ptBR: {
+    index: {
+      eyebrow: 'Admin',
+      title: 'Usuários',
+      subtitle: 'Gerencie contas, perfis e verificação em uma área protegida.',
+      empty: 'A API não retornou usuários.',
+    },
+    settings: {
+      eyebrow: 'Configurações',
+      title: 'Configurações da conta',
+      subtitle: 'Atualize os dados da conta disponíveis para o seu perfil.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Criar usuário',
+      subtitle: 'Crie uma conta e defina seu perfil de aplicação.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Editar usuário',
+      subtitle: 'Atualize esta conta e os campos gerenciados por admin.',
+    },
+    show: {
+      eyebrow: 'Admin',
+      title: 'Detalhes do usuário',
+      subtitle: 'Confira identidade, perfil e datas da conta.',
+    },
+    fields: {
+      id: 'ID',
+      profile: 'Perfil',
+      status: 'Status',
+      createdAt: 'Criado em',
+      updatedAt: 'Atualizado em',
+      newPassword: 'Nova senha',
+      verificationStatus: 'Status de verificação',
+      verifiedAt: 'Verificado em',
+      verified: 'Verificado',
+      unverified: 'Não verificado',
+    },
+    actions: {
+      create: 'Criar usuário',
+      view: 'Ver',
+      edit: 'Editar',
+      delete: 'Excluir',
+      save: 'Salvar alterações',
+      back: 'Voltar para usuários',
+      settings: 'Configurações',
+    },
+    feedback: {
+      created: 'Usuário criado com sucesso.',
+      saved: 'Usuário salvo com sucesso.',
+      deleted: 'Usuário excluído com sucesso.',
+    },
+    errors: {
+      loadUsers: 'Não foi possível carregar os usuários.',
+      loadUser: 'Não foi possível carregar este usuário.',
+      loadProfiles: 'Não foi possível carregar os perfis.',
+      save: 'Não foi possível salvar este usuário.',
+      delete: 'Não foi possível excluir este usuário.',
+      missingUser: 'Não foi possível resolver o usuário selecionado.',
+    },
+    confirmDelete: 'Excluir {name}?',
+  },
+  es: {
+    index: {
+      eyebrow: 'Admin',
+      title: 'Usuarios',
+      subtitle: 'Gestiona cuentas, perfiles y verificación en una vista protegida.',
+      empty: 'La API no devolvió usuarios.',
+    },
+    settings: {
+      eyebrow: 'Configuración',
+      title: 'Configuración de cuenta',
+      subtitle: 'Actualiza los datos de cuenta disponibles para tu perfil.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Crear usuario',
+      subtitle: 'Crea una cuenta y asigna su perfil de aplicación.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Editar usuario',
+      subtitle: 'Actualiza esta cuenta y los campos gestionados por admin.',
+    },
+    show: {
+      eyebrow: 'Admin',
+      title: 'Detalles del usuario',
+      subtitle: 'Revisa identidad, perfil y fechas de la cuenta.',
+    },
+    fields: {
+      id: 'ID',
+      profile: 'Perfil',
+      status: 'Estado',
+      createdAt: 'Creado',
+      updatedAt: 'Actualizado',
+      newPassword: 'Nueva contraseña',
+      verificationStatus: 'Estado de verificación',
+      verifiedAt: 'Verificado en',
+      verified: 'Verificado',
+      unverified: 'No verificado',
+    },
+    actions: {
+      create: 'Crear usuario',
+      view: 'Ver',
+      edit: 'Editar',
+      delete: 'Eliminar',
+      save: 'Guardar cambios',
+      back: 'Volver a usuarios',
+      settings: 'Configuración',
+    },
+    feedback: {
+      created: 'Usuario creado correctamente.',
+      saved: 'Usuario guardado correctamente.',
+      deleted: 'Usuario eliminado correctamente.',
+    },
+    errors: {
+      loadUsers: 'No se pudieron cargar los usuarios.',
+      loadUser: 'No se pudo cargar este usuario.',
+      loadProfiles: 'No se pudieron cargar los perfiles.',
+      save: 'No se pudo guardar este usuario.',
+      delete: 'No se pudo eliminar este usuario.',
+      missingUser: 'No se pudo resolver el usuario seleccionado.',
+    },
+    confirmDelete: '¿Eliminar {name}?',
+  },
+} as const
+
 export const messages = {
   en: {
     auth: authMessages.en,
+    users: userMessages.en,
     language: {
       label: 'Language',
     },
@@ -498,6 +762,8 @@ export const messages = {
       dashboard: 'Dashboard',
       profileItems: 'Profile navigation',
       account: 'Account',
+      settings: 'Settings',
+      users: 'Users',
     },
     hero: {
       tags: {
@@ -583,6 +849,7 @@ export const messages = {
   },
   ja: {
     auth: authMessages.ja,
+    users: userMessages.ja,
     language: {
       label: '言語',
     },
@@ -594,6 +861,8 @@ export const messages = {
       dashboard: 'ダッシュボード',
       profileItems: 'プロフィールナビゲーション',
       account: 'アカウント',
+      settings: '設定',
+      users: 'ユーザー',
     },
     hero: {
       tags: {
@@ -679,6 +948,7 @@ export const messages = {
   },
   'pt-BR': {
     auth: authMessages.ptBR,
+    users: userMessages.ptBR,
     language: {
       label: 'Idioma',
     },
@@ -690,6 +960,8 @@ export const messages = {
       dashboard: 'Dashboard',
       profileItems: 'Navegação do perfil',
       account: 'Conta',
+      settings: 'Configurações',
+      users: 'Usuários',
     },
     hero: {
       tags: {
@@ -775,6 +1047,7 @@ export const messages = {
   },
   es: {
     auth: authMessages.es,
+    users: userMessages.es,
     language: {
       label: 'Idioma',
     },
@@ -786,6 +1059,8 @@ export const messages = {
       dashboard: 'Dashboard',
       profileItems: 'Navegación del perfil',
       account: 'Cuenta',
+      settings: 'Configuración',
+      users: 'Usuarios',
     },
     hero: {
       tags: {

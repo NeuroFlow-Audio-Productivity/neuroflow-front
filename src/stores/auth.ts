@@ -72,6 +72,13 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
     isVerified: (state) => Boolean(state.user?.email_verified_at),
+    isAdmin: (state) => {
+      const profile = state.user?.profile
+      const slug = profile?.slug?.toLowerCase()
+      const name = profile?.name?.toLowerCase()
+
+      return slug === 'admin' || name === 'admin'
+    },
   },
 
   actions: {
@@ -103,6 +110,11 @@ export const useAuthStore = defineStore('auth', {
       this.profileItems = []
       this.profileItemsStatus = 'idle'
       this.profileItemsError = null
+      this.persistSession()
+    },
+
+    setCurrentUser(user: User | null) {
+      this.user = user
       this.persistSession()
     },
 

@@ -6,6 +6,8 @@ const fieldKeyByApiField: Record<string, string> = {
   email: 'auth.fields.email',
   password: 'auth.fields.password',
   password_confirmation: 'auth.fields.passwordConfirmation',
+  profile_id: 'auth.fields.profile',
+  email_verified_at: 'auth.fields.emailVerifiedAt',
 }
 
 const translate = (key: string, params: Record<string, string | number> = {}) =>

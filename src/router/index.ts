@@ -8,6 +8,9 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
 import VerifyEmailView from '@/views/auth/VerifyEmailView.vue'
+import UserFormView from '@/views/users/UserFormView.vue'
+import UserIndexView from '@/views/users/UserIndexView.vue'
+import UserShowView from '@/views/users/UserShowView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -61,6 +64,39 @@ const router = createRouter({
       component: DashboardView,
       meta: { requiresAuth: true },
     },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: UserFormView,
+      props: { mode: 'settings' },
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/users',
+      name: 'users-index',
+      component: UserIndexView,
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/users/create',
+      name: 'users-create',
+      component: UserFormView,
+      props: { mode: 'create' },
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/users/:id',
+      name: 'users-show',
+      component: UserShowView,
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/users/:id/edit',
+      name: 'users-edit',
+      component: UserFormView,
+      props: { mode: 'edit' },
+      meta: { requiresAuth: true, adminOnly: true },
+    },
   ],
 })
 
@@ -77,6 +113,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+
+  if (to.meta.adminOnly && !auth.isAdmin) {
     return { name: 'dashboard' }
   }
 })

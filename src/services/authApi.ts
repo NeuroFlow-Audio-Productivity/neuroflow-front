@@ -13,10 +13,10 @@ import type {
   ValidationErrors,
 } from '@/types/auth'
 
-type QueryValue = string | number | boolean | null | undefined | Array<string | null>
+export type QueryValue = string | number | boolean | null | undefined | Array<string | null>
 
 type ApiRequestOptions = {
-  method?: 'GET' | 'POST'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
   token?: string | null
   query?: Record<string, QueryValue>
@@ -77,7 +77,7 @@ const parseJson = async (response: Response) => {
   }
 }
 
-const request = async <ResponseBody>(path: string, options: ApiRequestOptions = {}) => {
+export const apiRequest = async <ResponseBody>(path: string, options: ApiRequestOptions = {}) => {
   const headers = new Headers({
     Accept: 'application/json',
   })
@@ -116,6 +116,8 @@ const request = async <ResponseBody>(path: string, options: ApiRequestOptions = 
 
   return payload as ResponseBody
 }
+
+const request = apiRequest
 
 export const authApi = {
   register: (payload: RegisterPayload) =>

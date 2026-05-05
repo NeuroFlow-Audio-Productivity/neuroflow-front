@@ -77,6 +77,69 @@ a {
   width: 100%;
 }
 
+.dark .auth-field .p-inputtext,
+.dark .auth-field .p-select {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.075) !important;
+  color: #f7fbf8 !important;
+  box-shadow: none !important;
+}
+
+.dark .auth-field .p-inputtext:hover,
+.dark .auth-field .p-select:not(.p-disabled):hover {
+  border-color: rgba(var(--mode-glow-rgb), 0.44) !important;
+}
+
+.dark .auth-field .p-inputtext:enabled:focus,
+.dark .auth-field .p-select.p-focus {
+  border-color: var(--mode-accent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mode-accent), transparent 42%) !important;
+}
+
+.dark .auth-field .p-inputtext::placeholder,
+.dark .auth-field .p-select-label.p-placeholder {
+  color: rgba(255, 255, 255, 0.46) !important;
+}
+
+.dark .auth-field .p-select-label {
+  color: #f7fbf8 !important;
+}
+
+.dark .auth-field .p-select-dropdown,
+.dark .auth-field .p-select-clear-icon,
+.dark .auth-field .p-password-toggle-mask-icon,
+.dark .auth-field .p-password .p-icon,
+.dark .auth-field .p-select .p-icon {
+  color: rgba(217, 255, 248, 0.62) !important;
+}
+
+.p-select-overlay,
+.p-select-list-container,
+.p-select-list {
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(7, 16, 14, 0.98) !important;
+  color: #f7fbf8 !important;
+}
+
+.p-select-overlay {
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32) !important;
+}
+
+.p-select-option {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.p-select-option:not(.p-disabled).p-focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.p-select-option.p-select-option-selected {
+  background: color-mix(in srgb, var(--mode-accent), transparent 84%) !important;
+  color: var(--mode-soft) !important;
+}
+
 .theme-text-accent {
   color: var(--mode-accent);
 }

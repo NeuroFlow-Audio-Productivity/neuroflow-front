@@ -61,6 +61,10 @@ const normalizedItemRoute = (route: string) => {
   return `/${trimmed.replace(/^\/+/, '')}`
 }
 
+const hasUsersProfileItem = computed(() =>
+  profileItems.value.some((item) => normalizedItemRoute(item.route) === '/users'),
+)
+
 const ensureProfileItems = async () => {
   await auth.hydrate()
 
@@ -135,6 +139,9 @@ watch(
       <RouterLink v-else class="navbar-link" to="/dashboard">
         {{ t('nav.dashboard') }}
       </RouterLink>
+      <RouterLink v-if="auth.isAdmin && !hasUsersProfileItem" class="navbar-link" to="/users">
+        {{ t('nav.users') }}
+      </RouterLink>
     </nav>
 
     <nav
@@ -158,7 +165,7 @@ watch(
 
       <template v-if="auth.isAuthenticated">
         <RouterLink
-          to="/dashboard"
+          to="/settings"
           class="hidden h-10 max-w-56 items-center gap-2 rounded-full border border-white/12 bg-white/10 px-2.5 pr-3 text-sm font-semibold text-white transition hover:bg-white/16 md:inline-flex"
         >
           <span
@@ -206,6 +213,18 @@ watch(
             </div>
 
             <nav class="mt-2 grid gap-1" :aria-label="t('nav.profileItems')">
+              <RouterLink class="mobile-profile-link" to="/settings">
+                <i class="pi pi-cog text-sm" aria-hidden="true" />
+                <span>{{ t('nav.settings') }}</span>
+              </RouterLink>
+              <RouterLink
+                v-if="auth.isAdmin && !hasUsersProfileItem"
+                class="mobile-profile-link"
+                to="/users"
+              >
+                <i class="pi pi-users text-sm" aria-hidden="true" />
+                <span>{{ t('nav.users') }}</span>
+              </RouterLink>
               <template v-if="hasProfileItems">
                 <template v-for="item in profileItems" :key="`mobile-${item.id}`">
                   <a
