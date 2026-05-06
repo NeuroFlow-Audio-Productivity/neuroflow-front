@@ -123,10 +123,10 @@ watch(
   >
     <RouterLink to="/" class="flex min-w-0 items-center gap-3 text-white">
       <span
-        class="grid size-9 shrink-0 place-items-center rounded-full border border-white/15 bg-white/8"
+        class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-white/15 bg-white/8"
         aria-hidden="true"
       >
-        <span class="logo-mark" />
+        <img class="logo-mark" src="/neuroflow-logo.svg" alt="" width="28" height="28" />
       </span>
       <span class="text-base font-semibold">NeuroFlow</span>
     </RouterLink>
@@ -349,31 +349,10 @@ watch(
 }
 
 .logo-mark {
-  position: relative;
-  width: 18px;
-  height: 18px;
-}
-
-.logo-mark,
-.logo-mark::before,
-.logo-mark::after {
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  border-radius: 999px;
-}
-
-.logo-mark::before,
-.logo-mark::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-}
-
-.logo-mark::before {
-  transform: rotate(60deg);
-}
-
-.logo-mark::after {
-  transform: rotate(-60deg);
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
 }
 
 .mobile-profile-menu {
