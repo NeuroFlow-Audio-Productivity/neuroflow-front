@@ -8,6 +8,9 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
 import VerifyEmailView from '@/views/auth/VerifyEmailView.vue'
+import ModeFormView from '@/views/modes/ModeFormView.vue'
+import ModeIndexView from '@/views/modes/ModeIndexView.vue'
+import ModeShowView from '@/views/modes/ModeShowView.vue'
 import SettingsCustomizationView from '@/views/settings/SettingsCustomizationView.vue'
 import UserFormView from '@/views/users/UserFormView.vue'
 import UserIndexView from '@/views/users/UserIndexView.vue'
@@ -81,6 +84,32 @@ const router = createRouter({
       name: 'settings-customization',
       component: SettingsCustomizationView,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/modes',
+      name: 'modes-index',
+      component: ModeIndexView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/modes/create',
+      name: 'modes-create',
+      component: ModeFormView,
+      props: { mode: 'create' },
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/modes/:id',
+      name: 'modes-show',
+      component: ModeShowView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/modes/:id/edit',
+      name: 'modes-edit',
+      component: ModeFormView,
+      props: { mode: 'edit' },
+      meta: { requiresAuth: true, adminOnly: true },
     },
     {
       path: '/users',

@@ -767,10 +767,247 @@ const userMessages = {
   },
 } as const
 
+const modeResourceMessages = {
+  en: {
+    index: {
+      eyebrow: 'Mode catalog',
+      title: 'Modes',
+      subtitle: 'Explore the functional states and the colors that shape each NeuroFlow view.',
+      total: 'Modes',
+      loading: 'Loading modes...',
+      empty: 'No modes were returned by the API.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Create mode',
+      subtitle: 'Define the name, description, and color used by the mode experience.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Edit mode',
+      subtitle: 'Update this mode and refresh its visual identity.',
+    },
+    show: {
+      eyebrow: 'Mode experience',
+      loading: 'Loading mode...',
+    },
+    form: {
+      loading: 'Loading mode...',
+      preview: 'Preview',
+      previewName: 'Mode name',
+      previewDescription: 'The description will appear here as you shape the mode.',
+    },
+    fields: {
+      id: 'ID',
+      name: 'Mode name',
+      description: 'Description',
+      color: 'Color',
+      createdAt: 'Created',
+      updatedAt: 'Updated',
+    },
+    actions: {
+      create: 'Create mode',
+      edit: 'Edit',
+      delete: 'Delete',
+      save: 'Save changes',
+      back: 'Back to modes',
+    },
+    feedback: {
+      created: 'Mode created successfully.',
+      saved: 'Mode saved successfully.',
+      deleted: 'Mode deleted successfully.',
+    },
+    errors: {
+      loadModes: 'Unable to load modes.',
+      loadMode: 'Unable to load this mode.',
+      save: 'Unable to save this mode.',
+      delete: 'Unable to delete this mode.',
+      missingMode: 'The selected mode could not be resolved.',
+    },
+    confirmDelete: 'Delete {name}?',
+  },
+  ja: {
+    index: {
+      eyebrow: 'モードカタログ',
+      title: 'モード',
+      subtitle: 'NeuroFlow の各状態と、その表示を形づくる色を確認します。',
+      total: 'モード',
+      loading: 'モードを読み込み中...',
+      empty: 'API からモードが返されませんでした。',
+    },
+    create: {
+      eyebrow: '管理者',
+      title: 'モード作成',
+      subtitle: 'モード体験に使う名前、説明、色を定義します。',
+    },
+    edit: {
+      eyebrow: '管理者',
+      title: 'モード編集',
+      subtitle: 'このモードとビジュアル ID を更新します。',
+    },
+    show: {
+      eyebrow: 'モード体験',
+      loading: 'モードを読み込み中...',
+    },
+    form: {
+      loading: 'モードを読み込み中...',
+      preview: 'プレビュー',
+      previewName: 'モード名',
+      previewDescription: '説明を入力すると、ここに表示されます。',
+    },
+    fields: {
+      id: 'ID',
+      name: 'モード名',
+      description: '説明',
+      color: '色',
+      createdAt: '作成日',
+      updatedAt: '更新日',
+    },
+    actions: {
+      create: 'モード作成',
+      edit: '編集',
+      delete: '削除',
+      save: '変更を保存',
+      back: 'モードへ戻る',
+    },
+    feedback: {
+      created: 'モードを作成しました。',
+      saved: 'モードを保存しました。',
+      deleted: 'モードを削除しました。',
+    },
+    errors: {
+      loadModes: 'モードを読み込めません。',
+      loadMode: 'このモードを読み込めません。',
+      save: 'このモードを保存できません。',
+      delete: 'このモードを削除できません。',
+      missingMode: '選択したモードを解決できません。',
+    },
+    confirmDelete: '{name} を削除しますか？',
+  },
+  ptBR: {
+    index: {
+      eyebrow: 'Catálogo de modos',
+      title: 'Modos',
+      subtitle: 'Explore os estados funcionais e as cores que moldam cada tela do NeuroFlow.',
+      total: 'Modos',
+      loading: 'Carregando modos...',
+      empty: 'A API não retornou modos.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Criar modo',
+      subtitle: 'Defina nome, descrição e cor usados pela experiência do modo.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Editar modo',
+      subtitle: 'Atualize este modo e renove sua identidade visual.',
+    },
+    show: {
+      eyebrow: 'Experiência do modo',
+      loading: 'Carregando modo...',
+    },
+    form: {
+      loading: 'Carregando modo...',
+      preview: 'Prévia',
+      previewName: 'Nome do modo',
+      previewDescription: 'A descrição aparece aqui enquanto você molda o modo.',
+    },
+    fields: {
+      id: 'ID',
+      name: 'Nome do modo',
+      description: 'Descrição',
+      color: 'Cor',
+      createdAt: 'Criado em',
+      updatedAt: 'Atualizado em',
+    },
+    actions: {
+      create: 'Criar modo',
+      edit: 'Editar',
+      delete: 'Excluir',
+      save: 'Salvar alterações',
+      back: 'Voltar para modos',
+    },
+    feedback: {
+      created: 'Modo criado com sucesso.',
+      saved: 'Modo salvo com sucesso.',
+      deleted: 'Modo excluído com sucesso.',
+    },
+    errors: {
+      loadModes: 'Não foi possível carregar os modos.',
+      loadMode: 'Não foi possível carregar este modo.',
+      save: 'Não foi possível salvar este modo.',
+      delete: 'Não foi possível excluir este modo.',
+      missingMode: 'Não foi possível resolver o modo selecionado.',
+    },
+    confirmDelete: 'Excluir {name}?',
+  },
+  es: {
+    index: {
+      eyebrow: 'Catálogo de modos',
+      title: 'Modos',
+      subtitle:
+        'Explora los estados funcionales y los colores que moldean cada vista de NeuroFlow.',
+      total: 'Modos',
+      loading: 'Cargando modos...',
+      empty: 'La API no devolvió modos.',
+    },
+    create: {
+      eyebrow: 'Admin',
+      title: 'Crear modo',
+      subtitle: 'Define nombre, descripción y color usados por la experiencia del modo.',
+    },
+    edit: {
+      eyebrow: 'Admin',
+      title: 'Editar modo',
+      subtitle: 'Actualiza este modo y renueva su identidad visual.',
+    },
+    show: {
+      eyebrow: 'Experiencia del modo',
+      loading: 'Cargando modo...',
+    },
+    form: {
+      loading: 'Cargando modo...',
+      preview: 'Vista previa',
+      previewName: 'Nombre del modo',
+      previewDescription: 'La descripción aparecerá aquí mientras moldeas el modo.',
+    },
+    fields: {
+      id: 'ID',
+      name: 'Nombre del modo',
+      description: 'Descripción',
+      color: 'Color',
+      createdAt: 'Creado',
+      updatedAt: 'Actualizado',
+    },
+    actions: {
+      create: 'Crear modo',
+      edit: 'Editar',
+      delete: 'Eliminar',
+      save: 'Guardar cambios',
+      back: 'Volver a modos',
+    },
+    feedback: {
+      created: 'Modo creado correctamente.',
+      saved: 'Modo guardado correctamente.',
+      deleted: 'Modo eliminado correctamente.',
+    },
+    errors: {
+      loadModes: 'No se pudieron cargar los modos.',
+      loadMode: 'No se pudo cargar este modo.',
+      save: 'No se pudo guardar este modo.',
+      delete: 'No se pudo eliminar este modo.',
+      missingMode: 'No se pudo resolver el modo seleccionado.',
+    },
+    confirmDelete: '¿Eliminar {name}?',
+  },
+} as const
+
 export const messages = {
   en: {
     auth: authMessages.en,
     users: userMessages.en,
+    modeResource: modeResourceMessages.en,
     language: {
       label: 'Language',
     },
@@ -821,22 +1058,19 @@ export const messages = {
         label: 'Focus',
         title: 'Deep focus',
         subtitle: 'Discreet beta pulses for distraction-free work blocks.',
-        description:
-          'Binaural beats and isochronic rhythms calibrated to keep attention steady while the procedural synthesizer creates continuous variation.',
+        description: 'Beta waves: discreet pulses for distraction-free work blocks.',
       },
       relax: {
         label: 'Relax',
         title: 'Real relaxation',
         subtitle: 'Theta textures to slow down mental noise.',
-        description:
-          'Ambient layers, filtered noise, and slow cycles help the body leave alert mode without depending on external streaming.',
+        description: 'Theta waves: textured ambience to slow down mental noise.',
       },
       sleep: {
         label: 'Sleep',
         title: 'Real sleep',
         subtitle: 'Delta waves with automatic fade-out for falling asleep.',
-        description:
-          'Long sessions gradually reduce intensity and stop by themselves, keeping everything local in the browser and away from tracking.',
+        description: 'Delta waves: automatic fade-out for falling asleep.',
       },
     },
     modesSection: {
@@ -884,6 +1118,7 @@ export const messages = {
   ja: {
     auth: authMessages.ja,
     users: userMessages.ja,
+    modeResource: modeResourceMessages.ja,
     language: {
       label: '言語',
     },
@@ -934,22 +1169,19 @@ export const messages = {
         label: '集中',
         title: '深い集中',
         subtitle: '作業ブロックを乱さない控えめなベータパルス。',
-        description:
-          'バイノーラルビートとアイソクロニックリズムで注意を安定させ、プロシージャルシンセが継続的な変化を生み出します。',
+        description: 'ベータ波：集中を妨げない作業ブロックのための控えめなパルス。',
       },
       relax: {
         label: 'リラックス',
         title: '本当のリラックス',
         subtitle: '思考のノイズをゆるめるシータ系テクスチャ。',
-        description:
-          'アンビエントレイヤー、フィルターされたノイズ、ゆっくりした周期で、外部ストリーミングに頼らず警戒状態をほどきます。',
+        description: 'シータ波：思考のノイズをゆるめる質感のあるアンビエンス。',
       },
       sleep: {
         label: '睡眠',
         title: '深い睡眠',
         subtitle: '眠りに入るための自動フェード付きデルタ波。',
-        description:
-          '長めのセッションは少しずつ強度を下げて自動で停止し、すべてをブラウザ内に保ちます。',
+        description: 'デルタ波：眠りに入るための自動フェードアウト。',
       },
     },
     modesSection: {
@@ -997,6 +1229,7 @@ export const messages = {
   'pt-BR': {
     auth: authMessages.ptBR,
     users: userMessages.ptBR,
+    modeResource: modeResourceMessages.ptBR,
     language: {
       label: 'Idioma',
     },
@@ -1047,22 +1280,19 @@ export const messages = {
         label: 'Foco',
         title: 'Foco profundo',
         subtitle: 'Pulsos beta discretos para blocos de trabalho sem distração.',
-        description:
-          'Batidas binaurais e ritmos isocrônicos calibrados para manter atenção estável enquanto o sintetizador procedural cria variações contínuas.',
+        description: 'Ondas beta: pulsos discretos para blocos de trabalho sem distração.',
       },
       relax: {
         label: 'Relaxar',
         title: 'Relaxamento real',
         subtitle: 'Texturas theta para desacelerar o ruído mental.',
-        description:
-          'Camadas ambientes, ruído filtrado e ciclos lentos ajudam o corpo a sair do estado de alerta sem depender de streaming externo.',
+        description: 'Ondas theta: ambiência texturizada para desacelerar o ruído mental.',
       },
       sleep: {
         label: 'Sono',
         title: 'Sono de verdade',
         subtitle: 'Ondas delta com fade automático para adormecer.',
-        description:
-          'Sessões longas reduzem intensidade aos poucos e encerram sozinhas, mantendo tudo local no browser e longe de rastreamento.',
+        description: 'Ondas delta: fade-out automático para adormecer.',
       },
     },
     modesSection: {
@@ -1110,6 +1340,7 @@ export const messages = {
   es: {
     auth: authMessages.es,
     users: userMessages.es,
+    modeResource: modeResourceMessages.es,
     language: {
       label: 'Idioma',
     },
@@ -1160,22 +1391,19 @@ export const messages = {
         label: 'Foco',
         title: 'Foco profundo',
         subtitle: 'Pulsos beta discretos para bloques de trabajo sin distracciones.',
-        description:
-          'Batidos binaurales y ritmos isocrónicos calibrados para mantener la atención estable mientras el sintetizador procedural crea variación continua.',
+        description: 'Ondas beta: pulsos discretos para bloques de trabajo sin distracciones.',
       },
       relax: {
         label: 'Relajar',
         title: 'Relajación real',
         subtitle: 'Texturas theta para desacelerar el ruido mental.',
-        description:
-          'Capas ambientales, ruido filtrado y ciclos lentos ayudan al cuerpo a salir del estado de alerta sin depender de streaming externo.',
+        description: 'Ondas theta: ambiente texturizado para desacelerar el ruido mental.',
       },
       sleep: {
         label: 'Sueño',
         title: 'Sueño real',
         subtitle: 'Ondas delta con fade automático para dormirte.',
-        description:
-          'Las sesiones largas reducen la intensidad poco a poco y se detienen solas, manteniendo todo local en el navegador y lejos del rastreo.',
+        description: 'Ondas delta: desvanecimiento automático para dormirte.',
       },
     },
     modesSection: {
