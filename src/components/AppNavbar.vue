@@ -70,11 +70,16 @@ const hasUsersProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/users'),
 )
 
+const hasModesProfileItem = computed(() =>
+  profileItems.value.some((item) => normalizedItemRoute(item.route) === '/modes'),
+)
+
 const profileItemLabel = (name: string, route: string) => {
   if (usesNativeHref(route)) return name
 
   const labelKeyByRoute: Record<string, string> = {
     '/dashboard': 'nav.dashboard',
+    '/modes': 'nav.modes',
     '/settings': 'nav.settings',
     '/settings/account': 'nav.settings',
     '/users': 'nav.users',
@@ -159,6 +164,9 @@ watch(
       <RouterLink v-else class="navbar-link" to="/dashboard">
         {{ t('nav.dashboard') }}
       </RouterLink>
+      <RouterLink v-if="!hasModesProfileItem" class="navbar-link" to="/modes">
+        {{ t('nav.modes') }}
+      </RouterLink>
       <RouterLink v-if="auth.isAdmin && !hasUsersProfileItem" class="navbar-link" to="/users">
         {{ t('nav.users') }}
       </RouterLink>
@@ -236,6 +244,10 @@ watch(
               <RouterLink class="mobile-profile-link" to="/settings/account">
                 <i class="pi pi-cog text-sm" aria-hidden="true" />
                 <span>{{ t('nav.settings') }}</span>
+              </RouterLink>
+              <RouterLink v-if="!hasModesProfileItem" class="mobile-profile-link" to="/modes">
+                <i class="pi pi-sliders-h text-sm" aria-hidden="true" />
+                <span>{{ t('nav.modes') }}</span>
               </RouterLink>
               <RouterLink
                 v-if="auth.isAdmin && !hasUsersProfileItem"
