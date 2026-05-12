@@ -17,7 +17,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import type { Mode } from '@/types/mode'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
@@ -37,7 +37,6 @@ const pageStyle = computed(() => ({
   ...modeVisualStyle(mode.value?.color),
   ...modeRhythmStyle(mode.value),
 }))
-const modeColor = computed(() => normalizeModeColor(mode.value?.color))
 const translatedModeName = computed(() => {
   if (!mode.value) return ''
 
@@ -52,19 +51,6 @@ const translatedModeDescription = computed(() => {
 
   return key ? t(`modes.${key}.description`) : mode.value.description
 })
-
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return '-'
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat(locale.value, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date)
-}
 
 const setError = (caughtError: unknown, fallbackKey: string) => {
   if (caughtError instanceof ApiError) {
@@ -197,18 +183,21 @@ watch(
             <dl class="mode-detail-strip relative z-10 mt-8">
               <div>
                 <dt>{{ t('modeResource.fields.color') }}</dt>
-                <dd>
-                  <span class="mode-swatch" aria-hidden="true" />
-                  <span>{{ modeColor }}</span>
+                <dd class="mode-color-display">
+                  <span class="mode-color-preview" aria-hidden="true">
+                    <span />
+                  </span>
+                  <span class="mode-color-ramp" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  <code class="mode-color-code">{{ normalizeModeColor(mode.color) }}</code>
                 </dd>
               </div>
               <div>
                 <dt>{{ t('modeResource.fields.id') }}</dt>
                 <dd>#{{ mode.id }}</dd>
-              </div>
-              <div>
-                <dt>{{ t('modeResource.fields.updatedAt') }}</dt>
-                <dd>{{ formatDate(mode.updated_at) }}</dd>
               </div>
             </dl>
           </div>
@@ -233,21 +222,6 @@ watch(
 
           <div class="mode-signal-track" aria-hidden="true">
             <span />
-          </div>
-        </section>
-
-        <section class="mode-info-grid mt-6">
-          <div>
-            <span>{{ t('modeResource.fields.createdAt') }}</span>
-            <strong>{{ formatDate(mode.created_at) }}</strong>
-          </div>
-          <div>
-            <span>{{ t('modeResource.fields.updatedAt') }}</span>
-            <strong>{{ formatDate(mode.updated_at) }}</strong>
-          </div>
-          <div>
-            <span>{{ t('modeResource.fields.color') }}</span>
-            <strong>{{ modeColor }}</strong>
           </div>
         </section>
       </template>
@@ -364,8 +338,7 @@ watch(
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.mode-detail-strip dt,
-.mode-info-grid span {
+.mode-detail-strip dt {
   color: rgba(255, 255, 255, 0.48);
   font-size: 0.72rem;
   font-weight: 800;
@@ -386,15 +359,95 @@ watch(
   overflow-wrap: anywhere;
 }
 
-.mode-swatch {
-  display: inline-block;
-  width: 0.9rem;
-  height: 0.9rem;
-  flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+.mode-color-display {
+  flex-wrap: wrap;
+}
+
+.mode-color-preview {
+  position: relative;
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.95), rgba(255, 255, 255, 0.14)),
+    var(--resource-mode-color);
+  box-shadow:
+    0 0 2.4rem rgba(var(--resource-mode-rgb), 0.45),
+    inset 0 0 2.2rem rgba(255, 255, 255, 0.14);
+}
+
+.mode-color-preview::before {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    transparent 0 0.7rem,
+    rgba(255, 255, 255, 0.18) 0.72rem 0.8rem,
+    transparent 0.82rem 1.4rem
+  );
+  content: '';
+  opacity: 0.42;
+}
+
+.mode-color-preview span {
+  position: relative;
+  width: 1.15rem;
+  height: 1.15rem;
   border-radius: 999px;
   background: var(--resource-mode-color);
-  box-shadow: 0 0 1.6rem rgba(var(--resource-mode-rgb), 0.72);
+  box-shadow: 0 0 1.6rem rgba(0, 0, 0, 0.28);
+}
+
+.mode-color-ramp {
+  display: grid;
+  min-width: min(16rem, 100%);
+  flex: 1 1 12rem;
+  gap: 0.45rem;
+}
+
+.mode-color-ramp span {
+  display: block;
+  height: 0.75rem;
+  border-radius: 999px;
+}
+
+.mode-color-ramp span:nth-child(1) {
+  background: linear-gradient(90deg, transparent, rgba(var(--resource-mode-rgb), 0.9));
+}
+
+.mode-color-ramp span:nth-child(2) {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--resource-mode-rgb), 0.28),
+    var(--resource-mode-color),
+    rgba(255, 255, 255, 0.42)
+  );
+}
+
+.mode-color-ramp span:nth-child(3) {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(var(--resource-mode-rgb), 0.7)
+  );
+}
+
+.mode-color-code {
+  display: inline-flex;
+  min-height: 2.05rem;
+  align-items: center;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.38);
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.12);
+  padding: 0.3rem 0.7rem;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
 .mode-audio-scene {
@@ -544,29 +597,6 @@ watch(
   animation: signalTrack var(--resource-mode-band-duration) ease-in-out infinite alternate;
 }
 
-.mode-info-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.mode-info-grid div {
-  min-height: 5.2rem;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.22);
-  border-radius: 8px;
-  background: rgba(7, 16, 14, 0.76);
-  padding: 1rem;
-  backdrop-filter: blur(18px);
-}
-
-.mode-info-grid strong {
-  display: block;
-  margin-top: 0.55rem;
-  color: #ffffff;
-  font-size: 1rem;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
 @keyframes waveFieldDrift {
   from {
     transform: skewY(-6deg) scale(1.06) translate3d(-0.6rem, 0, 0);
@@ -638,16 +668,12 @@ watch(
   }
 
   .mode-detail-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.35fr) minmax(10rem, 0.65fr);
   }
 
   .mode-detail-strip div + div {
     border-top: 0;
     border-left: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .mode-info-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -16,7 +16,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import type { Mode } from '@/types/mode'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const auth = useAuthStore()
 
 const modes = ref<Mode[]>([])
@@ -26,29 +26,6 @@ const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
 const sortedModes = computed(() => [...modes.value].sort((a, b) => a.id - b.id))
-
-const latestUpdatedAt = computed(() =>
-  sortedModes.value.reduce<string | null>((latest, mode) => {
-    if (!latest) return mode.updated_at
-
-    return new Date(mode.updated_at).getTime() > new Date(latest).getTime()
-      ? mode.updated_at
-      : latest
-  }, null),
-)
-
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return '-'
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat(locale.value, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date)
-}
 
 const translatedModeName = (mode: Mode) => {
   const key = modeSemanticKey(mode)
@@ -167,14 +144,10 @@ onMounted(() => {
         {{ error }}
       </div>
 
-      <section class="mt-6 grid gap-3 sm:grid-cols-3">
+      <section class="mt-6 grid gap-3 sm:grid-cols-2">
         <div class="mode-stat-panel">
           <span class="mode-stat-value">{{ sortedModes.length }}</span>
           <span class="mode-stat-label">{{ t('modeResource.index.total') }}</span>
-        </div>
-        <div class="mode-stat-panel">
-          <span class="mode-stat-value">{{ formatDate(latestUpdatedAt) }}</span>
-          <span class="mode-stat-label">{{ t('modeResource.fields.updatedAt') }}</span>
         </div>
         <div class="mode-stat-panel mode-stat-panel--color">
           <span class="mode-spectrum" aria-hidden="true">
@@ -218,8 +191,10 @@ onMounted(() => {
                 <span v-for="beat in 10" :key="beat" />
               </span>
 
-              <span class="relative z-10 text-xs font-semibold uppercase text-white/48">
-                #{{ mode.id }} / {{ normalizeModeColor(mode.color) }}
+              <span class="mode-card-color-chip">
+                <span class="mode-card-color-dot" aria-hidden="true" />
+                <span class="mode-card-color-label">{{ t('modeResource.fields.color') }}</span>
+                <code>{{ normalizeModeColor(mode.color) }}</code>
               </span>
 
               <h2 class="relative z-10 mt-8 text-3xl font-semibold leading-tight text-white">
@@ -230,12 +205,8 @@ onMounted(() => {
               </p>
             </RouterLink>
 
-            <div class="mode-card-footer">
-              <span class="text-xs font-semibold text-white/46">
-                {{ formatDate(mode.updated_at) }}
-              </span>
-
-              <div v-if="auth.isAdmin" class="flex items-center gap-1">
+            <div v-if="auth.isAdmin" class="mode-card-footer">
+              <div class="flex items-center gap-1">
                 <RouterLink :to="{ name: 'modes-edit', params: { id: mode.id } }">
                   <Button
                     icon="pi pi-pencil"
@@ -449,13 +420,53 @@ onMounted(() => {
   animation-delay: -3.6s;
 }
 
+.mode-card-color-chip {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 2.1rem;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(100%, 13rem);
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.38);
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.12);
+  padding: 0.35rem 0.7rem;
+  color: color-mix(in srgb, var(--resource-mode-color), #ffffff 28%);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mode-card-color-label {
+  min-width: 0;
+}
+
+.mode-card-color-chip code {
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.mode-card-color-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: var(--resource-mode-color);
+  box-shadow: 0 0 1.35rem rgba(var(--resource-mode-rgb), 0.72);
+}
+
 .mode-card-footer {
   position: relative;
   z-index: 1;
   display: flex;
   min-height: 4rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.09);
   padding: 0.55rem 0.75rem 0.65rem 1rem;

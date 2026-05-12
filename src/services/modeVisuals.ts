@@ -61,7 +61,7 @@ const semanticKeyFromText = (value: string | null | undefined): ModeSemanticKey 
 }
 
 export const modeSemanticKey = (mode: ModeSemanticInput | null | undefined) =>
-  semanticKeyFromText(mode?.name) ?? semanticKeyFromText(mode?.description)
+  semanticKeyFromText(mode?.description) ?? semanticKeyFromText(mode?.name)
 
 const hexChannel = (color: string, start: number) =>
   Number.parseInt(color.slice(start, start + 2), 16)

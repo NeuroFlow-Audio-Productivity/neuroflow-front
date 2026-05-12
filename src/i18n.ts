@@ -1058,22 +1058,19 @@ export const messages = {
         label: 'Focus',
         title: 'Deep focus',
         subtitle: 'Discreet beta pulses for distraction-free work blocks.',
-        description:
-          'Binaural beats and isochronic rhythms calibrated to keep attention steady while the procedural synthesizer creates continuous variation.',
+        description: 'Beta waves: discreet pulses for distraction-free work blocks.',
       },
       relax: {
         label: 'Relax',
         title: 'Real relaxation',
         subtitle: 'Theta textures to slow down mental noise.',
-        description:
-          'Ambient layers, filtered noise, and slow cycles help the body leave alert mode without depending on external streaming.',
+        description: 'Theta waves: textured ambience to slow down mental noise.',
       },
       sleep: {
         label: 'Sleep',
         title: 'Real sleep',
         subtitle: 'Delta waves with automatic fade-out for falling asleep.',
-        description:
-          'Long sessions gradually reduce intensity and stop by themselves, keeping everything local in the browser and away from tracking.',
+        description: 'Delta waves: automatic fade-out for falling asleep.',
       },
     },
     modesSection: {
@@ -1172,22 +1169,19 @@ export const messages = {
         label: '集中',
         title: '深い集中',
         subtitle: '作業ブロックを乱さない控えめなベータパルス。',
-        description:
-          'バイノーラルビートとアイソクロニックリズムで注意を安定させ、プロシージャルシンセが継続的な変化を生み出します。',
+        description: 'ベータ波：集中を妨げない作業ブロックのための控えめなパルス。',
       },
       relax: {
         label: 'リラックス',
         title: '本当のリラックス',
         subtitle: '思考のノイズをゆるめるシータ系テクスチャ。',
-        description:
-          'アンビエントレイヤー、フィルターされたノイズ、ゆっくりした周期で、外部ストリーミングに頼らず警戒状態をほどきます。',
+        description: 'シータ波：思考のノイズをゆるめる質感のあるアンビエンス。',
       },
       sleep: {
         label: '睡眠',
         title: '深い睡眠',
         subtitle: '眠りに入るための自動フェード付きデルタ波。',
-        description:
-          '長めのセッションは少しずつ強度を下げて自動で停止し、すべてをブラウザ内に保ちます。',
+        description: 'デルタ波：眠りに入るための自動フェードアウト。',
       },
     },
     modesSection: {
@@ -1286,22 +1280,19 @@ export const messages = {
         label: 'Foco',
         title: 'Foco profundo',
         subtitle: 'Pulsos beta discretos para blocos de trabalho sem distração.',
-        description:
-          'Batidas binaurais e ritmos isocrônicos calibrados para manter atenção estável enquanto o sintetizador procedural cria variações contínuas.',
+        description: 'Ondas beta: pulsos discretos para blocos de trabalho sem distração.',
       },
       relax: {
         label: 'Relaxar',
         title: 'Relaxamento real',
         subtitle: 'Texturas theta para desacelerar o ruído mental.',
-        description:
-          'Camadas ambientes, ruído filtrado e ciclos lentos ajudam o corpo a sair do estado de alerta sem depender de streaming externo.',
+        description: 'Ondas theta: ambiência texturizada para desacelerar o ruído mental.',
       },
       sleep: {
         label: 'Sono',
         title: 'Sono de verdade',
         subtitle: 'Ondas delta com fade automático para adormecer.',
-        description:
-          'Sessões longas reduzem intensidade aos poucos e encerram sozinhas, mantendo tudo local no browser e longe de rastreamento.',
+        description: 'Ondas delta: fade-out automático para adormecer.',
       },
     },
     modesSection: {
@@ -1400,22 +1391,19 @@ export const messages = {
         label: 'Foco',
         title: 'Foco profundo',
         subtitle: 'Pulsos beta discretos para bloques de trabajo sin distracciones.',
-        description:
-          'Batidos binaurales y ritmos isocrónicos calibrados para mantener la atención estable mientras el sintetizador procedural crea variación continua.',
+        description: 'Ondas beta: pulsos discretos para bloques de trabajo sin distracciones.',
       },
       relax: {
         label: 'Relajar',
         title: 'Relajación real',
         subtitle: 'Texturas theta para desacelerar el ruido mental.',
-        description:
-          'Capas ambientales, ruido filtrado y ciclos lentos ayudan al cuerpo a salir del estado de alerta sin depender de streaming externo.',
+        description: 'Ondas theta: ambiente texturizado para desacelerar el ruido mental.',
       },
       sleep: {
         label: 'Sueño',
         title: 'Sueño real',
         subtitle: 'Ondas delta con fade automático para dormirte.',
-        description:
-          'Las sesiones largas reducen la intensidad poco a poco y se detienen solas, manteniendo todo local en el navegador y lejos del rastreo.',
+        description: 'Ondas delta: desvanecimiento automático para dormirte.',
       },
     },
     modesSection: {
