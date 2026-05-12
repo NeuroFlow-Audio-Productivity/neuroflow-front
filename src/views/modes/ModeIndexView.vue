@@ -7,7 +7,12 @@ import AppNavbar from '@/components/AppNavbar.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { modeApi } from '@/services/modeApi'
-import { modeVisualStyle, normalizeModeColor } from '@/services/modeVisuals'
+import {
+  modeRhythmStyle,
+  modeSemanticKey,
+  modeVisualStyle,
+  normalizeModeColor,
+} from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import type { Mode } from '@/types/mode'
 
@@ -45,6 +50,23 @@ const formatDate = (value: string | null | undefined) => {
   }).format(date)
 }
 
+const translatedModeName = (mode: Mode) => {
+  const key = modeSemanticKey(mode)
+
+  return key ? t(`modes.${key}.label`) : mode.name
+}
+
+const translatedModeDescription = (mode: Mode) => {
+  const key = modeSemanticKey(mode)
+
+  return key ? t(`modes.${key}.description`) : mode.description
+}
+
+const modeCardStyle = (mode: Mode) => ({
+  ...modeVisualStyle(mode.color),
+  ...modeRhythmStyle(mode),
+})
+
 const setError = (caughtError: unknown, fallbackKey: string) => {
   if (caughtError instanceof ApiError) {
     error.value = translateApiMessage(caughtError.message, {
@@ -77,7 +99,9 @@ const loadModes = async () => {
 const deleteMode = async (mode: Mode) => {
   if (!auth.token || !auth.isAdmin) return
 
-  const confirmed = window.confirm(t('modeResource.confirmDelete', { name: mode.name }))
+  const confirmed = window.confirm(
+    t('modeResource.confirmDelete', { name: translatedModeName(mode) }),
+  )
 
   if (!confirmed) return
 
@@ -184,15 +208,14 @@ onMounted(() => {
             v-for="mode in sortedModes"
             :key="mode.id"
             class="mode-card"
-            :style="modeVisualStyle(mode.color)"
+            :style="modeCardStyle(mode)"
           >
             <RouterLink
               :to="{ name: 'modes-show', params: { id: mode.id } }"
               class="mode-card-main"
             >
-              <span class="mode-card-orbit" aria-hidden="true">
-                <span />
-                <span />
+              <span class="mode-card-wave" aria-hidden="true">
+                <span v-for="beat in 10" :key="beat" />
               </span>
 
               <span class="relative z-10 text-xs font-semibold uppercase text-white/48">
@@ -200,10 +223,10 @@ onMounted(() => {
               </span>
 
               <h2 class="relative z-10 mt-8 text-3xl font-semibold leading-tight text-white">
-                {{ mode.name }}
+                {{ translatedModeName(mode) }}
               </h2>
               <p class="relative z-10 mt-4 text-sm leading-6 text-white/68">
-                {{ mode.description }}
+                {{ translatedModeDescription(mode) }}
               </p>
             </RouterLink>
 
@@ -306,7 +329,8 @@ onMounted(() => {
   border: 1px solid rgba(var(--resource-mode-rgb), 0.34);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 76% 18%, rgba(var(--resource-mode-rgb), 0.28), transparent 11rem),
+    linear-gradient(105deg, rgba(var(--resource-mode-rgb), 0.24), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 52%),
     linear-gradient(145deg, rgba(var(--resource-mode-rgb), 0.13), rgba(7, 16, 14, 0.94) 52%);
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
 }
@@ -314,15 +338,22 @@ onMounted(() => {
 .mode-card::before {
   position: absolute;
   inset: -20%;
-  background: repeating-linear-gradient(
-    112deg,
-    transparent 0 1rem,
-    rgba(255, 255, 255, 0.055) 1.05rem 1.14rem,
-    transparent 1.2rem 2.35rem
-  );
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 0.95rem,
+      rgba(var(--resource-mode-rgb), 0.14) 0.98rem 1.06rem,
+      transparent 1.1rem 2.15rem
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3.5rem,
+      rgba(255, 255, 255, 0.055) 3.55rem 3.62rem,
+      transparent 3.68rem 7rem
+    );
   content: '';
   opacity: 0.58;
-  transform: rotate(-8deg);
+  transform: skewY(-8deg);
   transition:
     opacity 180ms ease,
     transform 260ms ease;
@@ -330,7 +361,7 @@ onMounted(() => {
 
 .mode-card:hover::before {
   opacity: 0.78;
-  transform: rotate(-8deg) translate3d(0.5rem, -0.35rem, 0);
+  transform: skewY(-8deg) translate3d(0.5rem, -0.35rem, 0);
 }
 
 .mode-card-main {
@@ -341,37 +372,81 @@ onMounted(() => {
   color: inherit;
 }
 
-.mode-card-orbit {
+.mode-card-wave {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  display: grid;
-  width: 5.8rem;
-  height: 5.8rem;
-  place-items: center;
+  display: flex;
+  width: 7rem;
+  height: 4.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
   border: 1px solid rgba(var(--resource-mode-rgb), 0.32);
-  border-radius: 999px;
-  background: rgba(var(--resource-mode-rgb), 0.09);
-  box-shadow: inset 0 0 2.4rem rgba(var(--resource-mode-rgb), 0.2);
+  border-radius: 8px;
+  background: rgba(3, 6, 5, 0.42);
+  box-shadow:
+    inset 0 0 2.4rem rgba(var(--resource-mode-rgb), 0.18),
+    0 1rem 3rem rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(16px);
 }
 
-.mode-card-orbit span {
-  grid-area: 1 / 1;
+.mode-card-wave span {
   display: block;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.48);
+  width: 0.28rem;
+  height: var(--bar-height, 2.4rem);
   border-radius: 999px;
+  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 12%);
+  box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb), 0.48);
+  opacity: 0.86;
+  transform: scaleY(0.52);
+  transform-origin: center;
+  animation: modeCardWave var(--resource-mode-wave-duration) ease-in-out infinite;
 }
 
-.mode-card-orbit span:first-child {
-  width: 4rem;
-  height: 4rem;
+.mode-card-wave span:nth-child(2) {
+  --bar-height: 3.1rem;
+  animation-delay: -0.4s;
 }
 
-.mode-card-orbit span:last-child {
-  width: 1.15rem;
-  height: 1.15rem;
-  background: var(--resource-mode-color);
-  box-shadow: 0 0 2rem rgba(var(--resource-mode-rgb), 0.7);
+.mode-card-wave span:nth-child(3) {
+  --bar-height: 2rem;
+  animation-delay: -0.8s;
+}
+
+.mode-card-wave span:nth-child(4) {
+  --bar-height: 3.5rem;
+  animation-delay: -1.2s;
+}
+
+.mode-card-wave span:nth-child(5) {
+  --bar-height: 2.4rem;
+  animation-delay: -1.6s;
+}
+
+.mode-card-wave span:nth-child(6) {
+  --bar-height: 3.7rem;
+  animation-delay: -2s;
+}
+
+.mode-card-wave span:nth-child(7) {
+  --bar-height: 2.2rem;
+  animation-delay: -2.4s;
+}
+
+.mode-card-wave span:nth-child(8) {
+  --bar-height: 3rem;
+  animation-delay: -2.8s;
+}
+
+.mode-card-wave span:nth-child(9) {
+  --bar-height: 1.8rem;
+  animation-delay: -3.2s;
+}
+
+.mode-card-wave span:nth-child(10) {
+  --bar-height: 2.7rem;
+  animation-delay: -3.6s;
 }
 
 .mode-card-footer {
@@ -384,5 +459,27 @@ onMounted(() => {
   gap: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.09);
   padding: 0.55rem 0.75rem 0.65rem 1rem;
+}
+
+@keyframes modeCardWave {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+
+  42% {
+    transform: scaleY(var(--resource-mode-wave-scale));
+  }
+
+  68% {
+    transform: scaleY(0.72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-card-wave span {
+    animation: none;
+    transform: scaleY(0.8);
+  }
 }
 </style>

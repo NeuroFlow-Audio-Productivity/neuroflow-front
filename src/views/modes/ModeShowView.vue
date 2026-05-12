@@ -8,7 +8,12 @@ import AppNavbar from '@/components/AppNavbar.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { modeApi } from '@/services/modeApi'
-import { modeVisualStyle, normalizeModeColor } from '@/services/modeVisuals'
+import {
+  modeRhythmStyle,
+  modeSemanticKey,
+  modeVisualStyle,
+  normalizeModeColor,
+} from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import type { Mode } from '@/types/mode'
 
@@ -28,8 +33,25 @@ const modeId = computed(() => {
   return Number.isFinite(id) ? id : null
 })
 
-const pageStyle = computed(() => modeVisualStyle(mode.value?.color))
+const pageStyle = computed(() => ({
+  ...modeVisualStyle(mode.value?.color),
+  ...modeRhythmStyle(mode.value),
+}))
 const modeColor = computed(() => normalizeModeColor(mode.value?.color))
+const translatedModeName = computed(() => {
+  if (!mode.value) return ''
+
+  const key = modeSemanticKey(mode.value)
+
+  return key ? t(`modes.${key}.label`) : mode.value.name
+})
+const translatedModeDescription = computed(() => {
+  if (!mode.value) return ''
+
+  const key = modeSemanticKey(mode.value)
+
+  return key ? t(`modes.${key}.description`) : mode.value.description
+})
 
 const formatDate = (value: string | null | undefined) => {
   if (!value) return '-'
@@ -79,7 +101,9 @@ const loadMode = async () => {
 const deleteMode = async () => {
   if (!auth.token || !auth.isAdmin || !mode.value) return
 
-  const confirmed = window.confirm(t('modeResource.confirmDelete', { name: mode.value.name }))
+  const confirmed = window.confirm(
+    t('modeResource.confirmDelete', { name: translatedModeName.value }),
+  )
 
   if (!confirmed) return
 
@@ -134,8 +158,8 @@ watch(
 
       <template v-else-if="mode">
         <section class="mode-stage mt-6">
-          <div class="mode-ridge-field" aria-hidden="true" />
-          <div class="mode-heat-field" aria-hidden="true" />
+          <div class="mode-wave-field" aria-hidden="true" />
+          <div class="mode-frequency-field" aria-hidden="true" />
 
           <div class="mode-stage-copy">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -144,7 +168,7 @@ watch(
                   {{ t('modeResource.show.eyebrow') }}
                 </p>
                 <h1 class="mt-4 text-5xl font-semibold leading-none text-white sm:text-6xl">
-                  {{ mode.name }}
+                  {{ translatedModeName }}
                 </h1>
               </div>
 
@@ -167,7 +191,7 @@ watch(
             </div>
 
             <p class="relative z-10 mt-6 max-w-2xl text-lg leading-8 text-white/72">
-              {{ mode.description }}
+              {{ translatedModeDescription }}
             </p>
 
             <dl class="mode-detail-strip relative z-10 mt-8">
@@ -189,17 +213,25 @@ watch(
             </dl>
           </div>
 
-          <div class="mode-dimensional-scene" aria-hidden="true">
-            <div class="mode-glow-pool" />
-            <div class="mode-slab mode-slab--rear" />
-            <div class="mode-slab mode-slab--front">
-              <span />
+          <div class="mode-audio-scene" aria-hidden="true">
+            <div class="mode-wave-panel">
+              <span class="mode-wave-baseline" />
+              <div class="mode-wave-bars">
+                <span v-for="bar in 18" :key="`primary-${bar}`" />
+              </div>
             </div>
-            <div class="mode-disc mode-disc--large" />
-            <div class="mode-disc mode-disc--small" />
+            <div class="mode-wave-panel mode-wave-panel--echo">
+              <span class="mode-wave-baseline" />
+              <div class="mode-wave-bars">
+                <span v-for="bar in 14" :key="`echo-${bar}`" />
+              </div>
+            </div>
+            <div class="mode-spectral-bands">
+              <span v-for="band in 7" :key="band" />
+            </div>
           </div>
 
-          <div class="mode-light-track" aria-hidden="true">
+          <div class="mode-signal-track" aria-hidden="true">
             <span />
           </div>
         </section>
@@ -262,41 +294,45 @@ watch(
   isolation: isolate;
 }
 
-.mode-ridge-field,
-.mode-heat-field,
-.mode-dimensional-scene,
-.mode-light-track {
+.mode-wave-field,
+.mode-frequency-field,
+.mode-audio-scene,
+.mode-signal-track {
   position: absolute;
   pointer-events: none;
 }
 
-.mode-ridge-field {
+.mode-wave-field {
   inset: -12% -10%;
   z-index: -3;
   background:
-    radial-gradient(circle at 34% 72%, rgba(var(--resource-mode-rgb), 0.18), transparent 18rem),
+    linear-gradient(112deg, rgba(var(--resource-mode-rgb), 0.24), transparent 34%),
+    linear-gradient(292deg, rgba(var(--resource-mode-rgb), 0.12), transparent 42%),
     repeating-linear-gradient(
-      106deg,
-      rgba(255, 255, 255, 0.018) 0 0.75rem,
-      rgba(255, 255, 255, 0.085) 0.78rem 0.92rem,
-      rgba(0, 0, 0, 0.62) 0.95rem 1.85rem
+      90deg,
+      rgba(255, 255, 255, 0.018) 0 0.95rem,
+      rgba(var(--resource-mode-rgb), 0.12) 0.98rem 1.06rem,
+      rgba(0, 0, 0, 0.56) 1.1rem 2.25rem
     );
   filter: contrast(1.1);
-  opacity: 0.82;
-  transform: rotate(-4deg) scale(1.06);
-  animation: ridgeDrift 12s ease-in-out infinite alternate;
+  opacity: 0.76;
+  transform: skewY(-6deg) scale(1.06);
+  animation: waveFieldDrift var(--resource-mode-band-duration) ease-in-out infinite alternate;
 }
 
-.mode-heat-field {
-  inset: auto auto -18% -8%;
+.mode-frequency-field {
+  inset: 12% -8% auto 8%;
   z-index: -2;
-  width: 44rem;
-  height: 24rem;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(var(--resource-mode-rgb), 0.84), transparent 62%);
-  filter: blur(22px);
-  opacity: 0.44;
-  animation: heatSweep 7s ease-in-out infinite alternate;
+  height: 18rem;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 2.2rem,
+    rgba(255, 255, 255, 0.075) 2.25rem 2.3rem,
+    transparent 2.35rem 4.6rem
+  );
+  opacity: 0.5;
+  transform: perspective(48rem) rotateX(58deg) rotateZ(-5deg);
+  animation: frequencyFloat 9s ease-in-out infinite alternate;
 }
 
 .mode-stage-copy {
@@ -361,95 +397,132 @@ watch(
   box-shadow: 0 0 1.6rem rgba(var(--resource-mode-rgb), 0.72);
 }
 
-.mode-dimensional-scene {
-  right: -2rem;
-  bottom: 2.5rem;
+.mode-audio-scene {
+  right: -1.5rem;
+  bottom: 4.2rem;
   z-index: 1;
-  width: min(42rem, 64vw);
-  height: min(32rem, 56vw);
-  transform: perspective(62rem) rotateX(54deg) rotateZ(-17deg);
+  width: min(45rem, 66vw);
+  height: min(29rem, 48vw);
+  transform: perspective(60rem) rotateX(54deg) rotateZ(-10deg);
   transform-style: preserve-3d;
 }
 
-.mode-glow-pool {
+.mode-wave-panel {
   position: absolute;
-  right: 4%;
-  bottom: -4%;
-  width: 76%;
-  height: 35%;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(var(--resource-mode-rgb), 0.86), transparent 66%);
-  filter: blur(18px);
-  opacity: 0.62;
-  transform: translateZ(-5rem);
-}
-
-.mode-slab,
-.mode-disc {
-  position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(var(--resource-mode-rgb), 0.18)),
-    linear-gradient(170deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.78));
-  box-shadow:
-    0 2rem 4rem rgba(0, 0, 0, 0.4),
-    inset 0 0 3rem rgba(255, 255, 255, 0.08);
-}
-
-.mode-slab {
-  width: 58%;
-  height: 48%;
+  right: 10%;
+  bottom: 30%;
+  width: 72%;
+  height: 42%;
+  overflow: hidden;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.32);
   border-radius: 8px;
-  transform-style: preserve-3d;
+  background:
+    linear-gradient(108deg, rgba(var(--resource-mode-rgb), 0.18), transparent 48%),
+    rgba(3, 6, 5, 0.7);
+  box-shadow:
+    0 2rem 4.4rem rgba(0, 0, 0, 0.34),
+    inset 0 0 4rem rgba(var(--resource-mode-rgb), 0.12);
+  transform: translateZ(7rem);
+  animation: wavePanelFloat 5.5s ease-in-out infinite alternate;
 }
 
-.mode-slab--rear {
-  right: 14%;
-  bottom: 20%;
-  transform: translateZ(0) rotateZ(8deg);
-}
-
-.mode-slab--front {
-  right: 34%;
-  bottom: 31%;
-  transform: translateZ(7rem) rotateZ(-13deg);
-  animation: slabFloat 5s ease-in-out infinite alternate;
-}
-
-.mode-slab--front span {
-  position: absolute;
-  right: 11%;
+.mode-wave-panel--echo {
+  right: 3%;
   bottom: 13%;
-  width: 42%;
-  height: 0.55rem;
+  width: 58%;
+  height: 30%;
+  opacity: 0.58;
+  transform: translateZ(2rem);
+  animation-duration: 7s;
+  animation-direction: alternate-reverse;
+}
+
+.mode-wave-baseline {
+  position: absolute;
+  right: 8%;
+  left: 8%;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mode-wave-bars {
+  position: absolute;
+  inset: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+}
+
+.mode-wave-bars span {
+  display: block;
+  width: 0.42rem;
+  height: var(--bar-height, 5.2rem);
   border-radius: 999px;
-  background: var(--resource-mode-color);
-  box-shadow: 0 0 2rem rgba(var(--resource-mode-rgb), 0.85);
+  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 10%);
+  box-shadow: 0 0 1.6rem rgba(var(--resource-mode-rgb), 0.62);
+  transform: scaleY(0.44);
+  transform-origin: center;
+  animation: waveformPulse var(--resource-mode-wave-duration) ease-in-out infinite;
 }
 
-.mode-disc {
+.mode-wave-bars span:nth-child(2n) {
+  --bar-height: 4.1rem;
+  animation-delay: -0.35s;
+}
+
+.mode-wave-bars span:nth-child(3n) {
+  --bar-height: 6.4rem;
+  animation-delay: -0.7s;
+}
+
+.mode-wave-bars span:nth-child(4n) {
+  --bar-height: 3.4rem;
+  animation-delay: -1.05s;
+}
+
+.mode-wave-bars span:nth-child(5n) {
+  --bar-height: 7.2rem;
+  animation-delay: -1.4s;
+}
+
+.mode-spectral-bands {
+  position: absolute;
+  right: 12%;
+  bottom: 2%;
+  width: 70%;
+  height: 38%;
+  transform: translateZ(-2rem);
+}
+
+.mode-spectral-bands span {
+  display: block;
+  height: 0.35rem;
+  margin-top: 0.86rem;
   border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--resource-mode-rgb), 0.82),
+    transparent
+  );
+  opacity: 0.56;
+  transform: translateX(-12%);
+  animation: spectralBand var(--resource-mode-band-duration) ease-in-out infinite alternate;
 }
 
-.mode-disc--large {
-  right: 28%;
-  bottom: 42%;
-  width: 8.2rem;
-  height: 8.2rem;
-  transform: translateZ(10rem);
-  animation: discFloat 5.5s ease-in-out infinite alternate;
+.mode-spectral-bands span:nth-child(2n) {
+  animation-delay: -1.2s;
+  opacity: 0.38;
 }
 
-.mode-disc--small {
-  right: 20%;
-  bottom: 33%;
-  width: 5.2rem;
-  height: 5.2rem;
-  transform: translateZ(12rem);
-  animation: discFloat 4.8s ease-in-out infinite alternate-reverse;
+.mode-spectral-bands span:nth-child(3n) {
+  animation-delay: -2.4s;
+  opacity: 0.7;
 }
 
-.mode-light-track {
+.mode-signal-track {
   right: 1.25rem;
   bottom: 1.1rem;
   left: 1.25rem;
@@ -461,14 +534,14 @@ watch(
   background: rgba(255, 255, 255, 0.12);
 }
 
-.mode-light-track span {
+.mode-signal-track span {
   display: block;
   width: 42%;
   height: 100%;
   border-radius: inherit;
   background: var(--resource-mode-color);
   box-shadow: 0 0 1.4rem rgba(var(--resource-mode-rgb), 0.85);
-  animation: lightTrack 4.2s ease-in-out infinite alternate;
+  animation: signalTrack var(--resource-mode-band-duration) ease-in-out infinite alternate;
 }
 
 .mode-info-grid {
@@ -494,47 +567,62 @@ watch(
   overflow-wrap: anywhere;
 }
 
-@keyframes ridgeDrift {
+@keyframes waveFieldDrift {
   from {
-    transform: rotate(-4deg) scale(1.06) translate3d(-0.6rem, 0, 0);
+    transform: skewY(-6deg) scale(1.06) translate3d(-0.6rem, 0, 0);
   }
 
   to {
-    transform: rotate(-4deg) scale(1.08) translate3d(0.9rem, -0.45rem, 0);
+    transform: skewY(-6deg) scale(1.08) translate3d(0.9rem, -0.45rem, 0);
   }
 }
 
-@keyframes heatSweep {
+@keyframes frequencyFloat {
   from {
-    transform: translate3d(0, 0, 0) scale(0.92);
+    transform: perspective(48rem) rotateX(58deg) rotateZ(-5deg) translate3d(-0.4rem, 0, 0);
   }
 
   to {
-    transform: translate3d(12rem, -4rem, 0) scale(1.12);
+    transform: perspective(48rem) rotateX(58deg) rotateZ(-5deg) translate3d(0.9rem, -0.4rem, 0);
   }
 }
 
-@keyframes slabFloat {
+@keyframes wavePanelFloat {
   from {
-    transform: translateZ(7rem) rotateZ(-13deg) translate3d(0, 0, 0);
+    transform: translateZ(7rem) translate3d(0, 0, 0);
   }
 
   to {
-    transform: translateZ(8.4rem) rotateZ(-10deg) translate3d(0.6rem, -0.45rem, 0);
+    transform: translateZ(8.2rem) translate3d(0.6rem, -0.45rem, 0);
   }
 }
 
-@keyframes discFloat {
+@keyframes waveformPulse {
+  0%,
+  100% {
+    transform: scaleY(0.44);
+  }
+
+  45% {
+    transform: scaleY(var(--resource-mode-wave-scale));
+  }
+
+  72% {
+    transform: scaleY(0.64);
+  }
+}
+
+@keyframes spectralBand {
   from {
-    translate: 0 0;
+    transform: translateX(-12%) scaleX(0.72);
   }
 
   to {
-    translate: 0.45rem -0.7rem;
+    transform: translateX(14%) scaleX(1);
   }
 }
 
-@keyframes lightTrack {
+@keyframes signalTrack {
   from {
     transform: translateX(0);
   }
@@ -573,21 +661,22 @@ watch(
     padding-top: 1.5rem;
   }
 
-  .mode-dimensional-scene {
-    right: -8rem;
-    bottom: 4rem;
-    width: 34rem;
+  .mode-audio-scene {
+    right: -9rem;
+    bottom: 5.5rem;
+    width: 36rem;
     height: 26rem;
     opacity: 0.86;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mode-ridge-field,
-  .mode-heat-field,
-  .mode-slab--front,
-  .mode-disc,
-  .mode-light-track span {
+  .mode-wave-field,
+  .mode-frequency-field,
+  .mode-wave-panel,
+  .mode-wave-bars span,
+  .mode-spectral-bands span,
+  .mode-signal-track span {
     animation: none;
   }
 }

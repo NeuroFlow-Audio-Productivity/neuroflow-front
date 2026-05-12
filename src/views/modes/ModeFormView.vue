@@ -13,6 +13,7 @@ import { modeApi, type StoreModePayload, type UpdateModePayload } from '@/servic
 import {
   FALLBACK_MODE_COLOR,
   isHexColor,
+  modeRhythmStyle,
   modeVisualStyle,
   normalizeModeColor,
 } from '@/services/modeVisuals'
@@ -51,7 +52,10 @@ const eyebrowKey = computed(() => `modeResource.${props.mode}.eyebrow`)
 const submitLabel = computed(() =>
   isCreate.value ? t('modeResource.actions.create') : t('modeResource.actions.save'),
 )
-const previewStyle = computed(() => modeVisualStyle(form.color))
+const previewStyle = computed(() => ({
+  ...modeVisualStyle(form.color),
+  ...modeRhythmStyle(form),
+}))
 
 const colorPickerValue = computed({
   get: () => (isHexColor(form.color) ? normalizeModeColor(form.color) : FALLBACK_MODE_COLOR),
@@ -305,8 +309,12 @@ watch(
 
             <aside class="mode-form-preview">
               <span class="mode-preview-ridges" aria-hidden="true" />
-              <span class="mode-preview-orb" aria-hidden="true" />
-              <span class="mode-preview-slab" aria-hidden="true" />
+              <span class="mode-preview-bands" aria-hidden="true">
+                <span v-for="band in 5" :key="band" />
+              </span>
+              <span class="mode-preview-wave" aria-hidden="true">
+                <span v-for="beat in 12" :key="beat" />
+              </span>
               <div class="relative z-10">
                 <p class="text-xs font-semibold uppercase text-white/48">
                   {{ t('modeResource.form.preview') }}
@@ -355,7 +363,7 @@ watch(
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 82% 18%, rgba(var(--resource-mode-rgb), 0.16), transparent 18rem),
+    linear-gradient(105deg, rgba(var(--resource-mode-rgb), 0.16), transparent 36%),
     rgba(7, 16, 14, 0.86);
   padding: 1.25rem;
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
@@ -417,15 +425,15 @@ watch(
   border: 1px solid rgba(var(--resource-mode-rgb), 0.3);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 70% 24%, rgba(var(--resource-mode-rgb), 0.26), transparent 12rem),
-    #050706;
+    linear-gradient(118deg, rgba(var(--resource-mode-rgb), 0.24), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 54%), #050706;
   padding: 1.1rem;
   isolation: isolate;
 }
 
 .mode-preview-ridges,
-.mode-preview-orb,
-.mode-preview-slab {
+.mode-preview-bands,
+.mode-preview-wave {
   position: absolute;
   pointer-events: none;
 }
@@ -440,32 +448,80 @@ watch(
     rgba(0, 0, 0, 0.62) 1.22rem 2.2rem
   );
   opacity: 0.72;
-  transform: rotate(-8deg);
+  transform: skewY(-8deg);
 }
 
-.mode-preview-orb {
-  right: -4rem;
-  bottom: -4rem;
-  width: 18rem;
-  height: 18rem;
+.mode-preview-bands {
+  right: 1rem;
+  bottom: 1.4rem;
+  left: 1rem;
+  display: grid;
+  gap: 0.7rem;
+  opacity: 0.58;
+}
+
+.mode-preview-bands span {
+  display: block;
+  height: 0.35rem;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(var(--resource-mode-rgb), 0.82), transparent 62%);
-  filter: blur(18px);
-  opacity: 0.5;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--resource-mode-rgb), 0.78),
+    transparent
+  );
+  animation: previewBand var(--resource-mode-band-duration) ease-in-out infinite alternate;
 }
 
-.mode-preview-slab {
-  right: 1.4rem;
-  bottom: 3rem;
-  width: 13rem;
-  height: 8rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.mode-preview-bands span:nth-child(2n) {
+  animation-delay: -1.1s;
+}
+
+.mode-preview-bands span:nth-child(3n) {
+  animation-delay: -2.2s;
+}
+
+.mode-preview-wave {
+  right: 1.2rem;
+  bottom: 5.6rem;
+  display: flex;
+  width: 13.5rem;
+  height: 7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.32);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.36), rgba(var(--resource-mode-rgb), 0.2)),
-    linear-gradient(170deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.76));
-  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.4);
-  transform: perspective(34rem) rotateX(58deg) rotateZ(-16deg);
+  background: rgba(3, 6, 5, 0.56);
+  box-shadow: inset 0 0 3rem rgba(var(--resource-mode-rgb), 0.14);
+  transform: perspective(34rem) rotateX(58deg) rotateZ(-14deg);
+}
+
+.mode-preview-wave span {
+  display: block;
+  width: 0.33rem;
+  height: var(--bar-height, 4.5rem);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 12%);
+  box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb), 0.56);
+  transform: scaleY(0.5);
+  transform-origin: center;
+  animation: previewWave var(--resource-mode-wave-duration) ease-in-out infinite;
+}
+
+.mode-preview-wave span:nth-child(2n) {
+  --bar-height: 3.5rem;
+  animation-delay: -0.35s;
+}
+
+.mode-preview-wave span:nth-child(3n) {
+  --bar-height: 5.7rem;
+  animation-delay: -0.7s;
+}
+
+.mode-preview-wave span:nth-child(4n) {
+  --bar-height: 2.8rem;
+  animation-delay: -1.05s;
 }
 
 .mode-preview-color {
@@ -485,6 +541,38 @@ watch(
 @media (min-width: 640px) {
   .mode-form {
     padding: 1.5rem;
+  }
+}
+
+@keyframes previewWave {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+
+  45% {
+    transform: scaleY(var(--resource-mode-wave-scale));
+  }
+
+  72% {
+    transform: scaleY(0.66);
+  }
+}
+
+@keyframes previewBand {
+  from {
+    transform: translateX(-8%) scaleX(0.72);
+  }
+
+  to {
+    transform: translateX(10%) scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-preview-wave span,
+  .mode-preview-bands span {
+    animation: none;
   }
 }
 </style>

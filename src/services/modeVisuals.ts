@@ -1,6 +1,30 @@
 export const FALLBACK_MODE_COLOR = '#6ee7d8'
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i
+const MODE_RHYTHM_STYLES = {
+  focus: {
+    '--resource-mode-wave-duration': '3.2s',
+    '--resource-mode-wave-scale': '1.18',
+    '--resource-mode-band-duration': '6s',
+  },
+  relax: {
+    '--resource-mode-wave-duration': '5.4s',
+    '--resource-mode-wave-scale': '0.92',
+    '--resource-mode-band-duration': '9s',
+  },
+  sleep: {
+    '--resource-mode-wave-duration': '7.8s',
+    '--resource-mode-wave-scale': '0.72',
+    '--resource-mode-band-duration': '12s',
+  },
+} as const
+
+export type ModeSemanticKey = keyof typeof MODE_RHYTHM_STYLES
+
+type ModeSemanticInput = {
+  name?: string | null
+  description?: string | null
+}
 
 export const isHexColor = (value: string | null | undefined) =>
   HEX_COLOR_PATTERN.test(value?.trim() ?? '')
@@ -10,6 +34,34 @@ export const normalizeModeColor = (value: string | null | undefined) => {
 
   return color && HEX_COLOR_PATTERN.test(color) ? color.toLowerCase() : FALLBACK_MODE_COLOR
 }
+
+const normalizeSemanticText = (value: string | null | undefined) =>
+  (value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
+const semanticKeyFromText = (value: string | null | undefined): ModeSemanticKey | null => {
+  const text = normalizeSemanticText(value)
+
+  if (!text) return null
+  if (/\b(focus|focused|focusing|foco|concentr[a-z]*|attention|beta)\b/.test(text)) {
+    return 'focus'
+  }
+
+  if (/\b(relax|relaxed|relaxing|relajar|relaxamento|relajacion|theta)\b/.test(text)) {
+    return 'relax'
+  }
+
+  if (/\b(sleep|sleeping|sono|sueno|dormir|delta)\b/.test(text)) return 'sleep'
+
+  return null
+}
+
+export const modeSemanticKey = (mode: ModeSemanticInput | null | undefined) =>
+  semanticKeyFromText(mode?.name) ?? semanticKeyFromText(mode?.description)
 
 const hexChannel = (color: string, start: number) =>
   Number.parseInt(color.slice(start, start + 2), 16)
@@ -53,3 +105,7 @@ export const modeVisualStyle = (value: string | null | undefined): Record<string
     '--resource-mode-ink': modeInkColor(color),
   }
 }
+
+export const modeRhythmStyle = (
+  mode: ModeSemanticInput | null | undefined,
+): Record<string, string> => MODE_RHYTHM_STYLES[modeSemanticKey(mode) ?? 'focus']
