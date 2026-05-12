@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import AudioFormView from '@/views/audios/AudioFormView.vue'
+import AudioIndexView from '@/views/audios/AudioIndexView.vue'
+import AudioShowView from '@/views/audios/AudioShowView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import HomeView from '@/views/HomeView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
@@ -108,6 +111,32 @@ const router = createRouter({
       path: '/modes/:id/edit',
       name: 'modes-edit',
       component: ModeFormView,
+      props: { mode: 'edit' },
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/audios',
+      name: 'audios-index',
+      component: AudioIndexView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/audios/create',
+      name: 'audios-create',
+      component: AudioFormView,
+      props: { mode: 'create' },
+      meta: { requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: '/audios/:id',
+      name: 'audios-show',
+      component: AudioShowView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/audios/:id/edit',
+      name: 'audios-edit',
+      component: AudioFormView,
       props: { mode: 'edit' },
       meta: { requiresAuth: true, adminOnly: true },
     },
