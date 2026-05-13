@@ -72,6 +72,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/core',
+      name: 'core',
+      component: DashboardView,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/settings',
       redirect: { name: 'settings-account' },
     },

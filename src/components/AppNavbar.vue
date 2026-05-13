@@ -115,7 +115,7 @@ const navigationItems = computed(() => {
   }))
 
   if (profileItems.value.length === 0) {
-    items.push(fallbackItem('fallback-core', t('nav.core'), '/dashboard'))
+    items.push(fallbackItem('fallback-core', t('nav.core'), '/core'))
   }
 
   if (!hasModesProfileItem.value) {
