@@ -47,13 +47,6 @@ const modeName = computed(() => {
   return key ? t(`modes.${key}.label`) : mode.name
 })
 
-const sourceName = computed(() => {
-  const path = audio.value?.path ?? ''
-  const parts = path.split('/').filter(Boolean)
-
-  return parts.at(-1) ?? path
-})
-
 const formatDate = (value: string | null | undefined) => {
   if (!value) return '-'
 
@@ -196,7 +189,6 @@ watch(
             <div class="audio-player-panel">
               <AudioPlayer
                 :src="sourceUrl"
-                :title="sourceName"
                 :subtitle="`${t('audioResource.show.nowPlaying')} · ${modeName}`"
               />
             </div>
@@ -217,10 +209,6 @@ watch(
               <div>
                 <dt>{{ t('audioResource.fields.updatedAt') }}</dt>
                 <dd>{{ formatDate(audio.updated_at) }}</dd>
-              </div>
-              <div class="sm:col-span-2">
-                <dt>{{ t('audioResource.fields.path') }}</dt>
-                <dd class="break-all">{{ audio.path }}</dd>
               </div>
             </dl>
           </div>

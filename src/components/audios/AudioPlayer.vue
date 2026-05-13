@@ -214,9 +214,6 @@ watch(
         <span class="nf-audio-time">{{ formatTime(duration) }}</span>
       </div>
 
-      <div class="nf-audio-wave" aria-hidden="true">
-        <span v-for="bar in 24" :key="bar" />
-      </div>
     </div>
 
     <div class="nf-audio-actions">
@@ -475,10 +472,6 @@ watch(
   box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb, 110, 231, 216), 0.48);
 }
 
-.nf-audio-wave {
-  display: none;
-}
-
 .nf-audio-actions {
   position: relative;
   z-index: 2;
@@ -516,57 +509,4 @@ watch(
   }
 }
 
-@media (min-width: 900px) {
-  .nf-audio-wave {
-    display: flex;
-    height: 1.3rem;
-    align-items: center;
-    gap: 0.18rem;
-    margin-top: 0.32rem;
-    opacity: 0.54;
-  }
-
-  .nf-audio-wave span {
-    flex: 1;
-    height: 45%;
-    border-radius: 999px;
-    background: rgba(var(--resource-mode-rgb, 110, 231, 216), 0.72);
-    transform: scaleY(0.46);
-    transform-origin: center;
-    animation: nfPlayerWave var(--resource-mode-wave-duration, 3.2s) ease-in-out infinite;
-  }
-
-  .nf-audio-wave span:nth-child(2n) {
-    animation-delay: -0.25s;
-  }
-
-  .nf-audio-wave span:nth-child(3n) {
-    animation-delay: -0.5s;
-  }
-
-  .nf-audio-wave span:nth-child(4n) {
-    animation-delay: -0.75s;
-  }
-}
-
-@keyframes nfPlayerWave {
-  0%,
-  100% {
-    transform: scaleY(0.38);
-  }
-
-  48% {
-    transform: scaleY(var(--resource-mode-wave-scale, 1.08));
-  }
-
-  72% {
-    transform: scaleY(0.68);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nf-audio-wave span {
-    animation: none;
-  }
-}
 </style>
