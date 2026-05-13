@@ -1,7 +1,10 @@
 import { apiRequest } from '@/services/authApi'
 import type { Mode } from '@/types/mode'
+import type { PaginatedResponse, PaginationQuery } from '@/types/pagination'
 
-export type ModesResponse = {
+export type ModesResponse = PaginatedResponse<Mode>
+
+export type ModesAllResponse = {
   data: Mode[]
 }
 
@@ -16,8 +19,14 @@ export type UpdateModePayload = StoreModePayload
 const modePath = (id: string | number) => `/modes/${encodeURIComponent(String(id))}`
 
 export const modeApi = {
-  listModes: (token: string) =>
+  listModes: (token: string, query: PaginationQuery = {}) =>
     apiRequest<ModesResponse>('/modes', {
+      token,
+      query,
+    }),
+
+  listAllModes: (token: string) =>
+    apiRequest<ModesAllResponse>('/modes/all', {
       token,
     }),
 

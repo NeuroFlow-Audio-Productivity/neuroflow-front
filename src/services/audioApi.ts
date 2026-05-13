@@ -1,7 +1,10 @@
 import { apiRequest } from '@/services/authApi'
 import type { Audio } from '@/types/audio'
+import type { PaginatedResponse, PaginationQuery } from '@/types/pagination'
 
-export type AudiosResponse = {
+export type AudiosResponse = PaginatedResponse<Audio>
+
+export type AudiosAllResponse = {
   data: Audio[]
 }
 
@@ -38,14 +41,21 @@ const createAudioFormData = (
 export const audioSourceUrl = (audio: Pick<Audio, 'url'> | null | undefined) => audio?.url ?? ''
 
 export const audioApi = {
-  listAudios: (token: string) =>
+  listAudios: (token: string, query: PaginationQuery = {}) =>
     apiRequest<AudiosResponse>('/audios', {
+      token,
+      query,
+    }),
+
+  listAllAudios: (token: string) =>
+    apiRequest<AudiosAllResponse>('/audios/all', {
       token,
     }),
 
-  listAudiosForMode: (token: string, mode: string | number) =>
+  listAudiosForMode: (token: string, mode: string | number, query: PaginationQuery = {}) =>
     apiRequest<AudiosResponse>(`/modes/${encodeURIComponent(String(mode))}/audios`, {
       token,
+      query,
     }),
 
   createAudio: (token: string, payload: StoreAudioPayload) =>

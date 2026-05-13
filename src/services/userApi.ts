@@ -1,7 +1,10 @@
 import { apiRequest } from '@/services/authApi'
 import type { Profile, User } from '@/types/auth'
+import type { PaginatedResponse, PaginationQuery } from '@/types/pagination'
 
-export type UsersResponse = {
+export type UsersResponse = PaginatedResponse<User>
+
+export type UsersAllResponse = {
   data: User[]
 }
 
@@ -30,8 +33,14 @@ export type UpdateUserPayload = {
 const userPath = (id: string | number) => `/users/${encodeURIComponent(String(id))}`
 
 export const userApi = {
-  listUsers: (token: string) =>
+  listUsers: (token: string, query: PaginationQuery = {}) =>
     apiRequest<UsersResponse>('/users', {
+      token,
+      query,
+    }),
+
+  listAllUsers: (token: string) =>
+    apiRequest<UsersAllResponse>('/users/all', {
       token,
     }),
 

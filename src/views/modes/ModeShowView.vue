@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { modeApi } from '@/services/modeApi'
@@ -21,6 +22,7 @@ const { t } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { confirmDanger } = useThemedConfirm()
 
 const mode = ref<Mode | null>(null)
 const isLoading = ref(false)
@@ -87,9 +89,9 @@ const loadMode = async () => {
 const deleteMode = async () => {
   if (!auth.token || !auth.isAdmin || !mode.value) return
 
-  const confirmed = window.confirm(
-    t('modeResource.confirmDelete', { name: translatedModeName.value }),
-  )
+  const confirmed = await confirmDanger({
+    message: t('modeResource.confirmDelete', { name: translatedModeName.value }),
+  })
 
   if (!confirmed) return
 

@@ -6,7 +6,9 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import PaginationControls from '@/components/PaginationControls.vue'
 import AudioPlayer from '@/components/audios/AudioPlayer.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi, audioSourceUrl } from '@/services/audioApi'
@@ -15,12 +17,15 @@ import { modeApi } from '@/services/modeApi'
 import { useAuthStore } from '@/stores/auth'
 import type { Audio } from '@/types/audio'
 import type { Mode } from '@/types/mode'
+import { paginationMetaFromResponse, type PaginationMeta } from '@/types/pagination'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const { confirmDanger } = useThemedConfirm()
 
 const audios = ref<Audio[]>([])
 const modes = ref<Mode[]>([])
+const pagination = ref<PaginationMeta | null>(null)
 const selectedModeId = ref<number | null>(null)
 const isLoading = ref(false)
 const isLoadingModes = ref(false)
@@ -32,6 +37,7 @@ const sortedAudios = computed(() =>
   [...audios.value].sort((a, b) => a.name.localeCompare(b.name)),
 )
 
+const totalAudios = computed(() => pagination.value?.total ?? sortedAudios.value.length)
 const assignedAudios = computed(() => audios.value.filter((audio) => audio.mode || audio.mode_id))
 const unassignedAudios = computed(() => audios.value.length - assignedAudios.value.length)
 
@@ -78,7 +84,7 @@ const loadModes = async () => {
   isLoadingModes.value = true
 
   try {
-    const response = await modeApi.listModes(auth.token)
+    const response = await modeApi.listAllModes(auth.token)
 
     modes.value = response.data
   } catch (caughtError) {
@@ -88,7 +94,7 @@ const loadModes = async () => {
   }
 }
 
-const loadAudios = async () => {
+const loadAudios = async (page = pagination.value?.currentPage ?? 1) => {
   if (!auth.token) return
 
   isLoading.value = true
@@ -97,10 +103,11 @@ const loadAudios = async () => {
   try {
     const response =
       selectedModeId.value === null
-        ? await audioApi.listAudios(auth.token)
-        : await audioApi.listAudiosForMode(auth.token, selectedModeId.value)
+        ? await audioApi.listAudios(auth.token, { page })
+        : await audioApi.listAudiosForMode(auth.token, selectedModeId.value, { page })
 
     audios.value = response.data
+    pagination.value = paginationMetaFromResponse(response)
   } catch (caughtError) {
     setError(caughtError, 'audioResource.errors.loadAudios')
   } finally {
@@ -111,7 +118,9 @@ const loadAudios = async () => {
 const deleteAudio = async (audio: Audio) => {
   if (!auth.token || !auth.isAdmin) return
 
-  const confirmed = window.confirm(t('audioResource.confirmDelete', { name: audio.name }))
+  const confirmed = await confirmDanger({
+    message: t('audioResource.confirmDelete', { name: audio.name }),
+  })
 
   if (!confirmed) return
 
@@ -122,7 +131,10 @@ const deleteAudio = async (audio: Audio) => {
   try {
     await audioApi.deleteAudio(auth.token, audio.id)
 
-    audios.value = audios.value.filter((item) => item.id !== audio.id)
+    const currentPage = pagination.value?.currentPage ?? 1
+    const nextPage = audios.value.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage
+
+    await loadAudios(nextPage)
     successMessage.value = t('audioResource.feedback.deleted')
   } catch (caughtError) {
     setError(caughtError, 'audioResource.errors.delete')
@@ -137,7 +149,7 @@ onMounted(() => {
 })
 
 watch(selectedModeId, () => {
-  void loadAudios()
+  void loadAudios(1)
 })
 </script>
 
@@ -207,7 +219,7 @@ watch(selectedModeId, () => {
 
       <section class="mt-6 grid gap-3 sm:grid-cols-3">
         <div class="audio-stat-panel">
-          <span class="audio-stat-value">{{ sortedAudios.length }}</span>
+          <span class="audio-stat-value">{{ totalAudios }}</span>
           <span class="audio-stat-label">{{ t('audioResource.index.total') }}</span>
         </div>
         <div class="audio-stat-panel">
@@ -301,6 +313,13 @@ watch(selectedModeId, () => {
             </div>
           </article>
         </div>
+
+        <PaginationControls
+          class="mt-6"
+          :meta="pagination"
+          :loading="isLoading"
+          @page-change="loadAudios"
+        />
       </section>
     </section>
   </main>

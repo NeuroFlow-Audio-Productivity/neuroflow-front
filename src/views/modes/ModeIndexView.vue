@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import PaginationControls from '@/components/PaginationControls.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { modeApi } from '@/services/modeApi'
@@ -15,17 +17,21 @@ import {
 } from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import type { Mode } from '@/types/mode'
+import { paginationMetaFromResponse, type PaginationMeta } from '@/types/pagination'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const { confirmDanger } = useThemedConfirm()
 
 const modes = ref<Mode[]>([])
+const pagination = ref<PaginationMeta | null>(null)
 const isLoading = ref(false)
 const deletingModeId = ref<number | null>(null)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
 const sortedModes = computed(() => [...modes.value].sort((a, b) => a.id - b.id))
+const totalModes = computed(() => pagination.value?.total ?? sortedModes.value.length)
 
 const translatedModeName = (mode: Mode) => {
   const key = modeSemanticKey(mode)
@@ -56,16 +62,17 @@ const setError = (caughtError: unknown, fallbackKey: string) => {
   error.value = translateApiKey(fallbackKey)
 }
 
-const loadModes = async () => {
+const loadModes = async (page = pagination.value?.currentPage ?? 1) => {
   if (!auth.token) return
 
   isLoading.value = true
   error.value = null
 
   try {
-    const response = await modeApi.listModes(auth.token)
+    const response = await modeApi.listModes(auth.token, { page })
 
     modes.value = response.data
+    pagination.value = paginationMetaFromResponse(response)
   } catch (caughtError) {
     setError(caughtError, 'modeResource.errors.loadModes')
   } finally {
@@ -76,9 +83,9 @@ const loadModes = async () => {
 const deleteMode = async (mode: Mode) => {
   if (!auth.token || !auth.isAdmin) return
 
-  const confirmed = window.confirm(
-    t('modeResource.confirmDelete', { name: translatedModeName(mode) }),
-  )
+  const confirmed = await confirmDanger({
+    message: t('modeResource.confirmDelete', { name: translatedModeName(mode) }),
+  })
 
   if (!confirmed) return
 
@@ -89,7 +96,10 @@ const deleteMode = async (mode: Mode) => {
   try {
     await modeApi.deleteMode(auth.token, mode.id)
 
-    modes.value = modes.value.filter((item) => item.id !== mode.id)
+    const currentPage = pagination.value?.currentPage ?? 1
+    const nextPage = modes.value.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage
+
+    await loadModes(nextPage)
     successMessage.value = t('modeResource.feedback.deleted')
   } catch (caughtError) {
     setError(caughtError, 'modeResource.errors.delete')
@@ -146,7 +156,7 @@ onMounted(() => {
 
       <section class="mt-6 grid gap-3 sm:grid-cols-2">
         <div class="mode-stat-panel">
-          <span class="mode-stat-value">{{ sortedModes.length }}</span>
+          <span class="mode-stat-value">{{ totalModes }}</span>
           <span class="mode-stat-label">{{ t('modeResource.index.total') }}</span>
         </div>
         <div class="mode-stat-panel mode-stat-panel--color">
@@ -231,6 +241,13 @@ onMounted(() => {
             </div>
           </article>
         </div>
+
+        <PaginationControls
+          class="mt-6"
+          :meta="pagination"
+          :loading="isLoading"
+          @page-change="loadModes"
+        />
       </section>
     </section>
   </main>

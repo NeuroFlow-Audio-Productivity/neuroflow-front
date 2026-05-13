@@ -183,7 +183,7 @@ const loadModes = async () => {
   isLoadingModes.value = true
 
   try {
-    const response = await modeApi.listModes(auth.token)
+    const response = await modeApi.listAllModes(auth.token)
 
     modes.value = response.data
   } catch (caughtError) {

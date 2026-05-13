@@ -1315,6 +1315,18 @@ export const messages = {
     language: {
       label: 'Language',
     },
+    dialog: {
+      deleteTitle: 'Confirm deletion',
+      delete: 'Delete',
+      cancel: 'Cancel',
+    },
+    pagination: {
+      label: 'Pagination',
+      previous: 'Previous page',
+      next: 'Next page',
+      page: 'Page {page}',
+      summary: 'Showing {from}-{to} of {total}',
+    },
     nav: {
       label: 'Main',
       audios: 'Audios',
@@ -1427,6 +1439,18 @@ export const messages = {
     audioResource: audioResourceMessages.ja,
     language: {
       label: '言語',
+    },
+    dialog: {
+      deleteTitle: '削除の確認',
+      delete: '削除',
+      cancel: 'キャンセル',
+    },
+    pagination: {
+      label: 'ページ送り',
+      previous: '前のページ',
+      next: '次のページ',
+      page: '{page}ページ',
+      summary: '{total}件中 {from}-{to}件を表示',
     },
     nav: {
       label: 'メイン',
@@ -1541,6 +1565,18 @@ export const messages = {
     language: {
       label: 'Idioma',
     },
+    dialog: {
+      deleteTitle: 'Confirmar exclusão',
+      delete: 'Excluir',
+      cancel: 'Cancelar',
+    },
+    pagination: {
+      label: 'Paginação',
+      previous: 'Página anterior',
+      next: 'Próxima página',
+      page: 'Página {page}',
+      summary: 'Mostrando {from}-{to} de {total}',
+    },
     nav: {
       label: 'Principal',
       audios: 'Áudios',
@@ -1653,6 +1689,18 @@ export const messages = {
     audioResource: audioResourceMessages.es,
     language: {
       label: 'Idioma',
+    },
+    dialog: {
+      deleteTitle: 'Confirmar eliminación',
+      delete: 'Eliminar',
+      cancel: 'Cancelar',
+    },
+    pagination: {
+      label: 'Paginación',
+      previous: 'Página anterior',
+      next: 'Página siguiente',
+      page: 'Página {page}',
+      summary: 'Mostrando {from}-{to} de {total}',
     },
     nav: {
       label: 'Principal',

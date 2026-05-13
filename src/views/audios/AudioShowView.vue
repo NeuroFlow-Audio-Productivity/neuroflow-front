@@ -6,6 +6,7 @@ import Button from 'primevue/button'
 
 import AppNavbar from '@/components/AppNavbar.vue'
 import AudioPlayer from '@/components/audios/AudioPlayer.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi, audioSourceUrl } from '@/services/audioApi'
@@ -16,6 +17,7 @@ const { t, locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { confirmDanger } = useThemedConfirm()
 
 const audio = ref<Awaited<ReturnType<typeof audioApi.getAudio>> | null>(null)
 const isLoading = ref(false)
@@ -100,7 +102,9 @@ const loadAudio = async () => {
 const deleteAudio = async () => {
   if (!auth.token || !auth.isAdmin || !audio.value) return
 
-  const confirmed = window.confirm(t('audioResource.confirmDelete', { name: audio.value.name }))
+  const confirmed = await confirmDanger({
+    message: t('audioResource.confirmDelete', { name: audio.value.name }),
+  })
 
   if (!confirmed) return
 
