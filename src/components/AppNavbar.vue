@@ -244,7 +244,7 @@ watch(
     </nav>
 
     <div class="flex min-w-0 items-center gap-2">
-      <LocaleSwitcher />
+      <LocaleSwitcher v-if="!auth.isAuthenticated" />
 
       <template v-if="auth.isAuthenticated">
         <RouterLink

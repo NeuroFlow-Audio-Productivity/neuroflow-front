@@ -509,6 +509,8 @@ const userMessages = {
       customizationTitle: 'Customization',
       customizationSubtitle: 'Choose the color palette used across NeuroFlow.',
       colorPalette: 'Color palette',
+      languageTitle: 'Language',
+      languageSubtitle: 'Choose the language used across the app.',
     },
     create: {
       eyebrow: 'Admin',
@@ -577,6 +579,8 @@ const userMessages = {
       customizationTitle: 'カスタマイズ',
       customizationSubtitle: 'NeuroFlow 全体で使うカラーパレットを選択します。',
       colorPalette: 'カラーパレット',
+      languageTitle: '言語',
+      languageSubtitle: 'アプリ全体で使う言語を選択します。',
     },
     create: {
       eyebrow: '管理者',
@@ -645,6 +649,8 @@ const userMessages = {
       customizationTitle: 'Customização',
       customizationSubtitle: 'Escolha a paleta de cores usada em todo o NeuroFlow.',
       colorPalette: 'Paleta de cores',
+      languageTitle: 'Idioma',
+      languageSubtitle: 'Escolha o idioma usado em todo o aplicativo.',
     },
     create: {
       eyebrow: 'Admin',
@@ -713,6 +719,8 @@ const userMessages = {
       customizationTitle: 'Personalización',
       customizationSubtitle: 'Elige la paleta de color usada en todo NeuroFlow.',
       colorPalette: 'Paleta de color',
+      languageTitle: 'Idioma',
+      languageSubtitle: 'Elige el idioma usado en toda la aplicación.',
     },
     create: {
       eyebrow: 'Admin',

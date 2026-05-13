@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import SettingsSectionNav from '@/components/settings/SettingsSectionNav.vue'
 import {
   useVisualThemeStore,
@@ -97,6 +98,16 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
             </button>
           </div>
         </div>
+
+        <div class="customization-setting-row mt-6">
+          <div>
+            <p class="text-sm font-semibold text-white">{{ t('users.settings.languageTitle') }}</p>
+            <p class="mt-1 text-sm leading-6 text-white/58">
+              {{ t('users.settings.languageSubtitle') }}
+            </p>
+          </div>
+          <LocaleSwitcher />
+        </div>
       </section>
     </section>
   </main>
@@ -150,5 +161,21 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
   overflow-wrap: normal;
   word-break: normal;
   hyphens: none;
+}
+
+.customization-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1.25rem;
+}
+
+@media (max-width: 520px) {
+  .customization-setting-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>
