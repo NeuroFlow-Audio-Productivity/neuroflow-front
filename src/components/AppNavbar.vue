@@ -5,6 +5,11 @@ import { useRouter } from 'vue-router'
 
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import { useAuthStore } from '@/stores/auth'
+import type { ProfileItem } from '@/types/auth'
+
+type NavbarItem = ProfileItem & {
+  key: string
+}
 
 const props = withDefaults(
   defineProps<{
@@ -24,9 +29,9 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const profileItems = computed(() => auth.profileItems)
-const hasProfileItems = computed(() => profileItems.value.length > 0)
 const profileLabel = computed(() => auth.user?.profile?.name ?? auth.user?.profile?.slug ?? '')
 const displayName = computed(() => auth.user?.name ?? t('nav.account'))
+const profileRouteOrder = ['/dashboard', '/core', '/flows', '/modes', '/audios', '/users', '/settings']
 
 const initials = computed(() => {
   const parts = displayName.value.trim().split(/\s+/).filter(Boolean)
@@ -78,11 +83,67 @@ const hasAudiosProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/audios'),
 )
 
+const hasSettingsProfileItem = computed(() =>
+  profileItems.value.some((item) => normalizedItemRoute(item.route).startsWith('/settings')),
+)
+
+const fallbackItem = (key: string, name: string, route: string): NavbarItem => ({
+  id: -1,
+  key,
+  name,
+  route,
+  created_at: '',
+  updated_at: '',
+})
+
+const sortProfileItems = (items: NavbarItem[]) =>
+  [...items].sort((first, second) => {
+    const firstRoute = normalizedItemRoute(first.route)
+    const secondRoute = normalizedItemRoute(second.route)
+    const firstIndex = profileRouteOrder.findIndex((route) => firstRoute.startsWith(route))
+    const secondIndex = profileRouteOrder.findIndex((route) => secondRoute.startsWith(route))
+    const firstRank = firstIndex === -1 ? profileRouteOrder.length : firstIndex
+    const secondRank = secondIndex === -1 ? profileRouteOrder.length : secondIndex
+
+    return firstRank - secondRank
+  })
+
+const navigationItems = computed(() => {
+  const items: NavbarItem[] = profileItems.value.map((item) => ({
+    ...item,
+    key: `profile-${item.id}`,
+  }))
+
+  if (profileItems.value.length === 0) {
+    items.push(fallbackItem('fallback-core', t('nav.core'), '/dashboard'))
+  }
+
+  if (!hasModesProfileItem.value) {
+    items.push(fallbackItem('fallback-modes', t('nav.modes'), '/modes'))
+  }
+
+  if (!hasAudiosProfileItem.value) {
+    items.push(fallbackItem('fallback-audios', t('nav.audios'), '/audios'))
+  }
+
+  if (auth.isAdmin && !hasUsersProfileItem.value) {
+    items.push(fallbackItem('fallback-users', t('nav.users'), '/users'))
+  }
+
+  if (!hasSettingsProfileItem.value) {
+    items.push(fallbackItem('fallback-settings', t('nav.settings'), '/settings/account'))
+  }
+
+  return sortProfileItems(items)
+})
+
 const profileItemLabel = (name: string, route: string) => {
   if (usesNativeHref(route)) return name
 
   const labelKeyByRoute: Record<string, string> = {
-    '/dashboard': 'nav.dashboard',
+    '/dashboard': 'nav.core',
+    '/core': 'nav.core',
+    '/flows': 'nav.flows',
     '/audios': 'nav.audios',
     '/modes': 'nav.modes',
     '/settings': 'nav.settings',
@@ -146,38 +207,24 @@ watch(
       class="hidden min-w-0 flex-1 items-center justify-center gap-1 px-4 text-sm text-white/70 md:flex"
       :aria-label="t('nav.profileItems')"
     >
-      <template v-if="hasProfileItems">
-        <template v-for="item in profileItems" :key="item.id">
-          <a
-            v-if="usesNativeHref(item.route)"
-            class="navbar-link"
-            :href="item.route"
-            :title="profileItemLabel(item.name, item.route)"
-          >
-            {{ profileItemLabel(item.name, item.route) }}
-          </a>
-          <RouterLink
-            v-else
-            class="navbar-link"
-            :to="normalizedItemRoute(item.route)"
-            :title="profileItemLabel(item.name, item.route)"
-          >
-            {{ profileItemLabel(item.name, item.route) }}
-          </RouterLink>
-        </template>
+      <template v-for="item in navigationItems" :key="item.key">
+        <a
+          v-if="usesNativeHref(item.route)"
+          class="navbar-link"
+          :href="item.route"
+          :title="profileItemLabel(item.name, item.route)"
+        >
+          {{ profileItemLabel(item.name, item.route) }}
+        </a>
+        <RouterLink
+          v-else
+          class="navbar-link"
+          :to="normalizedItemRoute(item.route)"
+          :title="profileItemLabel(item.name, item.route)"
+        >
+          {{ profileItemLabel(item.name, item.route) }}
+        </RouterLink>
       </template>
-      <RouterLink v-else class="navbar-link" to="/dashboard">
-        {{ t('nav.dashboard') }}
-      </RouterLink>
-      <RouterLink v-if="!hasModesProfileItem" class="navbar-link" to="/modes">
-        {{ t('nav.modes') }}
-      </RouterLink>
-      <RouterLink v-if="!hasAudiosProfileItem" class="navbar-link" to="/audios">
-        {{ t('nav.audios') }}
-      </RouterLink>
-      <RouterLink v-if="auth.isAdmin && !hasUsersProfileItem" class="navbar-link" to="/users">
-        {{ t('nav.users') }}
-      </RouterLink>
     </nav>
 
     <nav
@@ -249,47 +296,14 @@ watch(
             </div>
 
             <nav class="mt-2 grid gap-1" :aria-label="t('nav.profileItems')">
-              <RouterLink class="mobile-profile-link" to="/settings/account">
-                <i class="pi pi-cog text-sm" aria-hidden="true" />
-                <span>{{ t('nav.settings') }}</span>
-              </RouterLink>
-              <RouterLink v-if="!hasModesProfileItem" class="mobile-profile-link" to="/modes">
-                <i class="pi pi-sliders-h text-sm" aria-hidden="true" />
-                <span>{{ t('nav.modes') }}</span>
-              </RouterLink>
-              <RouterLink v-if="!hasAudiosProfileItem" class="mobile-profile-link" to="/audios">
-                <i class="pi pi-volume-up text-sm" aria-hidden="true" />
-                <span>{{ t('nav.audios') }}</span>
-              </RouterLink>
-              <RouterLink
-                v-if="auth.isAdmin && !hasUsersProfileItem"
-                class="mobile-profile-link"
-                to="/users"
-              >
-                <i class="pi pi-users text-sm" aria-hidden="true" />
-                <span>{{ t('nav.users') }}</span>
-              </RouterLink>
-              <template v-if="hasProfileItems">
-                <template v-for="item in profileItems" :key="`mobile-${item.id}`">
-                  <a
-                    v-if="usesNativeHref(item.route)"
-                    class="mobile-profile-link"
-                    :href="item.route"
-                  >
-                    {{ profileItemLabel(item.name, item.route) }}
-                  </a>
-                  <RouterLink
-                    v-else
-                    class="mobile-profile-link"
-                    :to="normalizedItemRoute(item.route)"
-                  >
-                    {{ profileItemLabel(item.name, item.route) }}
-                  </RouterLink>
-                </template>
+              <template v-for="item in navigationItems" :key="`mobile-${item.key}`">
+                <a v-if="usesNativeHref(item.route)" class="mobile-profile-link" :href="item.route">
+                  {{ profileItemLabel(item.name, item.route) }}
+                </a>
+                <RouterLink v-else class="mobile-profile-link" :to="normalizedItemRoute(item.route)">
+                  {{ profileItemLabel(item.name, item.route) }}
+                </RouterLink>
               </template>
-              <RouterLink v-else class="mobile-profile-link" to="/dashboard">
-                {{ t('nav.dashboard') }}
-              </RouterLink>
             </nav>
 
             <button class="mobile-profile-link mt-2 w-full text-left" type="button" @click="logout">
