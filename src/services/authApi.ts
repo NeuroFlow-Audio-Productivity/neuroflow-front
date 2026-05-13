@@ -65,6 +65,9 @@ const apiUrl = (path: string, query?: Record<string, QueryValue>) => {
   return url.toString()
 }
 
+const isFormDataBody = (body: unknown): body is FormData =>
+  typeof FormData !== 'undefined' && body instanceof FormData
+
 const parseJson = async (response: Response) => {
   const text = await response.text()
 
@@ -78,11 +81,15 @@ const parseJson = async (response: Response) => {
 }
 
 export const apiRequest = async <ResponseBody>(path: string, options: ApiRequestOptions = {}) => {
+  const body = options.body
+  const isFormData = isFormDataBody(body)
+  const requestBody: BodyInit | undefined =
+    body === undefined ? undefined : isFormData ? body : JSON.stringify(body)
   const headers = new Headers({
     Accept: 'application/json',
   })
 
-  if (options.body !== undefined) {
+  if (body !== undefined && !isFormData) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -96,7 +103,7 @@ export const apiRequest = async <ResponseBody>(path: string, options: ApiRequest
     response = await fetch(apiUrl(path, options.query), {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: requestBody,
     })
   } catch {
     throw new ApiError(0, 'Unable to reach the NeuroFlow API.')

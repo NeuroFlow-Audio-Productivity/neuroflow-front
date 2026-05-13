@@ -10,6 +10,9 @@ const fieldKeyByApiField: Record<string, string> = {
   email_verified_at: 'auth.fields.emailVerifiedAt',
   description: 'modeResource.fields.description',
   color: 'modeResource.fields.color',
+  mode_id: 'audioResource.fields.mode',
+  file: 'audioResource.fields.file',
+  path: 'audioResource.fields.path',
 }
 
 const translate = (key: string, params: Record<string, string | number> = {}) =>

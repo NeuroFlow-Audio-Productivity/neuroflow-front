@@ -6,17 +6,22 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import PaginationControls from '@/components/PaginationControls.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { userApi } from '@/services/userApi'
 import { useAuthStore } from '@/stores/auth'
 import type { User } from '@/types/auth'
+import { paginationMetaFromResponse, type PaginationMeta } from '@/types/pagination'
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
+const { confirmDanger } = useThemedConfirm()
 
 const users = ref<User[]>([])
+const pagination = ref<PaginationMeta | null>(null)
 const isLoading = ref(false)
 const deletingUserId = ref<number | null>(null)
 const error = ref<string | null>(null)
@@ -51,16 +56,17 @@ const setError = (caughtError: unknown, fallbackKey: string) => {
   error.value = translateApiKey(fallbackKey)
 }
 
-const loadUsers = async () => {
+const loadUsers = async (page = pagination.value?.currentPage ?? 1) => {
   if (!auth.token) return
 
   isLoading.value = true
   error.value = null
 
   try {
-    const response = await userApi.listUsers(auth.token)
+    const response = await userApi.listUsers(auth.token, { page })
 
     users.value = response.data
+    pagination.value = paginationMetaFromResponse(response)
   } catch (caughtError) {
     setError(caughtError, 'users.errors.loadUsers')
   } finally {
@@ -71,7 +77,9 @@ const loadUsers = async () => {
 const deleteUser = async (user: User) => {
   if (!auth.token) return
 
-  const confirmed = window.confirm(t('users.confirmDelete', { name: user.name }))
+  const confirmed = await confirmDanger({
+    message: t('users.confirmDelete', { name: user.name }),
+  })
 
   if (!confirmed) return
 
@@ -80,15 +88,21 @@ const deleteUser = async (user: User) => {
   successMessage.value = null
 
   try {
+    const deletesCurrentUser = auth.user?.id === user.id
+
     await userApi.deleteUser(auth.token, user.id)
 
-    users.value = users.value.filter((item) => item.id !== user.id)
-    successMessage.value = t('users.feedback.deleted')
-
-    if (auth.user?.id === user.id) {
+    if (deletesCurrentUser) {
       auth.clearSession()
       await router.push({ name: 'login' })
+      return
     }
+
+    const currentPage = pagination.value?.currentPage ?? 1
+    const nextPage = users.value.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage
+
+    await loadUsers(nextPage)
+    successMessage.value = t('users.feedback.deleted')
   } catch (caughtError) {
     setError(caughtError, 'users.errors.delete')
   } finally {
@@ -233,6 +247,13 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
+
+        <PaginationControls
+          class="m-4"
+          :meta="pagination"
+          :loading="isLoading"
+          @page-change="loadUsers"
+        />
       </section>
     </section>
   </main>

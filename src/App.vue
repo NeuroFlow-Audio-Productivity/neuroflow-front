@@ -2,6 +2,7 @@
 import { watchEffect } from 'vue'
 import { RouterView } from 'vue-router'
 
+import ThemedConfirmDialog from '@/components/ThemedConfirmDialog.vue'
 import { useVisualThemeStore } from '@/stores/visualTheme'
 
 const visualTheme = useVisualThemeStore()
@@ -12,5 +13,6 @@ watchEffect(() => {
 </script>
 
 <template>
+  <ThemedConfirmDialog />
   <RouterView />
 </template>

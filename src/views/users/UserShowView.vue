@@ -6,6 +6,7 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { userApi } from '@/services/userApi'
@@ -16,6 +17,7 @@ const { t, locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { confirmDanger } = useThemedConfirm()
 
 const user = ref<User | null>(null)
 const isLoading = ref(false)
@@ -78,7 +80,9 @@ const loadUser = async () => {
 const deleteUser = async () => {
   if (!auth.token || !user.value) return
 
-  const confirmed = window.confirm(t('users.confirmDelete', { name: user.value.name }))
+  const confirmed = await confirmDanger({
+    message: t('users.confirmDelete', { name: user.value.name }),
+  })
 
   if (!confirmed) return
 
