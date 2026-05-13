@@ -26,7 +26,8 @@ const { confirmDanger } = useThemedConfirm()
 const audios = ref<Audio[]>([])
 const modes = ref<Mode[]>([])
 const pagination = ref<PaginationMeta | null>(null)
-const selectedModeId = ref<number | null>(null)
+const allModesFilterValue = 'all'
+const selectedModeId = ref<number | typeof allModesFilterValue>(allModesFilterValue)
 const isLoading = ref(false)
 const isLoadingModes = ref(false)
 const deletingAudioId = ref<string | number | null>(null)
@@ -42,7 +43,7 @@ const assignedAudios = computed(() => audios.value.filter((audio) => audio.mode 
 const unassignedAudios = computed(() => audios.value.length - assignedAudios.value.length)
 
 const modeOptions = computed(() => [
-  { label: t('audioResource.index.allModes'), value: null },
+  { label: t('audioResource.index.allModes'), value: allModesFilterValue },
   ...modes.value.map((mode) => ({
     label: translatedModeName(mode),
     value: mode.id,
@@ -102,7 +103,7 @@ const loadAudios = async (page = pagination.value?.currentPage ?? 1) => {
 
   try {
     const response =
-      selectedModeId.value === null
+      selectedModeId.value === allModesFilterValue
         ? await audioApi.listAudios(auth.token, { page })
         : await audioApi.listAudiosForMode(auth.token, selectedModeId.value, { page })
 
