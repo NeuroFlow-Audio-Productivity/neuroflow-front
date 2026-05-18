@@ -1398,6 +1398,17 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 1024px) {
+  .core-page {
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .core-shell {
+    height: calc(100svh - 3.5rem);
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .core-workspace {
     grid-template-columns: minmax(0, 1fr);
     min-height: calc(100svh - 6.35rem);
