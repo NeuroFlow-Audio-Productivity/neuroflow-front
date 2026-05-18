@@ -1355,6 +1355,8 @@ const coreTimerMessages = {
       mute: 'Mute audio',
       unmute: 'Unmute audio',
       chooseTrack: 'Choose {name}',
+      enterMinimal: 'Enter minimal mode',
+      exitMinimal: 'Exit minimal mode',
     },
     stats: {
       completed: 'Blocks done',
@@ -1407,6 +1409,8 @@ const coreTimerMessages = {
       mute: 'ミュート',
       unmute: 'ミュート解除',
       chooseTrack: '{name} を選択',
+      enterMinimal: 'ミニマルモードにする',
+      exitMinimal: 'ミニマルモードを終了',
     },
     stats: {
       completed: '完了ブロック',
@@ -1459,6 +1463,8 @@ const coreTimerMessages = {
       mute: 'Silenciar áudio',
       unmute: 'Ativar áudio',
       chooseTrack: 'Escolher {name}',
+      enterMinimal: 'Entrar no modo minimalista',
+      exitMinimal: 'Sair do modo minimalista',
     },
     stats: {
       completed: 'Blocos feitos',
@@ -1511,6 +1517,8 @@ const coreTimerMessages = {
       mute: 'Silenciar audio',
       unmute: 'Activar audio',
       chooseTrack: 'Elegir {name}',
+      enterMinimal: 'Entrar en modo minimalista',
+      exitMinimal: 'Salir del modo minimalista',
     },
     stats: {
       completed: 'Bloques hechos',

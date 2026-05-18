@@ -134,6 +134,13 @@ const playPauseLabel = computed(() =>
   isRunning.value ? t('coreTimer.actions.pause') : t('coreTimer.actions.start'),
 )
 const playPauseIcon = computed(() => (isRunning.value ? 'pi pi-pause' : 'pi pi-play'))
+const isMinimalMode = ref(false)
+const minimalModeLabel = computed(() =>
+  isMinimalMode.value ? t('coreTimer.actions.exitMinimal') : t('coreTimer.actions.enterMinimal'),
+)
+const minimalModeIcon = computed(() =>
+  isMinimalMode.value ? 'pi pi-window-maximize' : 'pi pi-window-minimize',
+)
 const activeCycleStep = computed(() => cycleIndex.value + 1)
 const trackCountLabel = computed(() =>
   t('coreTimer.audio.trackCount', { count: sortedAudios.value.length }),
@@ -322,6 +329,10 @@ function extendSession() {
   remainingSeconds.value += 5 * 60
 }
 
+function toggleMinimalMode() {
+  isMinimalMode.value = !isMinimalMode.value
+}
+
 function selectPhase(phase: TimerPhase) {
   if (timerPhase.value === phase) return
 
@@ -424,7 +435,7 @@ onBeforeUnmount(() => {
         {{ error }}
       </div>
 
-      <section class="core-workspace">
+      <section class="core-workspace" :class="{ 'core-workspace--minimal': isMinimalMode }">
         <section class="core-stage">
           <header class="core-topbar">
             <div class="core-mode-field auth-field">
@@ -442,6 +453,17 @@ onBeforeUnmount(() => {
                 class="!w-full"
               />
             </div>
+
+            <Button
+              type="button"
+              :icon="minimalModeIcon"
+              rounded
+              text
+              :aria-label="minimalModeLabel"
+              :title="minimalModeLabel"
+              class="core-minimal-toggle"
+              @click="toggleMinimalMode"
+            />
           </header>
 
           <div v-if="isLoadingModes" class="core-empty-state">
@@ -766,6 +788,70 @@ onBeforeUnmount(() => {
   align-self: stretch;
   padding-block: 0;
   line-height: 1.2;
+}
+
+.core-minimal-toggle {
+  width: 3.1rem !important;
+  height: 3.1rem !important;
+  flex: 0 0 auto;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.28) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.core-minimal-toggle:hover {
+  background: rgba(var(--resource-mode-rgb), 0.14) !important;
+  color: #ffffff !important;
+}
+
+.core-workspace--minimal {
+  min-height: calc(100svh - 6.5rem);
+}
+
+.core-workspace--minimal .core-stage {
+  min-height: inherit;
+}
+
+.core-workspace--minimal .core-topbar {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.core-workspace--minimal .core-mode-field,
+.core-workspace--minimal .core-mode-summary,
+.core-workspace--minimal .core-player-footer,
+.core-workspace--minimal .core-session-stats,
+.core-workspace--minimal .core-music-panel,
+.core-workspace--minimal .core-eyebrow,
+.core-workspace--minimal .core-track-label {
+  display: none;
+}
+
+.core-workspace--minimal .core-focus-layout {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.core-workspace--minimal .core-timer-zone {
+  min-height: 0;
+}
+
+.core-workspace--minimal .core-timer-orbit {
+  width: min(86vw, 78svh, 42rem);
+}
+
+.core-workspace--minimal .core-timer-orbit::before,
+.core-workspace--minimal .core-timer-orbit::after,
+.core-workspace--minimal .core-timer-ring {
+  display: none;
+}
+
+.core-workspace--minimal .core-timer-readout strong {
+  font-size: clamp(5.2rem, 16vw, 10rem);
 }
 
 .core-empty-state,
@@ -1356,7 +1442,7 @@ onBeforeUnmount(() => {
   .core-topbar {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .core-phase-tabs,
