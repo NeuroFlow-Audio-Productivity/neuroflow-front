@@ -804,6 +804,29 @@ onBeforeUnmount(() => {
   color: #ffffff !important;
 }
 
+.core-mode-summary,
+.core-player-footer,
+.core-session-stats,
+.core-music-panel,
+.core-eyebrow,
+.core-track-label {
+  transition:
+    opacity 220ms ease,
+    transform 260ms ease,
+    visibility 0s linear 0s;
+}
+
+.core-timer-orbit,
+.core-timer-orbit::after,
+.core-timer-ring,
+.core-timer-readout strong {
+  transition:
+    opacity 260ms ease,
+    transform 320ms ease,
+    width 320ms ease,
+    font-size 320ms ease;
+}
+
 .core-workspace--minimal {
   min-height: calc(100svh - 6.5rem);
 }
@@ -818,14 +841,24 @@ onBeforeUnmount(() => {
   right: 1rem;
 }
 
-.core-workspace--minimal .core-mode-field,
+.core-workspace--minimal .core-mode-field {
+  display: none;
+}
+
 .core-workspace--minimal .core-mode-summary,
 .core-workspace--minimal .core-player-footer,
 .core-workspace--minimal .core-session-stats,
 .core-workspace--minimal .core-music-panel,
 .core-workspace--minimal .core-eyebrow,
 .core-workspace--minimal .core-track-label {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.65rem) scale(0.98);
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 240ms ease,
+    visibility 0s linear 240ms;
 }
 
 .core-workspace--minimal .core-focus-layout {
@@ -846,7 +879,7 @@ onBeforeUnmount(() => {
 
 .core-workspace--minimal .core-timer-orbit::after,
 .core-workspace--minimal .core-timer-ring {
-  display: none;
+  opacity: 0;
 }
 
 .core-workspace--minimal .core-timer-readout strong {
