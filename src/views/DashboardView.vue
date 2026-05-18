@@ -844,7 +844,6 @@ onBeforeUnmount(() => {
   width: min(86vw, 78svh, 42rem);
 }
 
-.core-workspace--minimal .core-timer-orbit::before,
 .core-workspace--minimal .core-timer-orbit::after,
 .core-workspace--minimal .core-timer-ring {
   display: none;
@@ -1505,10 +1504,6 @@ onBeforeUnmount(() => {
     padding: 1.45rem 1.55rem 1.35rem;
   }
 
-  .core-workspace--minimal .core-focus-layout {
-    transform: translateY(-4rem);
-  }
-
   .core-focus-layout {
     position: absolute;
     inset: 0;
@@ -1520,6 +1515,7 @@ onBeforeUnmount(() => {
   .core-timer-zone {
     min-height: 0;
     pointer-events: auto;
+    transform: translateY(-4rem);
   }
 
   .core-mode-summary {
