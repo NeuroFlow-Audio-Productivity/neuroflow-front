@@ -408,6 +408,7 @@ onBeforeUnmount(() => {
   <main
     class="core-page dark min-h-screen overflow-hidden px-0 py-4 text-[#f7fbf8]"
     :style="pageVisualStyle"
+    :class="{ 'core-page--minimal': isMinimalMode }"
   >
     <AppNavbar />
 
@@ -728,6 +729,27 @@ onBeforeUnmount(() => {
 
 .core-page :deep(.app-navbar) {
   width: calc(100% - 2rem);
+}
+
+.core-page :deep(.app-navbar) {
+  transition:
+    opacity 220ms ease,
+    transform 260ms ease,
+    visibility 0s linear 0s;
+}
+
+.core-page--minimal :deep(.app-navbar) {
+  position: absolute;
+  left: 50%;
+  top: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -0.75rem);
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 240ms ease,
+    visibility 0s linear 240ms;
 }
 
 .core-shell {
@@ -1586,6 +1608,20 @@ onBeforeUnmount(() => {
     height: calc(100svh - 3.5rem);
     min-height: 0;
     overflow: hidden;
+  }
+
+  .core-page--minimal .core-shell {
+    height: 100svh;
+    padding-top: 0;
+  }
+
+  .core-page--minimal .core-workspace--minimal,
+  .core-page--minimal .core-workspace--minimal .core-stage {
+    min-height: 100svh;
+  }
+
+  .core-page--minimal .core-timer-zone {
+    transform: none;
   }
 
   .core-workspace {
