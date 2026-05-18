@@ -1505,6 +1505,10 @@ onBeforeUnmount(() => {
     padding: 1.45rem 1.55rem 1.35rem;
   }
 
+  .core-workspace--minimal .core-focus-layout {
+    transform: translateY(-4rem);
+  }
+
   .core-focus-layout {
     position: absolute;
     inset: 0;
