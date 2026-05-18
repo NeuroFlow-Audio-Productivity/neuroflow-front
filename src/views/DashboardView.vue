@@ -752,10 +752,20 @@ onBeforeUnmount(() => {
 }
 
 .core-mode-field :deep(.p-select) {
+  align-items: center;
   min-height: 3.1rem;
   border-color: rgba(255, 255, 255, 0.16) !important;
   background: rgba(13, 10, 18, 0.72) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.core-mode-field :deep(.p-select-label) {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  align-self: stretch;
+  padding-block: 0;
+  line-height: 1.2;
 }
 
 .core-empty-state,
@@ -1352,6 +1362,38 @@ onBeforeUnmount(() => {
   .core-phase-tabs,
   .core-session-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .core-stage {
+    min-height: 0;
+  }
+
+  .core-focus-layout {
+    min-height: 0;
+    gap: 1.35rem;
+    padding-top: 1rem;
+  }
+
+  .core-timer-zone {
+    min-height: 18rem;
+  }
+
+  .core-timer-orbit {
+    width: min(72vw, 21rem);
+  }
+
+  .core-mode-summary {
+    margin-top: 0;
+  }
+
+  .core-player-footer {
+    margin-top: 1.25rem;
+  }
+
+  .core-controls {
+    margin-top: 0;
   }
 }
 
