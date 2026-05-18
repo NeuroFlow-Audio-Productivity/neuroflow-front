@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
@@ -17,11 +18,13 @@ import type { Mode } from '@/types/mode'
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak'
 
-const phaseDurations: Record<TimerPhase, number> = {
+const defaultPhaseDurations: Record<TimerPhase, number> = {
   work: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
+
+const phaseDurations = ref<Record<TimerPhase, number>>({ ...defaultPhaseDurations })
 
 const phaseCycle: TimerPhase[] = [
   'work',
@@ -49,12 +52,18 @@ const audios = ref<Audio[]>([])
 const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
 const timerPhase = ref<TimerPhase>('work')
-const remainingSeconds = ref(phaseDurations.work)
+const remainingSeconds = ref(defaultPhaseDurations.work)
 const cycleIndex = ref(0)
 const completedBlocks = ref(0)
 const isRunning = ref(false)
 const isLoadingModes = ref(false)
 const isLoadingAudios = ref(false)
+const isDurationDialogVisible = ref(false)
+const durationDraft = ref<Record<TimerPhase, number>>({
+  work: Math.floor(defaultPhaseDurations.work / 60),
+  shortBreak: Math.floor(defaultPhaseDurations.shortBreak / 60),
+  longBreak: Math.floor(defaultPhaseDurations.longBreak / 60),
+})
 const error = ref<string | null>(null)
 
 const audioElement = ref<HTMLAudioElement | null>(null)
@@ -71,7 +80,7 @@ const phaseOptions = computed(() =>
     key: phase,
     label: t(`coreTimer.phases.${phase}`),
     icon: phaseIcons[phase],
-    minutes: Math.floor(phaseDurations[phase] / 60),
+    minutes: Math.floor(phaseDurations.value[phase] / 60),
   })),
 )
 
@@ -118,7 +127,7 @@ const audioVolumeIcon = computed(() => {
   return 'pi pi-volume-up'
 })
 
-const currentPhaseTotalSeconds = computed(() => phaseDurations[timerPhase.value])
+const currentPhaseTotalSeconds = computed(() => phaseDurations.value[timerPhase.value])
 const formattedRemaining = computed(() => formatClock(remainingSeconds.value))
 const timerProgress = computed(() => {
   const totalSeconds = currentPhaseTotalSeconds.value
@@ -258,7 +267,7 @@ function completePhase() {
   const nextPhase = phaseCycle[cycleIndex.value] ?? 'work'
 
   timerPhase.value = nextPhase
-  remainingSeconds.value = phaseDurations[nextPhase]
+  remainingSeconds.value = phaseDurations.value[nextPhase]
 }
 
 function tickTimer() {
@@ -318,7 +327,7 @@ function toggleSession() {
 
 function resetSession() {
   pauseSession()
-  remainingSeconds.value = phaseDurations[timerPhase.value]
+  remainingSeconds.value = phaseDurations.value[timerPhase.value]
 }
 
 function skipPhase() {
@@ -327,6 +336,37 @@ function skipPhase() {
 
 function extendSession() {
   remainingSeconds.value += 5 * 60
+}
+
+function normalizeDurationMinutes(value: number) {
+  return Math.min(180, Math.max(1, Math.round(Number.isFinite(value) ? value : 1)))
+}
+
+function openDurationDialog() {
+  durationDraft.value = {
+    work: Math.floor(phaseDurations.value.work / 60),
+    shortBreak: Math.floor(phaseDurations.value.shortBreak / 60),
+    longBreak: Math.floor(phaseDurations.value.longBreak / 60),
+  }
+  isDurationDialogVisible.value = true
+}
+
+function saveDurationSettings() {
+  const previousTotalSeconds = currentPhaseTotalSeconds.value
+  const elapsedSeconds = Math.max(0, previousTotalSeconds - remainingSeconds.value)
+  const nextDurations: Record<TimerPhase, number> = {
+    work: normalizeDurationMinutes(durationDraft.value.work) * 60,
+    shortBreak: normalizeDurationMinutes(durationDraft.value.shortBreak) * 60,
+    longBreak: normalizeDurationMinutes(durationDraft.value.longBreak) * 60,
+  }
+
+  phaseDurations.value = nextDurations
+
+  const nextTotalSeconds = nextDurations[timerPhase.value]
+  remainingSeconds.value = isRunning.value
+    ? Math.max(1, Math.min(nextTotalSeconds, nextTotalSeconds - elapsedSeconds))
+    : nextTotalSeconds
+  isDurationDialogVisible.value = false
 }
 
 function toggleMinimalMode() {
@@ -339,7 +379,7 @@ function selectPhase(phase: TimerPhase) {
   pauseSession()
   timerPhase.value = phase
   cycleIndex.value = phaseCycle.findIndex((cyclePhase) => cyclePhase === phase)
-  remainingSeconds.value = phaseDurations[phase]
+  remainingSeconds.value = phaseDurations.value[phase]
 }
 
 function selectTrack(audio: Audio) {
@@ -427,6 +467,45 @@ onBeforeUnmount(() => {
       @playing="isAudioWaiting = false"
       @error="hasAudioError = true"
     />
+
+    <Dialog
+      v-model:visible="isDurationDialogVisible"
+      modal
+      :draggable="false"
+      :header="t('coreTimer.settings.title')"
+      class="core-duration-dialog"
+      :style="pageVisualStyle"
+    >
+      <form class="core-duration-form" v-on:submit.prevent="saveDurationSettings">
+        <label v-for="phase in phaseOptions" :key="phase.key" class="core-duration-field">
+          <span>{{ phase.label }}</span>
+          <input
+            v-model.number="durationDraft[phase.key]"
+            type="number"
+            min="1"
+            max="180"
+            step="1"
+            inputmode="numeric"
+          />
+          <small>{{ t('coreTimer.settings.minutes') }}</small>
+        </label>
+
+        <div class="core-duration-actions">
+          <Button
+            type="button"
+            :label="t('auth.actions.cancel')"
+            text
+            class="core-duration-cancel"
+            v-on:click="isDurationDialogVisible = false"
+          />
+          <Button
+            type="submit"
+            :label="t('coreTimer.actions.saveDurations')"
+            class="core-duration-save"
+          />
+        </div>
+      </form>
+    </Dialog>
 
     <section class="core-shell flex min-h-[calc(100svh-5.5rem)] flex-col pt-4 sm:pt-5">
       <div
@@ -537,6 +616,13 @@ onBeforeUnmount(() => {
                   :label="t('coreTimer.actions.addFive')"
                   class="core-soft-action"
                   @click="extendSession"
+                />
+                <Button
+                  type="button"
+                  icon="pi pi-cog"
+                  :label="t('coreTimer.actions.configureDurations')"
+                  class="core-soft-action"
+                  v-on:click="openDurationDialog"
                 />
               </div>
             </div>
@@ -765,7 +851,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: transparent !important;
   box-shadow: none;
 }
 
@@ -906,6 +992,123 @@ onBeforeUnmount(() => {
 
 .core-workspace--minimal .core-timer-readout strong {
   font-size: clamp(5.2rem, 16vw, 10rem);
+}
+
+:global(.core-duration-dialog) {
+  width: min(26rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.26);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(var(--resource-mode-rgb), 0.18), transparent 46%),
+    rgba(6, 12, 14, 0.98) !important;
+  color: #f7fbf8 !important;
+  box-shadow:
+    0 1.5rem 5rem rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(22px);
+}
+
+:global(.core-duration-dialog .p-dialog-header) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent !important;
+  color: #ffffff;
+  padding: 1rem 1.1rem;
+}
+
+:global(.core-duration-dialog .p-dialog-title) {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 760;
+}
+
+:global(.core-duration-dialog .p-dialog-close-button) {
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+:global(.core-duration-dialog .p-dialog-close-button:hover) {
+  background: rgba(var(--resource-mode-rgb), 0.14) !important;
+  color: #ffffff !important;
+}
+
+:global(.core-duration-dialog .p-dialog-content) {
+  background: transparent !important;
+  color: inherit;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.core-duration-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.core-duration-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem auto;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0.7rem;
+}
+
+.core-duration-field span {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.core-duration-field input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.22);
+  border-radius: 8px;
+  background: rgba(var(--resource-mode-rgb), 0.12);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 720;
+  outline: none;
+  padding: 0.55rem 0.65rem;
+}
+
+.core-duration-field input:focus {
+  border-color: var(--resource-mode-color);
+  box-shadow: 0 0 0 1px rgba(var(--resource-mode-rgb), 0.32);
+}
+
+.core-duration-field small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.core-duration-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.2rem;
+}
+
+.core-duration-cancel {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.core-duration-cancel:hover {
+  background: rgba(var(--resource-mode-rgb), 0.14) !important;
+  color: #ffffff !important;
+}
+
+.core-duration-save {
+  border-color: transparent !important;
+  background: var(--resource-mode-color) !important;
+  color: var(--resource-mode-ink) !important;
+  font-weight: 760 !important;
+}
+
+.core-duration-save:hover {
+  filter: brightness(1.06);
 }
 
 .core-empty-state,
@@ -1351,7 +1554,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 0.16rem;
   border-radius: 6px;
-  background: transparent;
+  background: transparent !important;
 }
 
 .core-track-wave span {

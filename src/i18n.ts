@@ -21,6 +21,7 @@ const authMessages = {
       sendResetLink: 'Send reset link',
       resetPassword: 'Reset password',
       signOut: 'Sign out',
+      cancel: 'Cancel'
     },
     fields: {
       name: 'Name',
@@ -142,6 +143,7 @@ const authMessages = {
       sendResetLink: 'リセットリンクを送信',
       resetPassword: 'パスワードを再設定',
       signOut: 'サインアウト',
+      cancel: 'キャンセル'
     },
     fields: {
       name: '名前',
@@ -261,6 +263,7 @@ const authMessages = {
       sendResetLink: 'Enviar link de reset',
       resetPassword: 'Redefinir senha',
       signOut: 'Sair',
+      cancel: 'Cancelar'
     },
     fields: {
       name: 'Nome',
@@ -380,6 +383,7 @@ const authMessages = {
       sendResetLink: 'Enviar enlace de reset',
       resetPassword: 'Restablecer contraseña',
       signOut: 'Salir',
+      cancel: 'Cancelar'
     },
     fields: {
       name: 'Nombre',
@@ -1357,6 +1361,12 @@ const coreTimerMessages = {
       chooseTrack: 'Choose {name}',
       enterMinimal: 'Enter minimal mode',
       exitMinimal: 'Exit minimal mode',
+      configureDurations: 'Configure timer durations',
+      saveDurations: 'Save durations',
+    },
+    settings: {
+      title: 'Timer durations',
+      minutes: 'min',
     },
     stats: {
       completed: 'Blocks done',
@@ -1411,6 +1421,12 @@ const coreTimerMessages = {
       chooseTrack: '{name} を選択',
       enterMinimal: 'ミニマルモードにする',
       exitMinimal: 'ミニマルモードを終了',
+      configureDurations: 'タイマー時間を設定',
+      saveDurations: '時間を保存',
+    },
+    settings: {
+      title: 'タイマー時間',
+      minutes: '分',
     },
     stats: {
       completed: '完了ブロック',
@@ -1465,6 +1481,12 @@ const coreTimerMessages = {
       chooseTrack: 'Escolher {name}',
       enterMinimal: 'Entrar no modo minimalista',
       exitMinimal: 'Sair do modo minimalista',
+      configureDurations: 'Configurar tempos',
+      saveDurations: 'Salvar tempos',
+    },
+    settings: {
+      title: 'Tempos do timer',
+      minutes: 'min',
     },
     stats: {
       completed: 'Blocos feitos',
@@ -1519,6 +1541,12 @@ const coreTimerMessages = {
       chooseTrack: 'Elegir {name}',
       enterMinimal: 'Entrar en modo minimalista',
       exitMinimal: 'Salir del modo minimalista',
+      configureDurations: 'Configurar tiempos',
+      saveDurations: 'Guardar tiempos',
+    },
+    settings: {
+      title: 'Tiempos del timer',
+      minutes: 'min',
     },
     stats: {
       completed: 'Bloques hechos',
