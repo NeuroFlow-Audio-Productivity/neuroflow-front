@@ -606,7 +606,7 @@ onBeforeUnmount(() => {
               @click="selectTrack(audio)"
             >
               <span class="core-track-wave" aria-hidden="true">
-                <span v-for="beat in 9" :key="beat" />
+                <span v-for="beat in 7" :key="beat" />
               </span>
               <span class="core-track-copy">
                 <strong>{{ audio.name }}</strong>
@@ -1323,28 +1323,70 @@ onBeforeUnmount(() => {
 
 .core-track-wave {
   display: flex;
-  width: 2.55rem;
-  height: 1.45rem;
+  width: 2.35rem;
+  height: 1.55rem;
   align-items: center;
   justify-content: center;
-  gap: 0.12rem;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.24);
+  gap: 0.16rem;
+  border-radius: 6px;
+  background: transparent;
 }
 
 .core-track-wave span {
-  width: 0.1rem;
-  height: 38%;
+  width: 0.08rem;
+  height: 42%;
   border-radius: 999px;
-  background: rgba(var(--resource-mode-rgb), 0.78);
+  background: color-mix(in srgb, var(--resource-mode-color), transparent 20%);
+  opacity: 0.9;
 }
 
-.core-track-wave span:nth-child(2n) {
-  height: 66%;
+.core-track--active .core-track-wave span {
+  animation: core-wave-pulse 920ms ease-in-out infinite;
+  transform-origin: center;
 }
 
-.core-track-wave span:nth-child(3n) {
-  height: 88%;
+.core-track--active .core-track-wave span:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.core-track--active .core-track-wave span:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.core-track--active .core-track-wave span:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.core-track--active .core-track-wave span:nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.core-track--active .core-track-wave span:nth-child(6) {
+  animation-delay: 400ms;
+}
+
+.core-track--active .core-track-wave span:nth-child(7) {
+  animation-delay: 480ms;
+}
+
+.core-track-wave span:nth-child(2) {
+  height: 64%;
+}
+
+.core-track-wave span:nth-child(3) {
+  height: 82%;
+}
+
+.core-track-wave span:nth-child(4) {
+  height: 100%;
+}
+
+.core-track-wave span:nth-child(5) {
+  height: 76%;
+}
+
+.core-track-wave span:nth-child(6) {
+  height: 56%;
 }
 
 .core-audio-console {
@@ -1457,6 +1499,25 @@ onBeforeUnmount(() => {
   color: #fecaca;
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+@keyframes core-wave-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.72);
+    opacity: 0.58;
+  }
+
+  50% {
+    transform: scaleY(1.12);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-track--active .core-track-wave span {
+    animation: none;
+  }
 }
 
 @keyframes core-ring-drift {
