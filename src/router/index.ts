@@ -7,6 +7,7 @@ import AudioShowView from '@/views/audios/AudioShowView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import HomeView from '@/views/HomeView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+import GoogleCallbackView from '@/views/auth/GoogleCallbackView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
@@ -32,6 +33,11 @@ const router = createRouter({
       name: 'login',
       component: LoginView,
       meta: { guestOnly: true },
+    },
+    {
+      path: '/auth/google/callback',
+      name: 'google-callback',
+      component: GoogleCallbackView,
     },
     {
       path: '/auth/register',

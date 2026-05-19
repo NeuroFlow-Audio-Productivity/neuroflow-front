@@ -27,11 +27,19 @@ const fieldError = (field: string) => auth.fieldErrors[field]?.[0]
 const safeRedirect = () => {
   const redirect = route.query.redirect
 
-  if (typeof redirect === 'string' && redirect.startsWith('/')) {
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
     return redirect
   }
 
   return '/dashboard'
+}
+
+const signInWithGoogle = async () => {
+  try {
+    await auth.startGoogleOAuth(safeRedirect())
+  } catch {
+    // The store keeps API errors available for the form.
+  }
 }
 
 const submit = async () => {
@@ -72,6 +80,22 @@ const submit = async () => {
         {{ auth.error }}
       </div>
 
+      <Button
+        type="button"
+        :label="t('auth.actions.signInWithGoogle')"
+        icon="pi pi-google"
+        :loading="isSubmitting"
+        outlined
+        class="w-full justify-center border-white/14 bg-white/[0.045] py-3 font-semibold text-white hover:border-[var(--mode-accent)]"
+        @click="signInWithGoogle"
+      />
+
+      <div class="flex items-center gap-3 text-xs font-semibold uppercase text-white/42">
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
+        <span>{{ t('auth.login.oauthDivider') }}</span>
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
+      </div>
+
       <div class="auth-field">
         <label class="auth-field-label" for="login-email">{{ t('auth.fields.email') }}</label>
         <InputText
@@ -107,10 +131,7 @@ const submit = async () => {
       </div>
 
       <div class="flex items-center justify-end">
-        <RouterLink
-          to="/auth/forgot-password"
-          class="theme-accent-link text-sm font-semibold"
-        >
+        <RouterLink to="/auth/forgot-password" class="theme-accent-link text-sm font-semibold">
           {{ t('auth.actions.forgotPassword') }}
         </RouterLink>
       </div>

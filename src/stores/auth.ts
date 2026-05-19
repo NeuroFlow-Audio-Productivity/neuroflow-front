@@ -6,6 +6,7 @@ import { translateValidationErrors, validationSummary } from '@/services/validat
 import type {
   ForgotPasswordPayload,
   LoginPayload,
+  LoginResponse,
   ProfileItem,
   RegisterPayload,
   ResendVerificationPayload,
@@ -24,6 +25,15 @@ type VerificationQuery = Record<
 const TOKEN_KEY = 'neuroflow-auth-token'
 const TOKEN_TYPE_KEY = 'neuroflow-auth-token-type'
 const USER_KEY = 'neuroflow-auth-user'
+const GOOGLE_OAUTH_STATE_KEY = 'neuroflow-google-oauth-state'
+const GOOGLE_OAUTH_STATE_TTL = 15 * 60 * 1000
+
+type GoogleOAuthStatePayload = {
+  state: string
+  redirect: string
+  redirect_uri: string | null
+  created_at: number
+}
 
 const storage = () => (typeof localStorage === 'undefined' ? undefined : localStorage)
 
@@ -52,6 +62,78 @@ const browserDeviceName = () => {
   if (typeof navigator === 'undefined') return 'NeuroFlow Web'
 
   return `NeuroFlow Web - ${navigator.platform || 'Browser'}`
+}
+
+const safeRedirectPath = (redirect?: string | null) =>
+  redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/dashboard'
+
+const googleOAuthRedirectUri = () => import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT_URI?.trim() || null
+
+const randomOAuthState = () => {
+  const bytes = new Uint8Array(16)
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes)
+
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  }
+
+  return Date.now().toString(36) + Math.random().toString(36).slice(2)
+}
+
+const readPendingGoogleOAuthState = () => {
+  const rawState = storage()?.getItem(GOOGLE_OAUTH_STATE_KEY)
+
+  if (!rawState) return null
+
+  try {
+    const parsed = JSON.parse(rawState) as Partial<GoogleOAuthStatePayload>
+
+    if (
+      typeof parsed.state === 'string' &&
+      typeof parsed.redirect === 'string' &&
+      (parsed.redirect_uri === null || typeof parsed.redirect_uri === 'string') &&
+      typeof parsed.created_at === 'number'
+    ) {
+      return parsed as GoogleOAuthStatePayload
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+const storePendingGoogleOAuthState = (payload: GoogleOAuthStatePayload) => {
+  storage()?.setItem(GOOGLE_OAUTH_STATE_KEY, JSON.stringify(payload))
+}
+
+const clearPendingGoogleOAuthState = () => {
+  storage()?.removeItem(GOOGLE_OAUTH_STATE_KEY)
+}
+
+const resolvePendingGoogleOAuthState = (state?: string | null) => {
+  const pendingState = readPendingGoogleOAuthState()
+
+  if (!pendingState) {
+    if (state) throw new ApiError(400, 'Invalid Google OAuth state.')
+
+    return { redirect: '/dashboard', redirect_uri: googleOAuthRedirectUri() }
+  }
+
+  if (Date.now() - pendingState.created_at > GOOGLE_OAUTH_STATE_TTL) {
+    clearPendingGoogleOAuthState()
+    throw new ApiError(400, 'Google OAuth session expired.')
+  }
+
+  if (!state || pendingState.state !== state) {
+    clearPendingGoogleOAuthState()
+    throw new ApiError(400, 'Invalid Google OAuth state.')
+  }
+
+  clearPendingGoogleOAuthState()
+
+  return pendingState
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -115,6 +197,17 @@ export const useAuthStore = defineStore('auth', {
 
     setCurrentUser(user: User | null) {
       this.user = user
+      this.persistSession()
+    },
+
+    applyLoginResponse(response: LoginResponse) {
+      this.token = response.access_token
+      this.tokenType = response.token_type
+      this.user = response.user
+      this.profileItems = []
+      this.profileItemsStatus = 'idle'
+      this.profileItemsError = null
+      this.setSuccess(response.message, 'auth.api.success.login')
       this.persistSession()
     },
 
@@ -219,6 +312,66 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async startGoogleOAuth(redirect?: string | null) {
+      this.resetFeedback()
+      this.status = 'loading'
+
+      try {
+        const pendingState = {
+          state: randomOAuthState(),
+          redirect: safeRedirectPath(redirect),
+          redirect_uri: googleOAuthRedirectUri(),
+          created_at: Date.now(),
+        }
+        const response = await authApi.googleRedirect({
+          redirect_uri: pendingState.redirect_uri,
+          state: pendingState.state,
+        })
+
+        storePendingGoogleOAuthState(pendingState)
+
+        if (typeof window !== 'undefined') {
+          window.location.assign(response.authorization_url)
+        }
+
+        return response
+      } catch (error) {
+        clearPendingGoogleOAuthState()
+        this.setError(error, 'auth.api.errors.oauthRedirect')
+        throw error
+      } finally {
+        this.status = 'ready'
+      }
+    },
+
+    async completeGoogleOAuth(code?: string | null, state?: string | null) {
+      this.resetFeedback()
+      this.status = 'loading'
+
+      try {
+        if (!code) {
+          clearPendingGoogleOAuthState()
+          throw new ApiError(400, 'Google OAuth authorization code is missing.')
+        }
+
+        const pendingState = resolvePendingGoogleOAuthState(state)
+        const response = await authApi.googleCallback({
+          code,
+          redirect_uri: pendingState.redirect_uri,
+          device_name: browserDeviceName(),
+        })
+
+        this.applyLoginResponse(response)
+
+        return { response, redirect: pendingState.redirect }
+      } catch (error) {
+        this.setError(error, 'auth.api.errors.oauth')
+        throw error
+      } finally {
+        this.status = 'ready'
+      }
+    },
+
     async login(payload: LoginPayload) {
       this.resetFeedback()
       this.status = 'loading'
@@ -229,14 +382,7 @@ export const useAuthStore = defineStore('auth', {
           device_name: payload.device_name ?? browserDeviceName(),
         })
 
-        this.token = response.access_token
-        this.tokenType = response.token_type
-        this.user = response.user
-        this.profileItems = []
-        this.profileItemsStatus = 'idle'
-        this.profileItemsError = null
-        this.setSuccess(response.message, 'auth.api.success.login')
-        this.persistSession()
+        this.applyLoginResponse(response)
 
         return response
       } catch (error) {

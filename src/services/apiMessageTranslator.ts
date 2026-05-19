@@ -7,6 +7,10 @@ type TranslateOptions = {
 
 const knownMessageKeys: Record<string, string> = {
   'login successful': 'auth.api.success.login',
+  'google authorization url generated successfully': 'auth.api.success.oauthRedirect',
+  'google oauth authorization code is missing': 'auth.api.errors.oauth',
+  'google oauth session expired': 'auth.api.errors.oauth',
+  'invalid google oauth state': 'auth.api.errors.oauth',
   'registration successful please verify your email address': 'auth.api.success.register',
   'verification email sent successfully': 'auth.api.success.verificationSent',
   'email verified successfully': 'auth.api.success.emailVerified',

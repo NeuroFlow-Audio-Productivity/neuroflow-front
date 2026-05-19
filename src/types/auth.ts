@@ -20,6 +20,8 @@ export type User = {
   name: string
   email: string
   email_verified_at: string | null
+  auth_provider?: 'google' | 'password'
+  google_avatar_url?: string | null
   created_at: string
   updated_at: string
 }
@@ -44,6 +46,23 @@ export type LoginResponse = {
   access_token: string
   token_type: string
   user: User
+}
+
+export type GoogleRedirectQuery = {
+  redirect_uri?: string | null
+  state?: string | null
+}
+
+export type GoogleRedirectResponse = {
+  message: string
+  authorization_url: string
+}
+
+export type GoogleCallbackPayload = {
+  code: string
+  redirect_uri?: string | null
+  device_name?: string | null
+  code_verifier?: string | null
 }
 
 export type MessageResponse = {

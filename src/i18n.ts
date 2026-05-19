@@ -15,13 +15,14 @@ const authMessages = {
   en: {
     actions: {
       signIn: 'Sign in',
+      signInWithGoogle: 'Continue with Google',
       createAccount: 'Create account',
       forgotPassword: 'Forgot password?',
       resendVerification: 'Resend verification',
       sendResetLink: 'Send reset link',
       resetPassword: 'Reset password',
       signOut: 'Sign out',
-      cancel: 'Cancel'
+      cancel: 'Cancel',
     },
     fields: {
       name: 'Name',
@@ -48,6 +49,7 @@ const authMessages = {
     api: {
       success: {
         login: 'Login successful.',
+        oauthRedirect: 'Google authorization URL generated successfully.',
         register: 'Registration successful. Please verify your email address.',
         verificationSent: 'Verification email sent successfully.',
         emailVerified: 'Email verified successfully.',
@@ -61,6 +63,8 @@ const authMessages = {
         network: 'Unable to reach the NeuroFlow API.',
         validation: 'Please review the highlighted fields.',
         credentials: 'These credentials do not match our records.',
+        oauth: 'Unable to complete Google sign-in.',
+        oauthRedirect: 'Unable to start Google sign-in.',
         register: 'Unable to create this account.',
         verificationResend: 'Unable to resend the verification email.',
         verification: 'Unable to verify this email address.',
@@ -87,8 +91,18 @@ const authMessages = {
         'Sign in with your verified NeuroFlow account and keep your session synced with the API token issued by Sanctum.',
       formTitle: 'Sign in',
       formSubtitle: 'Use the email and password you registered with.',
+      oauthDivider: 'or continue with',
       resetComplete: 'Your password was reset. You can sign in with the new password.',
       noAccount: 'No account yet?',
+    },
+    oauth: {
+      eyebrow: 'Google sign-in',
+      title: 'Finishing your secure sign-in.',
+      subtitle:
+        'Google returned you to NeuroFlow. The API is exchanging the authorization code for your session token.',
+      formTitle: 'Connecting Google',
+      formSubtitle: 'Keep this page open while NeuroFlow validates your Google account.',
+      checking: 'Completing Google sign-in...',
     },
     register: {
       eyebrow: 'Start protected',
@@ -137,13 +151,14 @@ const authMessages = {
   ja: {
     actions: {
       signIn: 'サインイン',
+      signInWithGoogle: 'Google で続行',
       createAccount: 'アカウント作成',
       forgotPassword: 'パスワードを忘れた場合',
       resendVerification: '確認メールを再送',
       sendResetLink: 'リセットリンクを送信',
       resetPassword: 'パスワードを再設定',
       signOut: 'サインアウト',
-      cancel: 'キャンセル'
+      cancel: 'キャンセル',
     },
     fields: {
       name: '名前',
@@ -170,6 +185,7 @@ const authMessages = {
     api: {
       success: {
         login: 'ログインしました。',
+        oauthRedirect: 'Google 認証 URL を生成しました。',
         register: '登録が完了しました。メールアドレスを確認してください。',
         verificationSent: '確認メールを送信しました。',
         emailVerified: 'メールアドレスを確認しました。',
@@ -183,6 +199,8 @@ const authMessages = {
         network: 'NeuroFlow API に接続できません。',
         validation: '入力内容を確認してください。',
         credentials: 'この認証情報は登録内容と一致しません。',
+        oauth: 'Google サインインを完了できません。',
+        oauthRedirect: 'Google サインインを開始できません。',
         register: 'このアカウントを作成できません。',
         verificationResend: '確認メールを再送できません。',
         verification: 'このメールアドレスを確認できません。',
@@ -209,8 +227,19 @@ const authMessages = {
         '確認済みの NeuroFlow アカウントでサインインし、Sanctum が発行した API トークンでセッションを維持します。',
       formTitle: 'サインイン',
       formSubtitle: '登録したメールとパスワードを入力してください。',
+      oauthDivider: 'または',
       resetComplete: 'パスワードを再設定しました。新しいパスワードでサインインできます。',
       noAccount: 'まだアカウントがありませんか？',
+    },
+    oauth: {
+      eyebrow: 'Google サインイン',
+      title: '安全なサインインを完了しています。',
+      subtitle:
+        'Google から NeuroFlow に戻りました。API が認証コードをセッショントークンに交換しています。',
+      formTitle: 'Google に接続中',
+      formSubtitle:
+        'NeuroFlow が Google アカウントを確認するまで、このページを開いたままにしてください。',
+      checking: 'Google サインインを完了しています...',
     },
     register: {
       eyebrow: '保護された開始',
@@ -257,13 +286,14 @@ const authMessages = {
   ptBR: {
     actions: {
       signIn: 'Entrar',
+      signInWithGoogle: 'Continuar com Google',
       createAccount: 'Criar conta',
       forgotPassword: 'Esqueceu a senha?',
       resendVerification: 'Reenviar verificação',
       sendResetLink: 'Enviar link de reset',
       resetPassword: 'Redefinir senha',
       signOut: 'Sair',
-      cancel: 'Cancelar'
+      cancel: 'Cancelar',
     },
     fields: {
       name: 'Nome',
@@ -290,6 +320,7 @@ const authMessages = {
     api: {
       success: {
         login: 'Login realizado com sucesso.',
+        oauthRedirect: 'URL de autorização do Google gerada com sucesso.',
         register: 'Cadastro realizado com sucesso. Verifique seu email.',
         verificationSent: 'Email de verificação enviado com sucesso.',
         emailVerified: 'Email verificado com sucesso.',
@@ -303,6 +334,8 @@ const authMessages = {
         network: 'Não foi possível conectar à API do NeuroFlow.',
         validation: 'Revise os campos destacados.',
         credentials: 'Essas credenciais não correspondem aos nossos registros.',
+        oauth: 'Não foi possível concluir o login com Google.',
+        oauthRedirect: 'Não foi possível iniciar o login com Google.',
         register: 'Não foi possível criar esta conta.',
         verificationResend: 'Não foi possível reenviar o email de verificação.',
         verification: 'Não foi possível verificar este email.',
@@ -329,8 +362,18 @@ const authMessages = {
         'Entre com sua conta NeuroFlow verificada e mantenha a sessão sincronizada pelo token Sanctum da API.',
       formTitle: 'Entrar',
       formSubtitle: 'Use o email e a senha cadastrados.',
+      oauthDivider: 'ou continue com',
       resetComplete: 'Sua senha foi redefinida. Você já pode entrar com a nova senha.',
       noAccount: 'Ainda não tem conta?',
+    },
+    oauth: {
+      eyebrow: 'Login com Google',
+      title: 'Concluindo seu acesso seguro.',
+      subtitle:
+        'O Google retornou ao NeuroFlow. A API está trocando o código de autorização pelo token da sessão.',
+      formTitle: 'Conectando ao Google',
+      formSubtitle: 'Mantenha esta página aberta enquanto o NeuroFlow valida sua conta Google.',
+      checking: 'Concluindo login com Google...',
     },
     register: {
       eyebrow: 'Comece protegido',
@@ -377,13 +420,14 @@ const authMessages = {
   es: {
     actions: {
       signIn: 'Entrar',
+      signInWithGoogle: 'Continuar con Google',
       createAccount: 'Crear cuenta',
       forgotPassword: '¿Olvidaste la contraseña?',
       resendVerification: 'Reenviar verificación',
       sendResetLink: 'Enviar enlace de reset',
       resetPassword: 'Restablecer contraseña',
       signOut: 'Salir',
-      cancel: 'Cancelar'
+      cancel: 'Cancelar',
     },
     fields: {
       name: 'Nombre',
@@ -410,6 +454,7 @@ const authMessages = {
     api: {
       success: {
         login: 'Inicio de sesión exitoso.',
+        oauthRedirect: 'URL de autorización de Google generada correctamente.',
         register: 'Registro exitoso. Verifica tu email.',
         verificationSent: 'Email de verificación enviado correctamente.',
         emailVerified: 'Email verificado correctamente.',
@@ -423,6 +468,8 @@ const authMessages = {
         network: 'No se pudo conectar con la API de NeuroFlow.',
         validation: 'Revisa los campos destacados.',
         credentials: 'Estas credenciales no coinciden con nuestros registros.',
+        oauth: 'No se pudo completar el inicio con Google.',
+        oauthRedirect: 'No se pudo iniciar sesión con Google.',
         register: 'No se pudo crear esta cuenta.',
         verificationResend: 'No se pudo reenviar el email de verificación.',
         verification: 'No se pudo verificar este email.',
@@ -449,8 +496,18 @@ const authMessages = {
         'Entra con tu cuenta NeuroFlow verificada y mantén la sesión sincronizada con el token Sanctum de la API.',
       formTitle: 'Entrar',
       formSubtitle: 'Usa el email y la contraseña registrados.',
+      oauthDivider: 'o continúa con',
       resetComplete: 'Tu contraseña fue restablecida. Ya puedes entrar con la nueva contraseña.',
       noAccount: '¿Todavía no tienes cuenta?',
+    },
+    oauth: {
+      eyebrow: 'Inicio con Google',
+      title: 'Terminando tu acceso seguro.',
+      subtitle:
+        'Google te devolvió a NeuroFlow. La API está cambiando el código de autorización por tu token de sesión.',
+      formTitle: 'Conectando con Google',
+      formSubtitle: 'Mantén esta página abierta mientras NeuroFlow valida tu cuenta de Google.',
+      checking: 'Completando inicio con Google...',
     },
     register: {
       eyebrow: 'Empieza protegido',
