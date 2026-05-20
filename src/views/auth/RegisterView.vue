@@ -32,7 +32,7 @@ const safeRedirect = () => {
     return redirect
   }
 
-  return '/dashboard'
+  return '/core'
 }
 
 const signInWithGoogle = async () => {

@@ -81,16 +81,9 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: DashboardView,
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/core',
       name: 'core',
       component: DashboardView,
-      meta: { requiresAuth: true },
     },
     {
       path: '/settings',
@@ -203,11 +196,11 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    return { name: 'dashboard' }
+    return { name: 'core' }
   }
 
   if (to.meta.adminOnly && !auth.isAdmin) {
-    return { name: 'dashboard' }
+    return { name: 'core' }
   }
 })
 

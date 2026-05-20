@@ -273,7 +273,7 @@ const submit = async () => {
     successMessage.value = t('users.feedback.saved')
 
     if (!auth.isAdmin && !isSettings.value) {
-      await router.push({ name: 'dashboard' })
+      await router.push({ name: 'core' })
     }
   } catch (caughtError) {
     setError(caughtError, 'users.errors.save')

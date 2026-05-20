@@ -31,7 +31,7 @@ const router = useRouter()
 const profileItems = computed(() => auth.profileItems)
 const profileLabel = computed(() => auth.user?.profile?.name ?? auth.user?.profile?.slug ?? '')
 const displayName = computed(() => auth.user?.name ?? t('nav.account'))
-const profileRouteOrder = ['/dashboard', '/core', '/flows', '/modes', '/audios', '/users', '/settings']
+const profileRouteOrder = ['/core', '/flows', '/modes', '/audios', '/users', '/settings']
 
 const initials = computed(() => {
   const parts = displayName.value.trim().split(/\s+/).filter(Boolean)
@@ -65,11 +65,16 @@ const usesNativeHref = (route: string) => {
 const normalizedItemRoute = (route: string) => {
   const trimmed = route.trim()
 
-  if (!trimmed) return '/dashboard'
-  if (trimmed.startsWith('/')) return trimmed
+  if (!trimmed) return '/core'
 
-  return `/${trimmed.replace(/^\/+/, '')}`
+  const normalized = trimmed.startsWith('/') ? trimmed : '/' + trimmed.replace(/^\/+/, '')
+
+  return normalized === '/dashboard' ? '/core' : normalized
 }
+
+const hasCoreProfileItem = computed(() =>
+  profileItems.value.some((item) => normalizedItemRoute(item.route) === '/core'),
+)
 
 const hasUsersProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/users'),
@@ -114,7 +119,7 @@ const navigationItems = computed(() => {
     key: `profile-${item.id}`,
   }))
 
-  if (profileItems.value.length === 0) {
+  if (!hasCoreProfileItem.value) {
     items.push(fallbackItem('fallback-core', t('nav.core'), '/core'))
   }
 
@@ -164,7 +169,7 @@ const ensureProfileItems = async () => {
   try {
     await auth.fetchProfileItems()
   } catch {
-    // The navbar falls back to the dashboard link if item loading is unavailable.
+    // The navbar falls back to the core link if item loading is unavailable.
   }
 }
 
@@ -228,19 +233,24 @@ watch(
     </nav>
 
     <nav
-      v-else-if="marketingLinks"
+      v-else
       class="hidden items-center gap-1 text-sm text-white/70 md:flex"
       :aria-label="t('nav.label')"
     >
-      <a class="navbar-link" href="#modes">
-        {{ t('nav.modes') }}
-      </a>
-      <a class="navbar-link" href="#privacy">
-        {{ t('nav.privacy') }}
-      </a>
-      <a class="navbar-link" href="#how-it-works">
-        {{ t('nav.howItWorks') }}
-      </a>
+      <RouterLink class="navbar-link" to="/core">
+        {{ t('nav.core') }}
+      </RouterLink>
+      <template v-if="marketingLinks">
+        <a class="navbar-link" href="#modes">
+          {{ t('nav.modes') }}
+        </a>
+        <a class="navbar-link" href="#privacy">
+          {{ t('nav.privacy') }}
+        </a>
+        <a class="navbar-link" href="#how-it-works">
+          {{ t('nav.howItWorks') }}
+        </a>
+      </template>
     </nav>
 
     <div class="flex min-w-0 items-center gap-2">
@@ -315,6 +325,21 @@ watch(
       </template>
 
       <template v-else>
+        <RouterLink
+          to="/core"
+          class="hidden h-10 items-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/16 sm:inline-flex md:hidden"
+        >
+          <i class="pi pi-bolt" aria-hidden="true" />
+          <span>{{ t('nav.core') }}</span>
+        </RouterLink>
+        <RouterLink
+          to="/core"
+          class="grid size-10 place-items-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/16 sm:hidden"
+          :aria-label="t('nav.core')"
+        >
+          <i class="pi pi-bolt" aria-hidden="true" />
+        </RouterLink>
+
         <template v-if="alternateTo">
           <RouterLink
             :to="alternateTo"

@@ -17,6 +17,9 @@ import type { Audio } from '@/types/audio'
 import type { Mode } from '@/types/mode'
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak'
+type BrowserWindowWithLegacyAudioContext = Window & {
+  webkitAudioContext?: typeof AudioContext
+}
 
 const defaultPhaseDurations: Record<TimerPhase, number> = {
   work: 25 * 60,
@@ -42,6 +45,33 @@ const phaseIcons: Record<TimerPhase, string> = {
   shortBreak: 'pi pi-sparkles',
   longBreak: 'pi pi-moon',
 }
+
+const fallbackModes: Mode[] = [
+  {
+    id: 1,
+    name: 'Focus',
+    description: 'Deep focus session for attention and flow.',
+    color: '#6ee7d8',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 2,
+    name: 'Relax',
+    description: 'Relax session for breathing and recovery.',
+    color: '#a7f3d0',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 3,
+    name: 'Sleep',
+    description: 'Sleep session for slower evening wind-down.',
+    color: '#c4b5fd',
+    created_at: '',
+    updated_at: '',
+  },
+]
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -74,6 +104,7 @@ const isAudioWaiting = ref(false)
 const hasAudioError = ref(false)
 
 let timerInterval: ReturnType<typeof window.setInterval> | undefined
+let completionAudioContext: AudioContext | undefined
 
 const phaseOptions = computed(() =>
   (['work', 'shortBreak', 'longBreak'] as TimerPhase[]).map((phase) => ({
@@ -200,21 +231,26 @@ function setError(caughtError: unknown, fallbackKey: string) {
 }
 
 async function loadModes() {
-  if (!auth.token) return
-
   isLoadingModes.value = true
   error.value = null
 
   try {
     const response = await modeApi.listAllModes(auth.token)
 
-    modes.value = response.data
-    selectedModeId.value =
-      selectedModeId.value ??
-      response.data.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
-      response.data[0]?.id ??
-      null
+    const nextModes = response.data.length > 0 ? response.data : fallbackModes
+
+    modes.value = nextModes
+    selectedModeId.value = nextModes.some((mode) => mode.id === selectedModeId.value)
+      ? selectedModeId.value
+      : (nextModes.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
+        nextModes[0]?.id ??
+        null)
   } catch (caughtError) {
+    modes.value = fallbackModes
+    selectedModeId.value =
+      fallbackModes.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
+      fallbackModes[0]?.id ??
+      null
     setError(caughtError, 'coreTimer.errors.loadModes')
   } finally {
     isLoadingModes.value = false
@@ -222,8 +258,6 @@ async function loadModes() {
 }
 
 async function loadAudiosForMode(modeId: number) {
-  if (!auth.token) return
-
   isLoadingAudios.value = true
   error.value = null
 
@@ -258,6 +292,77 @@ function clearTimerInterval() {
   timerInterval = undefined
 }
 
+function getCompletionAudioContext() {
+  const AudioContextConstructor =
+    window.AudioContext ?? (window as BrowserWindowWithLegacyAudioContext).webkitAudioContext
+
+  if (!AudioContextConstructor) return null
+
+  completionAudioContext ??= new AudioContextConstructor()
+
+  return completionAudioContext
+}
+
+async function prepareCompletionBell() {
+  const audioContext = getCompletionAudioContext()
+
+  if (!audioContext || audioContext.state !== 'suspended') return
+
+  try {
+    await audioContext.resume()
+  } catch {
+    // The timer can still run if the browser refuses notification audio.
+  }
+}
+
+async function ringCompletionBell() {
+  const audioContext = getCompletionAudioContext()
+
+  if (!audioContext) return
+
+  try {
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume()
+    }
+
+    const now = audioContext.currentTime
+    const bellFrequencies = [880, 1174.66]
+    const masterGain = audioContext.createGain()
+
+    masterGain.gain.setValueAtTime(0.0001, now)
+    masterGain.gain.exponentialRampToValueAtTime(0.48, now + 0.02)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.05)
+    masterGain.connect(audioContext.destination)
+
+    bellFrequencies.forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator()
+      const noteGain = audioContext.createGain()
+      const startTime = now + index * 0.14
+      const stopTime = startTime + 0.72
+
+      oscillator.type = 'sine'
+      oscillator.frequency.setValueAtTime(frequency, startTime)
+      noteGain.gain.setValueAtTime(0.0001, startTime)
+      noteGain.gain.exponentialRampToValueAtTime(1, startTime + 0.02)
+      noteGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+
+      oscillator.connect(noteGain).connect(masterGain)
+      oscillator.start(startTime)
+      oscillator.stop(stopTime)
+      oscillator.onended = () => {
+        oscillator.disconnect()
+        noteGain.disconnect()
+
+        if (index === bellFrequencies.length - 1) {
+          masterGain.disconnect()
+        }
+      }
+    })
+  } catch {
+    // Bell playback is best-effort and should never block the next phase.
+  }
+}
+
 function completePhase() {
   if (timerPhase.value === 'work') {
     completedBlocks.value += 1
@@ -270,9 +375,15 @@ function completePhase() {
   remainingSeconds.value = phaseDurations.value[nextPhase]
 }
 
+function completeExpiredPhase() {
+  void ringCompletionBell()
+  pauseSession()
+  completePhase()
+}
+
 function tickTimer() {
   if (remainingSeconds.value <= 1) {
-    completePhase()
+    completeExpiredPhase()
     return
   }
 
@@ -307,12 +418,14 @@ function pauseAudio() {
 
 async function startSession() {
   isRunning.value = true
+  void prepareCompletionBell()
   await nextTick()
   await playAudio()
 }
 
 function pauseSession() {
   isRunning.value = false
+  clearTimerInterval()
   pauseAudio()
 }
 
@@ -441,6 +554,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimerInterval()
   pauseAudio()
+
+  if (completionAudioContext && completionAudioContext.state !== 'closed') {
+    void completionAudioContext.close()
+  }
+
+  completionAudioContext = undefined
 })
 </script>
 

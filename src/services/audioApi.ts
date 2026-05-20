@@ -41,18 +41,22 @@ const createAudioFormData = (
 export const audioSourceUrl = (audio: Pick<Audio, 'url'> | null | undefined) => audio?.url ?? ''
 
 export const audioApi = {
-  listAudios: (token: string, query: PaginationQuery = {}) =>
+  listAudios: (token?: string | null, query: PaginationQuery = {}) =>
     apiRequest<AudiosResponse>('/audios', {
       token,
       query,
     }),
 
-  listAllAudios: (token: string) =>
+  listAllAudios: (token?: string | null) =>
     apiRequest<AudiosAllResponse>('/audios/all', {
       token,
     }),
 
-  listAudiosForMode: (token: string, mode: string | number, query: PaginationQuery = {}) =>
+  listAudiosForMode: (
+    token: string | null | undefined,
+    mode: string | number,
+    query: PaginationQuery = {},
+  ) =>
     apiRequest<AudiosResponse>(`/modes/${encodeURIComponent(String(mode))}/audios`, {
       token,
       query,

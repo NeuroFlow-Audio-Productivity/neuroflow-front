@@ -76,7 +76,7 @@ const browserDeviceName = () => {
 }
 
 const safeRedirectPath = (redirect?: string | null) =>
-  redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/dashboard'
+  redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/core'
 
 const googleOAuthRedirectUri = () => import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT_URI?.trim() || null
 
@@ -129,7 +129,7 @@ const resolvePendingGoogleOAuthState = (state?: string | null) => {
   if (!pendingState) {
     if (state) throw new ApiError(400, 'Invalid Google OAuth state.')
 
-    return { redirect: '/dashboard', redirect_uri: googleOAuthRedirectUri() }
+    return { redirect: '/core', redirect_uri: googleOAuthRedirectUri() }
   }
 
   if (Date.now() - pendingState.created_at > GOOGLE_OAUTH_STATE_TTL) {
@@ -150,7 +150,7 @@ const resolvePendingGoogleOAuthState = (state?: string | null) => {
 const resolveFrontendGoogleOAuthState = (state?: string | null) => {
   const pendingState = readPendingGoogleOAuthState()
 
-  if (!pendingState) return { redirect: '/dashboard', redirect_uri: googleOAuthRedirectUri() }
+  if (!pendingState) return { redirect: '/core', redirect_uri: googleOAuthRedirectUri() }
 
   if (Date.now() - pendingState.created_at > GOOGLE_OAUTH_STATE_TTL) {
     clearPendingGoogleOAuthState()
