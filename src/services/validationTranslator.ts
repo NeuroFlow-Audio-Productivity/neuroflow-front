@@ -46,6 +46,10 @@ export const translateValidationMessage = (message: string, field: string) => {
     return translate('auth.api.errors.oauthPasswordAccount')
   }
 
+  if (normalized.includes('uses google sign-in') || normalized.includes('continue with google')) {
+    return translate('auth.api.errors.oauthGoogleAccount')
+  }
+
   if (normalized.includes('required')) {
     return translate('auth.validation.required', { field: label })
   }

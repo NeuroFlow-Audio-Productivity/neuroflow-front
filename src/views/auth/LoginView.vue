@@ -96,7 +96,7 @@ const submit = async () => {
         icon="pi pi-google"
         :loading="isSubmitting"
         outlined
-        class="w-full justify-center border-white/14 bg-white/[0.045] py-3 font-semibold text-white hover:border-[var(--mode-accent)]"
+        class="theme-google-button !w-full"
         @click="signInWithGoogle"
       />
 

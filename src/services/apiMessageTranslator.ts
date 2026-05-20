@@ -83,6 +83,10 @@ export const translateApiMessage = (
     return translateApiKey('auth.api.errors.oauthPasswordAccount')
   }
 
+  if (normalized.includes('uses google sign-in') || normalized.includes('continue with google')) {
+    return translateApiKey('auth.api.errors.oauthGoogleAccount')
+  }
+
   const key = knownMessageKeys[normalized]
 
   if (key) return translateApiKey(key)

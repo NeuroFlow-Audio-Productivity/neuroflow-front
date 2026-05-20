@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const route = useRoute()
 const router = useRouter()
 
 const form = reactive({
@@ -23,6 +24,24 @@ const form = reactive({
 const isSubmitting = computed(() => auth.status === 'loading')
 
 const fieldError = (field: string) => auth.fieldErrors[field]?.[0]
+
+const safeRedirect = () => {
+  const redirect = route.query.redirect
+
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+
+  return '/dashboard'
+}
+
+const signInWithGoogle = async () => {
+  try {
+    await auth.startGoogleOAuth(safeRedirect())
+  } catch {
+    // The store keeps API errors available for the form.
+  }
+}
 
 const submit = async () => {
   try {
@@ -56,6 +75,22 @@ const submit = async () => {
         class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
       >
         {{ auth.error }}
+      </div>
+
+      <Button
+        type="button"
+        :label="t('auth.actions.signInWithGoogle')"
+        icon="pi pi-google"
+        :loading="isSubmitting"
+        outlined
+        class="theme-google-button !w-full"
+        @click="signInWithGoogle"
+      />
+
+      <div class="flex items-center gap-3 text-xs font-semibold uppercase text-white/42">
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
+        <span>{{ t('auth.login.oauthDivider') }}</span>
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
       </div>
 
       <div class="auth-field">

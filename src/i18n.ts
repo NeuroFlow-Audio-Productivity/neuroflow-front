@@ -66,6 +66,7 @@ const authMessages = {
         oauth: 'Unable to complete Google sign-in.',
         oauthPasswordAccount:
           'This email already uses password login. Sign in with email and password.',
+        oauthGoogleAccount: 'This email already uses Google sign-in. Please continue with Google.',
         oauthRedirect: 'Unable to start Google sign-in.',
         register: 'Unable to create this account.',
         verificationResend: 'Unable to resend the verification email.',
@@ -204,6 +205,8 @@ const authMessages = {
         oauth: 'Google サインインを完了できません。',
         oauthPasswordAccount:
           'このメールアドレスはパスワードログインで登録されています。メールとパスワードでサインインしてください。',
+        oauthGoogleAccount:
+          'このメールアドレスは Google サインインで登録されています。Google で続行してください。',
         oauthRedirect: 'Google サインインを開始できません。',
         register: 'このアカウントを作成できません。',
         verificationResend: '確認メールを再送できません。',
@@ -340,6 +343,7 @@ const authMessages = {
         credentials: 'Essas credenciais não correspondem aos nossos registros.',
         oauth: 'Não foi possível concluir o login com Google.',
         oauthPasswordAccount: 'Este email já usa login por senha. Entre com email e senha.',
+        oauthGoogleAccount: 'Este email já usa login com Google. Continue com Google.',
         oauthRedirect: 'Não foi possível iniciar o login com Google.',
         register: 'Não foi possível criar esta conta.',
         verificationResend: 'Não foi possível reenviar o email de verificação.',
@@ -476,6 +480,7 @@ const authMessages = {
         oauth: 'No se pudo completar el inicio con Google.',
         oauthPasswordAccount:
           'Este email ya usa inicio con contraseña. Entra con email y contraseña.',
+        oauthGoogleAccount: 'Este email ya usa inicio con Google. Continúa con Google.',
         oauthRedirect: 'No se pudo iniciar sesión con Google.',
         register: 'No se pudo crear esta cuenta.',
         verificationResend: 'No se pudo reenviar el email de verificación.',
