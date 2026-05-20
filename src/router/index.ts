@@ -29,6 +29,10 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/login',
+      redirect: (to) => ({ name: 'login', query: to.query }),
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: LoginView,
@@ -37,6 +41,11 @@ const router = createRouter({
     {
       path: '/auth/google/callback',
       name: 'google-callback',
+      component: GoogleCallbackView,
+    },
+    {
+      path: '/auth/callback',
+      name: 'auth-callback',
       component: GoogleCallbackView,
     },
     {

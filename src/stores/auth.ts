@@ -27,12 +27,23 @@ const TOKEN_TYPE_KEY = 'neuroflow-auth-token-type'
 const USER_KEY = 'neuroflow-auth-user'
 const GOOGLE_OAUTH_STATE_KEY = 'neuroflow-google-oauth-state'
 const GOOGLE_OAUTH_STATE_TTL = 15 * 60 * 1000
+const GOOGLE_OAUTH_POPUP_TIMEOUT = 3 * 60 * 1000
 
 type GoogleOAuthStatePayload = {
   state: string
   redirect: string
   redirect_uri: string | null
   created_at: number
+}
+
+type GoogleOAuthCallbackPayload = Partial<LoginResponse> & {
+  message?: string
+  errors?: ValidationErrors
+}
+
+type GoogleOAuthLoginResponse = Omit<LoginResponse, 'message' | 'user'> & {
+  message?: string
+  user?: User
 }
 
 const storage = () => (typeof localStorage === 'undefined' ? undefined : localStorage)
@@ -136,6 +147,298 @@ const resolvePendingGoogleOAuthState = (state?: string | null) => {
   return pendingState
 }
 
+const resolveFrontendGoogleOAuthState = (state?: string | null) => {
+  const pendingState = readPendingGoogleOAuthState()
+
+  if (!pendingState) return { redirect: '/dashboard', redirect_uri: googleOAuthRedirectUri() }
+
+  if (Date.now() - pendingState.created_at > GOOGLE_OAUTH_STATE_TTL) {
+    clearPendingGoogleOAuthState()
+    throw new ApiError(400, 'Google OAuth session expired.')
+  }
+
+  if (state && pendingState.state !== state) {
+    clearPendingGoogleOAuthState()
+    throw new ApiError(400, 'Invalid Google OAuth state.')
+  }
+
+  clearPendingGoogleOAuthState()
+
+  return pendingState
+}
+
+type OAuthQuery = Record<string, unknown>
+
+const queryString = (query: OAuthQuery, key: string) => {
+  const value = query[key]
+
+  if (Array.isArray(value)) {
+    return value.find((item): item is string => typeof item === 'string') ?? null
+  }
+
+  return typeof value === 'string' ? value : null
+}
+
+const nullableQueryString = (query: OAuthQuery, key: string) => {
+  const value = queryString(query, key)
+
+  return value && value !== 'null' ? value : null
+}
+
+const queryRecordFromSearchParams = (params: URLSearchParams) => {
+  const query: OAuthQuery = {}
+
+  params.forEach((value, key) => {
+    if (query[key] === undefined) {
+      query[key] = value
+      return
+    }
+
+    const currentValue = query[key]
+    query[key] = Array.isArray(currentValue)
+      ? [...currentValue, value]
+      : [String(currentValue), value]
+  })
+
+  return query
+}
+
+const integerQueryValue = (value: unknown) => {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) ? parsed : null
+}
+
+const userFromUnknown = (value: unknown): User | null => {
+  if (!value || typeof value !== 'object') return null
+
+  const payload = value as Record<string, unknown>
+  const id = integerQueryValue(payload.id)
+  const name = typeof payload.name === 'string' ? payload.name : null
+  const email = typeof payload.email === 'string' ? payload.email : null
+
+  if (id === null || !name || !email) return null
+
+  const profilePayload = payload.profile as Record<string, unknown> | null | undefined
+  const profileId = integerQueryValue(profilePayload?.id)
+  const profile =
+    profilePayload &&
+    profileId !== null &&
+    typeof profilePayload.name === 'string' &&
+    typeof profilePayload.slug === 'string'
+      ? {
+          id: profileId,
+          name: profilePayload.name,
+          slug: profilePayload.slug,
+          created_at:
+            typeof profilePayload.created_at === 'string' ? profilePayload.created_at : '',
+          updated_at:
+            typeof profilePayload.updated_at === 'string' ? profilePayload.updated_at : '',
+        }
+      : null
+
+  return {
+    id,
+    profile,
+    name,
+    email,
+    email_verified_at:
+      typeof payload.email_verified_at === 'string' ? payload.email_verified_at || null : null,
+    auth_provider:
+      payload.auth_provider === 'google' || payload.auth_provider === 'password'
+        ? payload.auth_provider
+        : undefined,
+    google_avatar_url:
+      typeof payload.google_avatar_url === 'string' ? payload.google_avatar_url || null : null,
+    created_at: typeof payload.created_at === 'string' ? payload.created_at : '',
+    updated_at: typeof payload.updated_at === 'string' ? payload.updated_at : '',
+  }
+}
+
+const userFromQuery = (query: OAuthQuery) => {
+  const encodedUser = queryString(query, 'user')
+
+  if (encodedUser) {
+    try {
+      const user = userFromUnknown(JSON.parse(encodedUser))
+
+      if (user) return user
+    } catch {
+      // Fall through to bracket notation used by PHP query strings.
+    }
+  }
+
+  return userFromUnknown({
+    id: queryString(query, 'user[id]'),
+    name: queryString(query, 'user[name]'),
+    email: queryString(query, 'user[email]'),
+    email_verified_at: nullableQueryString(query, 'user[email_verified_at]'),
+    auth_provider: queryString(query, 'user[auth_provider]'),
+    google_avatar_url: nullableQueryString(query, 'user[google_avatar_url]'),
+    created_at: queryString(query, 'user[created_at]'),
+    updated_at: queryString(query, 'user[updated_at]'),
+    profile: {
+      id: queryString(query, 'user[profile][id]'),
+      name: queryString(query, 'user[profile][name]'),
+      slug: queryString(query, 'user[profile][slug]'),
+      created_at: queryString(query, 'user[profile][created_at]'),
+      updated_at: queryString(query, 'user[profile][updated_at]'),
+    },
+  })
+}
+
+const googleOAuthErrorFromQuery = (query: OAuthQuery) => {
+  const error = queryString(query, 'error')
+
+  if (!error) return null
+
+  if (error === 'auth_provider_password') {
+    return new ApiError(
+      422,
+      'This email already uses password login. Sign in with email and password.',
+      {
+        auth_provider: ['password'],
+      },
+    )
+  }
+
+  return new ApiError(
+    400,
+    queryString(query, 'error_description') ?? 'Unable to complete Google sign-in.',
+  )
+}
+
+const loginResponseFromQuery = (query: OAuthQuery) => {
+  const accessToken = queryString(query, 'access_token')
+  const tokenType = queryString(query, 'token_type')
+
+  if (!accessToken && !tokenType) return null
+
+  const user = userFromQuery(query)
+
+  if (!accessToken || !tokenType) {
+    throw new ApiError(422, 'The API rejected this request.')
+  }
+
+  return {
+    message: queryString(query, 'message') ?? 'Login successful.',
+    access_token: accessToken,
+    token_type: tokenType,
+    ...(user ? { user } : {}),
+  }
+}
+
+const extractJsonText = (text: string) => {
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+
+  if (start === -1 || end <= start) return null
+
+  return text.slice(start, end + 1)
+}
+
+const isGoogleOAuthLoginResponse = (
+  payload: GoogleOAuthCallbackPayload,
+): payload is GoogleOAuthLoginResponse =>
+  typeof payload.access_token === 'string' &&
+  typeof payload.token_type === 'string' &&
+  (payload.user === undefined || (typeof payload.user === 'object' && payload.user !== null))
+
+const popupCallbackPayload = (targetWindow: Window, expectedState: string) => {
+  let popupUrl: URL
+
+  try {
+    popupUrl = new URL(targetWindow.location.href)
+  } catch {
+    return null
+  }
+
+  if (
+    !popupUrl.pathname.endsWith('/auth/google/callback') &&
+    !popupUrl.pathname.endsWith('/auth/callback')
+  ) {
+    return null
+  }
+
+  const query = queryRecordFromSearchParams(popupUrl.searchParams)
+  const callbackState = queryString(query, 'state')
+
+  if (callbackState && callbackState !== expectedState) {
+    throw new ApiError(400, 'Invalid Google OAuth state.')
+  }
+
+  const queryError = googleOAuthErrorFromQuery(query)
+
+  if (queryError) throw queryError
+
+  const queryPayload = loginResponseFromQuery(query)
+
+  if (queryPayload) return queryPayload
+
+  const bodyText = targetWindow.document.body?.innerText?.trim() ?? ''
+  const jsonText = extractJsonText(bodyText)
+
+  if (!jsonText) return null
+
+  try {
+    return JSON.parse(jsonText) as GoogleOAuthCallbackPayload
+  } catch {
+    throw new ApiError(500, 'The API rejected this request.')
+  }
+}
+
+const waitForGoogleOAuthPopup = (targetWindow: Window, expectedState: string) =>
+  new Promise<GoogleOAuthLoginResponse>((resolve, reject) => {
+    const startedAt = Date.now()
+    let intervalId = 0
+
+    const finish = (callback: () => void) => {
+      window.clearInterval(intervalId)
+      callback()
+    }
+
+    intervalId = window.setInterval(() => {
+      if (targetWindow.closed) {
+        finish(() => reject(new ApiError(400, 'Google OAuth sign-in was canceled.')))
+        return
+      }
+
+      if (Date.now() - startedAt > GOOGLE_OAUTH_POPUP_TIMEOUT) {
+        targetWindow.close()
+        finish(() => reject(new ApiError(408, 'Google OAuth sign-in timed out.')))
+        return
+      }
+
+      try {
+        const payload = popupCallbackPayload(targetWindow, expectedState)
+
+        if (!payload) return
+
+        targetWindow.close()
+
+        if (isGoogleOAuthLoginResponse(payload)) {
+          finish(() => resolve(payload))
+          return
+        }
+
+        finish(() =>
+          reject(
+            new ApiError(
+              422,
+              payload.message ?? 'The API rejected this request.',
+              payload.errors ?? {},
+            ),
+          ),
+        )
+      } catch (error) {
+        if (error instanceof ApiError) {
+          targetWindow.close()
+          finish(() => reject(error))
+        }
+      }
+    }, 300)
+  })
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: readToken(),
@@ -209,6 +512,20 @@ export const useAuthStore = defineStore('auth', {
       this.profileItemsError = null
       this.setSuccess(response.message, 'auth.api.success.login')
       this.persistSession()
+    },
+
+    async applyGoogleOAuthLoginResponse(response: GoogleOAuthLoginResponse) {
+      const user = response.user ?? (await authApi.currentUser(response.access_token))
+      const loginResponse = {
+        message: response.message ?? 'Login successful.',
+        access_token: response.access_token,
+        token_type: response.token_type,
+        user,
+      }
+
+      this.applyLoginResponse(loginResponse)
+
+      return loginResponse
     },
 
     setSuccess(message: string | null | undefined, fallbackKey: string) {
@@ -312,11 +629,15 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async startGoogleOAuth(redirect?: string | null) {
+    async startGoogleOAuth(redirect?: string | null, targetWindow?: Window | null) {
       this.resetFeedback()
       this.status = 'loading'
 
       try {
+        if (targetWindow === null) {
+          throw new ApiError(400, 'Google OAuth popup was blocked.')
+        }
+
         const pendingState = {
           state: randomOAuthState(),
           redirect: safeRedirectPath(redirect),
@@ -330,14 +651,61 @@ export const useAuthStore = defineStore('auth', {
 
         storePendingGoogleOAuthState(pendingState)
 
+        if (targetWindow && !targetWindow.closed) {
+          targetWindow.location.assign(response.authorization_url)
+
+          const loginResponse = await waitForGoogleOAuthPopup(targetWindow, pendingState.state)
+
+          clearPendingGoogleOAuthState()
+          const completedResponse = await this.applyGoogleOAuthLoginResponse(loginResponse)
+
+          return { response: completedResponse, redirect: pendingState.redirect }
+        }
+
         if (typeof window !== 'undefined') {
           window.location.assign(response.authorization_url)
         }
 
         return response
       } catch (error) {
+        if (targetWindow && !targetWindow.closed) {
+          targetWindow.close()
+        }
+
         clearPendingGoogleOAuthState()
         this.setError(error, 'auth.api.errors.oauthRedirect')
+        throw error
+      } finally {
+        this.status = 'ready'
+      }
+    },
+
+    async completeGoogleOAuthRedirect(query: OAuthQuery) {
+      this.resetFeedback()
+      this.status = 'loading'
+
+      try {
+        const queryError = googleOAuthErrorFromQuery(query)
+
+        if (queryError) {
+          clearPendingGoogleOAuthState()
+          throw queryError
+        }
+
+        const response = loginResponseFromQuery(query)
+
+        if (!response) {
+          clearPendingGoogleOAuthState()
+          throw new ApiError(400, 'Google OAuth token payload is missing.')
+        }
+
+        const pendingState = resolveFrontendGoogleOAuthState(queryString(query, 'state'))
+
+        const completedResponse = await this.applyGoogleOAuthLoginResponse(response)
+
+        return { response: completedResponse, redirect: pendingState.redirect }
+      } catch (error) {
+        this.setError(error, 'auth.api.errors.oauth')
         throw error
       } finally {
         this.status = 'ready'

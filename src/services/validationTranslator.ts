@@ -39,6 +39,13 @@ export const translateValidationMessage = (message: string, field: string) => {
     return translate('auth.api.errors.credentials')
   }
 
+  if (
+    normalized.includes('registered with password login') ||
+    normalized.includes('sign in with email and password')
+  ) {
+    return translate('auth.api.errors.oauthPasswordAccount')
+  }
+
   if (normalized.includes('required')) {
     return translate('auth.validation.required', { field: label })
   }
@@ -78,9 +85,18 @@ export const translateValidationMessage = (message: string, field: string) => {
   return translate('auth.validation.default', { field: label })
 }
 
+const shouldIgnoreValidationMessage = (field: string, message: string) =>
+  field === 'auth_provider' && ['password', 'google'].includes(message.trim().toLowerCase())
+
 export const translateValidationErrors = (errors: ValidationErrors) =>
   Object.entries(errors).reduce<ValidationErrors>((translatedErrors, [field, messages]) => {
-    translatedErrors[field] = messages.map((message) => translateValidationMessage(message, field))
+    const translatedMessages = messages
+      .filter((message) => !shouldIgnoreValidationMessage(field, message))
+      .map((message) => translateValidationMessage(message, field))
+
+    if (translatedMessages.length) {
+      translatedErrors[field] = translatedMessages
+    }
 
     return translatedErrors
   }, {})

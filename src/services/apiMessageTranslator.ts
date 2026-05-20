@@ -75,6 +75,14 @@ export const translateApiMessage = (
   options: TranslateOptions = {},
 ) => {
   const normalized = normalizeMessage(message ?? '')
+
+  if (
+    normalized.includes('registered with password login') ||
+    normalized.includes('sign in with email and password')
+  ) {
+    return translateApiKey('auth.api.errors.oauthPasswordAccount')
+  }
+
   const key = knownMessageKeys[normalized]
 
   if (key) return translateApiKey(key)

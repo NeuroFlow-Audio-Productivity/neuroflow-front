@@ -21,6 +21,16 @@ const form = reactive({
 
 const isSubmitting = computed(() => auth.status === 'loading')
 const resetCompleted = computed(() => route.query.reset === 'complete')
+const oauthRedirectError = computed(() => {
+  const error = route.query.error
+
+  if (typeof error !== 'string') return null
+
+  return error === 'auth_provider_password'
+    ? t('auth.api.errors.oauthPasswordAccount')
+    : t('auth.api.errors.oauth')
+})
+const displayError = computed(() => auth.error ?? oauthRedirectError.value)
 
 const fieldError = (field: string) => auth.fieldErrors[field]?.[0]
 
@@ -74,10 +84,10 @@ const submit = async () => {
       </div>
 
       <div
-        v-if="auth.error"
+        v-if="displayError"
         class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
       >
-        {{ auth.error }}
+        {{ displayError }}
       </div>
 
       <Button

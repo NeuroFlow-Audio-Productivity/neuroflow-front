@@ -15,6 +15,8 @@ const queryString = (value: unknown) => (typeof value === 'string' ? value : nul
 
 const callbackCode = computed(() => queryString(route.query.code))
 const callbackState = computed(() => queryString(route.query.state))
+const callbackAccessToken = computed(() => queryString(route.query.access_token))
+const callbackError = computed(() => queryString(route.query.error))
 const isProcessing = computed(() => auth.status === 'loading')
 const completed = computed(() => Boolean(auth.successMessage && auth.isAuthenticated))
 const eyebrow = computed(() => t('auth.oauth.eyebrow'))
@@ -24,7 +26,10 @@ const alternateLabel = computed(() => t('auth.actions.signIn'))
 
 const processCallback = async () => {
   try {
-    const result = await auth.completeGoogleOAuth(callbackCode.value, callbackState.value)
+    const result =
+      callbackAccessToken.value || callbackError.value
+        ? await auth.completeGoogleOAuthRedirect(route.query)
+        : await auth.completeGoogleOAuth(callbackCode.value, callbackState.value)
 
     await router.replace(result.redirect)
   } catch {

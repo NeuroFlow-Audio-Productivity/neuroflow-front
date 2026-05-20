@@ -64,6 +64,8 @@ const authMessages = {
         validation: 'Please review the highlighted fields.',
         credentials: 'These credentials do not match our records.',
         oauth: 'Unable to complete Google sign-in.',
+        oauthPasswordAccount:
+          'This email already uses password login. Sign in with email and password.',
         oauthRedirect: 'Unable to start Google sign-in.',
         register: 'Unable to create this account.',
         verificationResend: 'Unable to resend the verification email.',
@@ -200,6 +202,8 @@ const authMessages = {
         validation: '入力内容を確認してください。',
         credentials: 'この認証情報は登録内容と一致しません。',
         oauth: 'Google サインインを完了できません。',
+        oauthPasswordAccount:
+          'このメールアドレスはパスワードログインで登録されています。メールとパスワードでサインインしてください。',
         oauthRedirect: 'Google サインインを開始できません。',
         register: 'このアカウントを作成できません。',
         verificationResend: '確認メールを再送できません。',
@@ -335,6 +339,7 @@ const authMessages = {
         validation: 'Revise os campos destacados.',
         credentials: 'Essas credenciais não correspondem aos nossos registros.',
         oauth: 'Não foi possível concluir o login com Google.',
+        oauthPasswordAccount: 'Este email já usa login por senha. Entre com email e senha.',
         oauthRedirect: 'Não foi possível iniciar o login com Google.',
         register: 'Não foi possível criar esta conta.',
         verificationResend: 'Não foi possível reenviar o email de verificação.',
@@ -469,6 +474,8 @@ const authMessages = {
         validation: 'Revisa los campos destacados.',
         credentials: 'Estas credenciales no coinciden con nuestros registros.',
         oauth: 'No se pudo completar el inicio con Google.',
+        oauthPasswordAccount:
+          'Este email ya usa inicio con contraseña. Entra con email y contraseña.',
         oauthRedirect: 'No se pudo iniciar sesión con Google.',
         register: 'No se pudo crear esta cuenta.',
         verificationResend: 'No se pudo reenviar el email de verificación.',
