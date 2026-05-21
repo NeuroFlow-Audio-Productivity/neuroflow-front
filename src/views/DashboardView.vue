@@ -52,6 +52,7 @@ const fallbackModes: Mode[] = [
     name: 'Focus',
     description: 'Deep focus session for attention and flow.',
     color: '#6ee7d8',
+    is_system: false,
     created_at: '',
     updated_at: '',
   },
@@ -60,6 +61,7 @@ const fallbackModes: Mode[] = [
     name: 'Relax',
     description: 'Relax session for breathing and recovery.',
     color: '#a7f3d0',
+    is_system: false,
     created_at: '',
     updated_at: '',
   },
@@ -68,6 +70,7 @@ const fallbackModes: Mode[] = [
     name: 'Sleep',
     description: 'Sleep session for slower evening wind-down.',
     color: '#c4b5fd',
+    is_system: false,
     created_at: '',
     updated_at: '',
   },
@@ -79,8 +82,10 @@ const visualTheme = useVisualThemeStore()
 
 const modes = ref<Mode[]>([])
 const audios = ref<Audio[]>([])
+const alarmAudios = ref<Audio[]>([])
 const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
+const selectedAlarmAudioId = ref<string | number | null>(null)
 const timerPhase = ref<TimerPhase>('work')
 const remainingSeconds = ref(defaultPhaseDurations.work)
 const cycleIndex = ref(0)
@@ -88,6 +93,7 @@ const completedBlocks = ref(0)
 const isRunning = ref(false)
 const isLoadingModes = ref(false)
 const isLoadingAudios = ref(false)
+const isLoadingAlarmAudios = ref(false)
 const isDurationDialogVisible = ref(false)
 const durationDraft = ref<Record<TimerPhase, number>>({
   work: Math.floor(defaultPhaseDurations.work / 60),
@@ -97,6 +103,7 @@ const durationDraft = ref<Record<TimerPhase, number>>({
 const error = ref<string | null>(null)
 
 const audioElement = ref<HTMLAudioElement | null>(null)
+const alarmAudioElement = ref<HTMLAudioElement | null>(null)
 const audioVolume = ref(0.74)
 const isAudioMuted = ref(false)
 const isAudioPlaying = ref(false)
@@ -115,7 +122,40 @@ const phaseOptions = computed(() =>
   })),
 )
 
-const sortedModes = computed(() => [...modes.value].sort((a, b) => a.id - b.id))
+function normalizedModeName(mode: Mode) {
+  return mode.name.trim().toLowerCase()
+}
+
+function modeSystemFlag(mode: Mode) {
+  const flag = (mode as { isSystem?: unknown; is_system?: unknown }).is_system ??
+    (mode as { isSystem?: unknown; is_system?: unknown }).isSystem
+
+  if (typeof flag === 'boolean') return flag
+  if (typeof flag === 'number') return flag === 1
+  if (typeof flag === 'string') return ['1', 'true', 'yes'].includes(flag.trim().toLowerCase())
+
+  return false
+}
+
+function isSessionAlarmMode(mode: Mode) {
+  return normalizedModeName(mode) === 'session alarm'
+}
+
+function isSystemMode(mode: Mode) {
+  return modeSystemFlag(mode) || isSessionAlarmMode(mode)
+}
+
+const sortedSystemModes = computed(() =>
+  [...modes.value].filter((mode) => isSystemMode(mode)).sort((a, b) => a.id - b.id),
+)
+const sortedModes = computed(() =>
+  [...modes.value].filter((mode) => !isSystemMode(mode)).sort((a, b) => a.id - b.id),
+)
+const sessionAlarmMode = computed(() =>
+  sortedSystemModes.value.find((mode) => isSessionAlarmMode(mode)) ??
+  sortedSystemModes.value[0] ??
+  null,
+)
 const selectedMode = computed(
   () => sortedModes.value.find((mode) => mode.id === selectedModeId.value) ?? null,
 )
@@ -141,12 +181,31 @@ const modeOptions = computed(() =>
 )
 
 const sortedAudios = computed(() => [...audios.value].sort((a, b) => a.name.localeCompare(b.name)))
+const sortedAlarmAudios = computed(() =>
+  [...alarmAudios.value].sort((a, b) => a.name.localeCompare(b.name)),
+)
 const selectedAudio = computed(
   () =>
     sortedAudios.value.find((audio) => audioId(audio) === String(selectedAudioId.value)) ?? null,
 )
+const selectedAlarmAudio = computed(
+  () =>
+    sortedAlarmAudios.value.find((audio) => audioId(audio) === String(selectedAlarmAudioId.value)) ??
+    null,
+)
 const selectedAudioSource = computed(() => audioSourceUrl(selectedAudio.value))
+const selectedAlarmAudioSource = computed(() => audioSourceUrl(selectedAlarmAudio.value))
 const selectedTrackLabel = computed(() => selectedAudio.value?.name ?? t('coreTimer.audio.noTrack'))
+const selectedAlarmLabel = computed(() =>
+  selectedAlarmAudio.value?.name ?? t('coreTimer.settings.defaultAlarm'),
+)
+const alarmOptions = computed(() => [
+  { label: t('coreTimer.settings.defaultAlarm'), value: null },
+  ...sortedAlarmAudios.value.map((audio) => ({
+    label: audio.name,
+    value: audio.id,
+  })),
+])
 const hasAudioSource = computed(() => Boolean(selectedAudioSource.value))
 const audioVolumeStyle = computed(() => ({
   '--audio-volume': `${isAudioMuted.value ? 0 : audioVolume.value * 100}%`,
@@ -238,15 +297,25 @@ async function loadModes() {
     const response = await modeApi.listAllModes(auth.token)
 
     const nextModes = response.data.length > 0 ? response.data : fallbackModes
+    const nextSessionModes = nextModes.filter((mode) => !isSystemMode(mode))
 
     modes.value = nextModes
-    selectedModeId.value = nextModes.some((mode) => mode.id === selectedModeId.value)
+    selectedModeId.value = nextSessionModes.some((mode) => mode.id === selectedModeId.value)
       ? selectedModeId.value
-      : (nextModes.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
-        nextModes[0]?.id ??
+      : (nextSessionModes.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
+        nextSessionModes[0]?.id ??
         null)
+
+    if (sessionAlarmMode.value) {
+      await loadAlarmAudiosForMode(sessionAlarmMode.value.id)
+    } else {
+      alarmAudios.value = []
+      selectedAlarmAudioId.value = null
+    }
   } catch (caughtError) {
     modes.value = fallbackModes
+    alarmAudios.value = []
+    selectedAlarmAudioId.value = null
     selectedModeId.value =
       fallbackModes.find((mode) => modeSemanticKey(mode) === 'focus')?.id ??
       fallbackModes[0]?.id ??
@@ -281,6 +350,33 @@ async function loadAudiosForMode(modeId: number) {
   } finally {
     if (selectedModeId.value === modeId) {
       isLoadingAudios.value = false
+    }
+  }
+}
+
+async function loadAlarmAudiosForMode(modeId: number) {
+  isLoadingAlarmAudios.value = true
+
+  try {
+    const response = await audioApi.listAudiosForMode(auth.token, modeId, { per_page: 50 })
+
+    if (sessionAlarmMode.value?.id !== modeId) return
+
+    alarmAudios.value = response.data
+    selectedAlarmAudioId.value = response.data.some(
+      (audio) => audioId(audio) === String(selectedAlarmAudioId.value),
+    )
+      ? selectedAlarmAudioId.value
+      : (response.data[0]?.id ?? null)
+  } catch (caughtError) {
+    if (sessionAlarmMode.value?.id === modeId) {
+      alarmAudios.value = []
+      selectedAlarmAudioId.value = null
+      setError(caughtError, 'coreTimer.errors.loadAlarmAudios')
+    }
+  } finally {
+    if (sessionAlarmMode.value?.id === modeId) {
+      isLoadingAlarmAudios.value = false
     }
   }
 }
@@ -363,6 +459,23 @@ async function ringCompletionBell() {
   }
 }
 
+async function playCompletionAlarm() {
+  const alarmAudio = alarmAudioElement.value
+
+  if (alarmAudio && selectedAlarmAudioSource.value) {
+    try {
+      alarmAudio.pause()
+      alarmAudio.currentTime = 0
+      await alarmAudio.play()
+      return
+    } catch {
+      // Fall back to the generated bell if the uploaded alarm cannot play.
+    }
+  }
+
+  await ringCompletionBell()
+}
+
 function completePhase() {
   if (timerPhase.value === 'work') {
     completedBlocks.value += 1
@@ -376,8 +489,8 @@ function completePhase() {
 }
 
 function completeExpiredPhase() {
-  void ringCompletionBell()
   pauseSession()
+  void playCompletionAlarm()
   completePhase()
 }
 
@@ -547,6 +660,15 @@ watch(selectedAudioSource, async () => {
   }
 })
 
+watch(selectedAlarmAudioSource, () => {
+  const alarmAudio = alarmAudioElement.value
+
+  if (!alarmAudio) return
+
+  alarmAudio.pause()
+  alarmAudio.load()
+})
+
 onMounted(() => {
   void loadModes()
 })
@@ -587,6 +709,14 @@ onBeforeUnmount(() => {
       @error="hasAudioError = true"
     />
 
+    <audio
+      ref="alarmAudioElement"
+      :key="selectedAlarmAudioSource"
+      class="sr-only"
+      :src="selectedAlarmAudioSource || undefined"
+      preload="auto"
+    />
+
     <Dialog
       v-model:visible="isDurationDialogVisible"
       modal
@@ -607,6 +737,19 @@ onBeforeUnmount(() => {
             inputmode="numeric"
           />
           <small>{{ t('coreTimer.settings.minutes') }}</small>
+        </label>
+
+        <label class="core-duration-field core-duration-field--stacked">
+          <span>{{ t('coreTimer.settings.alarmSound') }}</span>
+          <Select
+            v-model="selectedAlarmAudioId"
+            :options="alarmOptions"
+            option-label="label"
+            option-value="value"
+            :loading="isLoadingAlarmAudios"
+            class="core-alarm-select !w-full"
+          />
+          <small>{{ t('coreTimer.settings.alarmHint', { alarm: selectedAlarmLabel }) }}</small>
         </label>
 
         <div class="core-duration-actions">
@@ -1195,6 +1338,23 @@ onBeforeUnmount(() => {
 .core-duration-field input:focus {
   border-color: var(--resource-mode-color);
   box-shadow: 0 0 0 1px rgba(var(--resource-mode-rgb), 0.32);
+}
+
+.core-duration-field--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.core-duration-field :deep(.p-select) {
+  min-height: 2.8rem;
+  border-color: rgba(var(--resource-mode-rgb), 0.22) !important;
+  background: rgba(var(--resource-mode-rgb), 0.12) !important;
+  color: #ffffff !important;
+}
+
+.core-duration-field :deep(.p-select-label) {
+  color: #ffffff;
+  font-weight: 720;
 }
 
 .core-duration-field small {

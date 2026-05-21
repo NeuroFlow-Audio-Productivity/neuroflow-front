@@ -12,6 +12,7 @@ export type StoreModePayload = {
   name: string
   description: string
   color: string
+  is_system: boolean
 }
 
 export type UpdateModePayload = StoreModePayload

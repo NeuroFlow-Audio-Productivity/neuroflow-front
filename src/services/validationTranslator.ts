@@ -10,6 +10,7 @@ const fieldKeyByApiField: Record<string, string> = {
   email_verified_at: 'auth.fields.emailVerifiedAt',
   description: 'modeResource.fields.description',
   color: 'modeResource.fields.color',
+  is_system: 'modeResource.fields.isSystem',
   mode_id: 'audioResource.fields.mode',
   file: 'audioResource.fields.file',
   path: 'audioResource.fields.path',

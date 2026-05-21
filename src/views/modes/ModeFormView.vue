@@ -37,6 +37,7 @@ const form = reactive({
   name: '',
   description: '',
   color: FALLBACK_MODE_COLOR,
+  is_system: false,
 })
 
 const fieldErrors = ref<ValidationErrors>({})
@@ -84,12 +85,14 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.color = FALLBACK_MODE_COLOR
+  form.is_system = false
 }
 
 const assignMode = (mode: Mode) => {
   form.name = mode.name
   form.description = mode.description
   form.color = mode.color
+  form.is_system = mode.is_system
 }
 
 const normalizeColorInput = () => {
@@ -148,12 +151,14 @@ const createPayload = (): StoreModePayload => ({
   name: form.name,
   description: form.description,
   color: form.color.trim(),
+  is_system: form.is_system,
 })
 
 const updatePayload = (): UpdateModePayload => ({
   name: form.name,
   description: form.description,
   color: form.color.trim(),
+  is_system: form.is_system,
 })
 
 const submit = async () => {
@@ -289,6 +294,21 @@ watch(
                 </span>
               </div>
 
+              <label class="mode-system-field" for="mode-is-system">
+                <input
+                  id="mode-is-system"
+                  v-model="form.is_system"
+                  type="checkbox"
+                />
+                <span>
+                  <strong>{{ t('modeResource.fields.isSystem') }}</strong>
+                  <small>{{ t('modeResource.fields.isSystemHint') }}</small>
+                </span>
+              </label>
+              <span v-if="fieldError('is_system')" class="auth-field-error">
+                {{ fieldError('is_system') }}
+              </span>
+
               <div class="auth-field">
                 <label class="auth-field-label" for="mode-description">
                   {{ t('modeResource.fields.description') }}
@@ -399,6 +419,41 @@ watch(
 .mode-color-picker::-moz-color-swatch {
   border: 0;
   border-radius: 6px;
+}
+
+.mode-system-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0.85rem;
+}
+
+.mode-system-field input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  accent-color: var(--resource-mode-color);
+}
+
+.mode-system-field span {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.mode-system-field strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.mode-system-field small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 :deep(.mode-textarea) {

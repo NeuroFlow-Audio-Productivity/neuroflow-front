@@ -883,6 +883,8 @@ const modeResourceMessages = {
       name: 'Mode name',
       description: 'Description',
       color: 'Color',
+      isSystem: 'System mode',
+      isSystemHint: 'Use this mode for application sounds like the session alarm instead of normal Pomodoro playback.',
       createdAt: 'Created',
       updatedAt: 'Updated',
     },
@@ -941,6 +943,8 @@ const modeResourceMessages = {
       name: 'モード名',
       description: '説明',
       color: '色',
+      isSystem: 'システムモード',
+      isSystemHint: '通常のポモドーロ再生ではなく、セッションアラームなどのアプリ音に使用します。',
       createdAt: '作成日',
       updatedAt: '更新日',
     },
@@ -999,6 +1003,8 @@ const modeResourceMessages = {
       name: 'Nome do modo',
       description: 'Descrição',
       color: 'Cor',
+      isSystem: 'Modo do sistema',
+      isSystemHint: 'Use este modo para sons do aplicativo, como o alarme da sessão, em vez da reprodução normal do pomodoro.',
       createdAt: 'Criado em',
       updatedAt: 'Atualizado em',
     },
@@ -1058,6 +1064,8 @@ const modeResourceMessages = {
       name: 'Nombre del modo',
       description: 'Descripción',
       color: 'Color',
+      isSystem: 'Modo del sistema',
+      isSystemHint: 'Usa este modo para sonidos de la aplicación, como la alarma de sesión, en vez de la reproducción normal del pomodoro.',
       createdAt: 'Creado',
       updatedAt: 'Actualizado',
     },
@@ -1436,6 +1444,9 @@ const coreTimerMessages = {
     settings: {
       title: 'Timer durations',
       minutes: 'min',
+      alarmSound: 'Session alarm',
+      defaultAlarm: 'Default bell',
+      alarmHint: 'Selected: {alarm}',
     },
     stats: {
       completed: 'Blocks done',
@@ -1445,6 +1456,7 @@ const coreTimerMessages = {
     errors: {
       loadModes: 'Unable to load modes.',
       loadAudios: 'Unable to load music for this mode.',
+      loadAlarmAudios: 'Unable to load session alarm sounds.',
       playAudio: 'Unable to play this track.',
     },
   },
@@ -1496,6 +1508,9 @@ const coreTimerMessages = {
     settings: {
       title: 'タイマー時間',
       minutes: '分',
+      alarmSound: 'セッションアラーム',
+      defaultAlarm: 'デフォルトベル',
+      alarmHint: '選択中: {alarm}',
     },
     stats: {
       completed: '完了ブロック',
@@ -1505,6 +1520,7 @@ const coreTimerMessages = {
     errors: {
       loadModes: 'モードを読み込めません。',
       loadAudios: 'このモードの音楽を読み込めません。',
+      loadAlarmAudios: 'セッションアラーム音を読み込めません。',
       playAudio: 'このトラックを再生できません。',
     },
   },
@@ -1556,6 +1572,9 @@ const coreTimerMessages = {
     settings: {
       title: 'Tempos do timer',
       minutes: 'min',
+      alarmSound: 'Alarme da sessão',
+      defaultAlarm: 'Sino padrão',
+      alarmHint: 'Selecionado: {alarm}',
     },
     stats: {
       completed: 'Blocos feitos',
@@ -1565,6 +1584,7 @@ const coreTimerMessages = {
     errors: {
       loadModes: 'Não foi possível carregar os modos.',
       loadAudios: 'Não foi possível carregar as músicas deste modo.',
+      loadAlarmAudios: 'Não foi possível carregar os sons do alarme da sessão.',
       playAudio: 'Não foi possível tocar esta faixa.',
     },
   },
@@ -1616,6 +1636,9 @@ const coreTimerMessages = {
     settings: {
       title: 'Tiempos del timer',
       minutes: 'min',
+      alarmSound: 'Alarma de sesión',
+      defaultAlarm: 'Campana predeterminada',
+      alarmHint: 'Seleccionado: {alarm}',
     },
     stats: {
       completed: 'Bloques hechos',
@@ -1625,6 +1648,7 @@ const coreTimerMessages = {
     errors: {
       loadModes: 'No se pudieron cargar los modos.',
       loadAudios: 'No se pudo cargar la música de este modo.',
+      loadAlarmAudios: 'No se pudieron cargar los sonidos de alarma de sesión.',
       playAudio: 'No se pudo reproducir esta pista.',
     },
   },
