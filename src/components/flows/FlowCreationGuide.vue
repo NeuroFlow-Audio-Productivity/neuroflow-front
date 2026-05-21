@@ -50,6 +50,15 @@ const guideStyle = computed(() =>
 const selectedCategoryLabel = computed(() =>
   selectedCategory.value ? t(selectedCategory.value.labelKey) : '',
 )
+const selectedCategoryEmoji = computed(() => selectedCategory.value?.emoji ?? '🧠')
+const visibleSuggestions = computed(
+  () => selectedCategory.value?.suggestions.filter((suggestion) => !suggestion.custom) ?? [],
+)
+const customPlaceholder = computed(() =>
+  selectedCategory.value
+    ? t(`flowResource.create.placeholders.${selectedCategory.value.key}`)
+    : t('flowResource.create.customPlaceholder'),
+)
 const submitDisabled = computed(() => isSaving.value || flowName.value.trim().length === 0)
 
 const suggestionLabel = (suggestion: FlowSuggestion) => t(suggestion.labelKey)
@@ -70,11 +79,18 @@ const selectCategory = (category: FlowCategory) => {
 
 const selectSuggestion = (suggestion: FlowSuggestion) => {
   selectedSuggestionKey.value = suggestion.key
-  flowName.value = suggestion.custom ? '' : suggestionLabel(suggestion)
+  flowName.value = suggestionLabel(suggestion)
   resetFeedback()
 }
 
 const resetGuide = () => {
+  selectedCategoryKey.value = null
+  selectedSuggestionKey.value = null
+  flowName.value = ''
+  resetFeedback()
+}
+
+const changeCategory = () => {
   selectedCategoryKey.value = null
   selectedSuggestionKey.value = null
   flowName.value = ''
@@ -129,63 +145,51 @@ const submit = async () => {
 
 <template>
   <section class="flow-guide" :class="{ 'flow-guide--compact': props.compact }" :style="guideStyle">
-    <div class="flow-guide-rail" aria-hidden="true">
-      <span :class="{ 'is-active': !selectedCategory }">1</span>
-      <i />
-      <span :class="{ 'is-active': selectedCategory }">2</span>
-    </div>
-
     <div
       v-if="error"
-      class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
+      class="flow-guide-error rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
     >
       {{ error }}
     </div>
 
-    <div class="flow-guide-step">
-      <div>
-        <p class="flow-step-kicker">{{ t('flowResource.create.stepOne') }}</p>
-        <h2>{{ t('flowResource.create.chooseCategory') }}</h2>
-      </div>
+    <Transition name="flow-guide-scene" mode="out-in">
+      <div v-if="!selectedCategory" key="category" class="flow-scene flow-scene--initial">
+        <h2>{{ t('flowResource.create.initialQuestion') }}</h2>
 
-      <div class="flow-category-grid">
-        <button
-          v-for="category in flowCategories"
-          :key="category.key"
-          class="flow-category-card"
-          :class="{ 'is-selected': selectedCategoryKey === category.key }"
-          :style="flowCategoryStyle(category.key)"
-          type="button"
-          @click="selectCategory(category)"
-        >
-          <span class="flow-category-icon" aria-hidden="true">{{ category.emoji }}</span>
-          <span class="flow-category-copy">
+        <div class="flow-category-grid" :aria-label="t('flowResource.create.initialQuestion')">
+          <button
+            v-for="category in flowCategories"
+            :key="category.key"
+            class="flow-category-card"
+            :style="flowCategoryStyle(category.key)"
+            type="button"
+            @click="selectCategory(category)"
+          >
+            <span class="flow-category-icon" aria-hidden="true">{{ category.emoji }}</span>
             <strong>{{ t(category.labelKey) }}</strong>
-            <small>{{ t(category.descriptionKey) }}</small>
-          </span>
-          <i :class="category.icon" aria-hidden="true" />
-        </button>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <Transition name="flow-guide-panel">
       <form
-        v-if="selectedCategory"
-        class="flow-guide-step flow-guide-suggestions"
+        v-else
+        key="suggestions"
+        class="flow-scene flow-scene--suggestions"
         @submit.prevent="submit"
       >
-        <div>
-          <p class="flow-step-kicker">{{ t('flowResource.create.stepTwo') }}</p>
-          <h2>
-            {{ t('flowResource.create.chooseSuggestion', { category: selectedCategoryLabel }) }}
-          </h2>
-        </div>
+        <button class="flow-selected-category" type="button" @click="changeCategory">
+          <span aria-hidden="true">{{ selectedCategoryEmoji }}</span>
+          <strong>{{ selectedCategoryLabel }}</strong>
+          <i class="pi pi-arrow-left" aria-hidden="true" />
+        </button>
+
+        <h2>{{ t('flowResource.create.suggestionQuestion') }}</h2>
 
         <div class="flow-suggestion-grid">
           <button
-            v-for="suggestion in selectedCategory.suggestions"
+            v-for="suggestion in visibleSuggestions"
             :key="suggestion.key"
-            class="flow-suggestion-chip"
+            class="flow-suggestion-card"
             :class="{ 'is-selected': selectedSuggestionKey === suggestion.key }"
             type="button"
             @click="selectSuggestion(suggestion)"
@@ -195,33 +199,18 @@ const submit = async () => {
           </button>
         </div>
 
-        <div class="auth-field">
-          <label class="auth-field-label" for="flow-name">
+        <div class="flow-custom-entry">
+          <label class="sr-only" for="flow-name">
             {{ t('flowResource.fields.name') }}
           </label>
           <InputText
             id="flow-name"
             v-model="flowName"
-            class="!w-full"
+            class="flow-name-input !w-full"
             autocomplete="off"
             maxlength="255"
-            :placeholder="t('flowResource.create.customPlaceholder')"
+            :placeholder="customPlaceholder"
             :invalid="Boolean(fieldError('name'))"
-          />
-          <span v-if="fieldError('name')" class="auth-field-error">
-            {{ fieldError('name') }}
-          </span>
-        </div>
-
-        <div class="flow-guide-actions">
-          <Button
-            type="button"
-            :label="t('flowResource.actions.changeCategory')"
-            icon="pi pi-arrow-left"
-            severity="secondary"
-            text
-            class="!justify-center !text-white/70 hover:!bg-white/10"
-            @click="selectedCategoryKey = null"
           />
           <Button
             type="submit"
@@ -229,9 +218,13 @@ const submit = async () => {
             icon="pi pi-check"
             :disabled="submitDisabled"
             :loading="isSaving"
-            class="theme-primary-button !justify-center"
+            class="theme-primary-button flow-create-button !justify-center"
           />
         </div>
+
+        <span v-if="fieldError('name')" class="auth-field-error flow-name-error">
+          {{ fieldError('name') }}
+        </span>
       </form>
     </Transition>
   </section>
@@ -243,170 +236,187 @@ const submit = async () => {
   --flow-accent-rgb: var(--mode-glow-rgb);
   position: relative;
   display: grid;
-  gap: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 100%;
+  min-height: calc(100svh - 7.5rem);
+  place-items: center;
+  overflow: hidden;
   border-radius: 8px;
   background:
-    linear-gradient(118deg, rgba(var(--flow-accent-rgb), 0.15), transparent 40%),
-    rgba(7, 16, 14, 0.84);
-  padding: 1rem;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(22px);
+    radial-gradient(ellipse at 50% 8%, rgba(var(--flow-accent-rgb), 0.2), transparent 34rem),
+    radial-gradient(ellipse at 18% 90%, rgba(var(--mode-companion-rgb), 0.12), transparent 30rem),
+    linear-gradient(180deg, rgba(7, 16, 14, 0.34), rgba(7, 16, 14, 0.12));
+  padding: clamp(1.5rem, 5vw, 4.5rem) 1rem;
+  isolation: isolate;
+}
+
+.flow-guide::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(120deg, transparent 0 26%, rgba(255, 255, 255, 0.04) 48%, transparent 72%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 2.2rem,
+      rgba(255, 255, 255, 0.028) 2.24rem 2.3rem
+    );
+  content: '';
+  opacity: 0.5;
+  mask-image: linear-gradient(180deg, transparent, #000 20%, #000 82%, transparent);
 }
 
 .flow-guide--compact {
-  box-shadow: none;
+  min-height: 100svh;
+  border-radius: 0;
 }
 
-.flow-guide-rail {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+.flow-guide-error {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 3;
+  margin: 0 auto;
+  max-width: 36rem;
 }
 
-.flow-guide-rail span {
-  display: grid;
-  width: 1.8rem;
-  height: 1.8rem;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.52);
-  font-size: 0.75rem;
-  font-weight: 800;
+.flow-scene {
+  width: min(100%, 56rem);
+  margin: 0 auto;
+  text-align: center;
 }
 
-.flow-guide-rail span.is-active {
-  border-color: color-mix(in srgb, var(--flow-accent), transparent 34%);
-  background: color-mix(in srgb, var(--flow-accent), transparent 84%);
-  color: var(--mode-soft);
-}
-
-.flow-guide-rail i {
-  display: block;
-  width: 3.2rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(var(--flow-accent-rgb), 0.62));
-}
-
-.flow-guide-step {
-  display: grid;
-  gap: 1rem;
-}
-
-.flow-step-kicker {
+.flow-scene h2 {
   margin: 0;
-  color: var(--flow-accent);
-  font-size: 0.75rem;
-  font-weight: 800;
+  color: #ffffff;
+  font-size: clamp(2.15rem, 5vw, 4.8rem);
+  font-weight: 760;
   letter-spacing: 0;
-  line-height: 1.2;
-  text-transform: uppercase;
+  line-height: 0.98;
+  text-wrap: balance;
 }
 
-.flow-guide-step h2 {
-  margin: 0.35rem 0 0;
-  color: #ffffff;
-  font-size: 1.35rem;
-  font-weight: 750;
-  letter-spacing: 0;
-  line-height: 1.18;
+.flow-scene--initial {
+  display: grid;
+  gap: clamp(2.1rem, 5vw, 4rem);
 }
 
 .flow-category-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .flow-category-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.8rem;
-  min-height: 5.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-height: clamp(9rem, 21vw, 12.5rem);
+  place-items: center;
+  gap: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.15), transparent 62%),
-    rgba(255, 255, 255, 0.055);
-  padding: 0.9rem;
-  color: inherit;
-  text-align: left;
+    linear-gradient(145deg, rgba(var(--flow-accent-rgb), 0.14), transparent 72%),
+    rgba(255, 255, 255, 0.052);
+  color: #ffffff;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
   transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    transform 180ms ease;
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 220ms ease;
 }
 
-.flow-category-card:hover,
-.flow-category-card.is-selected {
-  border-color: color-mix(in srgb, var(--flow-accent), transparent 38%);
+.flow-category-card:hover {
+  border-color: color-mix(in srgb, var(--flow-accent), transparent 44%);
   background:
-    linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.24), transparent 62%),
-    rgba(255, 255, 255, 0.075);
-  transform: translateY(-1px);
+    linear-gradient(145deg, rgba(var(--flow-accent-rgb), 0.22), transparent 70%),
+    rgba(255, 255, 255, 0.07);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  transform: translateY(-0.28rem);
 }
 
 .flow-category-icon {
-  display: grid;
-  width: 2.75rem;
-  height: 2.75rem;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(4, 8, 8, 0.44);
-  font-size: 1.35rem;
+  display: block;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
 }
 
-.flow-category-copy {
-  display: grid;
-  min-width: 0;
-  gap: 0.25rem;
+.flow-category-card strong {
+  font-size: clamp(1.25rem, 3vw, 1.85rem);
+  font-weight: 760;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
-.flow-category-copy strong,
-.flow-suggestion-chip strong {
+.flow-scene--suggestions {
+  display: grid;
+  width: min(100%, 62rem);
+  gap: clamp(1.25rem, 3vw, 2rem);
+  justify-items: center;
+}
+
+.flow-selected-category {
+  display: inline-flex;
+  min-height: 2.8rem;
+  max-width: min(100%, 18rem);
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(var(--flow-accent-rgb), 0.28);
+  border-radius: 999px;
+  background: rgba(var(--flow-accent-rgb), 0.1);
+  padding: 0.45rem 0.82rem;
+  color: color-mix(in srgb, var(--flow-accent), #ffffff 24%);
+  font-size: 0.9rem;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.flow-selected-category:hover {
+  border-color: color-mix(in srgb, var(--flow-accent), transparent 34%);
+  background: rgba(var(--flow-accent-rgb), 0.16);
+  color: #ffffff;
+}
+
+.flow-selected-category strong {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.flow-category-copy strong {
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 750;
-  line-height: 1.15;
-}
-
-.flow-category-copy small {
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 0.8rem;
-  line-height: 1.35;
-}
-
-.flow-category-card > i {
-  color: color-mix(in srgb, var(--flow-accent), #ffffff 18%);
+.flow-selected-category i {
+  font-size: 0.72rem;
+  opacity: 0.68;
 }
 
 .flow-suggestion-grid {
   display: flex;
+  max-width: 58rem;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
-.flow-suggestion-chip {
+.flow-suggestion-card {
   display: inline-flex;
-  min-height: 2.55rem;
+  min-height: 3.8rem;
   max-width: 100%;
   align-items: center;
-  gap: 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.45rem 0.7rem;
-  color: rgba(255, 255, 255, 0.74);
-  font-size: 0.86rem;
-  line-height: 1.15;
+  background:
+    linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.11), transparent 76%),
+    rgba(255, 255, 255, 0.06);
+  padding: 0.85rem 1.18rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(0.98rem, 2vw, 1.12rem);
+  line-height: 1.1;
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -414,65 +424,135 @@ const submit = async () => {
     transform 180ms ease;
 }
 
-.flow-suggestion-chip:hover,
-.flow-suggestion-chip.is-selected {
+.flow-suggestion-card span {
+  font-size: 1.15rem;
+}
+
+.flow-suggestion-card strong {
+  min-width: 0;
+  font-weight: 720;
+  overflow-wrap: anywhere;
+}
+
+.flow-suggestion-card:hover,
+.flow-suggestion-card.is-selected {
   border-color: color-mix(in srgb, var(--flow-accent), transparent 42%);
-  background: color-mix(in srgb, var(--flow-accent), transparent 88%);
+  background:
+    linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.22), transparent 76%),
+    rgba(255, 255, 255, 0.084);
   color: #ffffff;
-  transform: translateY(-1px);
+  transform: translateY(-0.15rem);
 }
 
-.flow-guide-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+.flow-custom-entry {
+  display: grid;
+  width: min(100%, 42rem);
+  gap: 0.75rem;
+  margin-top: clamp(0.5rem, 2vw, 1.1rem);
 }
 
-.flow-guide-panel-enter-active,
-.flow-guide-panel-leave-active {
+:deep(.flow-name-input) {
+  min-height: 3.55rem;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.078) !important;
+  padding-right: 1.2rem !important;
+  padding-left: 1.2rem !important;
+  color: #f7fbf8 !important;
+  text-align: center;
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.16) !important;
+}
+
+:deep(.flow-name-input:hover) {
+  border-color: rgba(var(--flow-accent-rgb), 0.42) !important;
+}
+
+:deep(.flow-name-input:enabled:focus) {
+  border-color: var(--flow-accent) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--flow-accent), transparent 44%),
+    0 18px 70px rgba(0, 0, 0, 0.16) !important;
+}
+
+:deep(.flow-name-input::placeholder) {
+  color: rgba(255, 255, 255, 0.46) !important;
+}
+
+.flow-create-button {
+  min-height: 3.35rem;
+  border-radius: 999px !important;
+}
+
+.flow-name-error {
+  display: block;
+  text-align: center;
+}
+
+.flow-guide-scene-enter-active,
+.flow-guide-scene-leave-active {
   transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+    opacity 260ms ease,
+    transform 280ms ease,
+    filter 280ms ease;
 }
 
-.flow-guide-panel-enter-from,
-.flow-guide-panel-leave-to {
+.flow-guide-scene-enter-from {
   opacity: 0;
-  transform: translateY(0.35rem);
+  filter: blur(0.35rem);
+  transform: translateY(0.9rem);
+}
+
+.flow-guide-scene-leave-to {
+  opacity: 0;
+  filter: blur(0.35rem);
+  transform: translateY(-0.9rem);
 }
 
 @media (min-width: 700px) {
-  .flow-guide {
-    padding: 1.2rem;
-  }
-
   .flow-category-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .flow-category-card {
-    grid-template-columns: minmax(0, 1fr);
-    align-content: space-between;
+  .flow-custom-entry {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.35rem;
+    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(20px);
   }
 
-  .flow-guide-actions {
-    flex-direction: row;
-    justify-content: flex-end;
+  :deep(.flow-name-input) {
+    border-color: transparent !important;
+    background: transparent !important;
+    text-align: left;
+    box-shadow: none !important;
+  }
+
+  :deep(.flow-name-input:enabled:focus) {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .flow-create-button {
+    min-width: 10rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .flow-category-card,
-  .flow-suggestion-chip,
-  .flow-guide-panel-enter-active,
-  .flow-guide-panel-leave-active {
+  .flow-suggestion-card,
+  .flow-selected-category,
+  .flow-guide-scene-enter-active,
+  .flow-guide-scene-leave-active {
     transition: none;
   }
 
   .flow-category-card:hover,
-  .flow-category-card.is-selected,
-  .flow-suggestion-chip:hover,
-  .flow-suggestion-chip.is-selected {
+  .flow-suggestion-card:hover,
+  .flow-suggestion-card.is-selected {
     transform: none;
   }
 }

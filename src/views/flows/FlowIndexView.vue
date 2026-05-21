@@ -178,10 +178,33 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="flows-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    v-if="!isLoading && sortedFlows.length === 0"
+    class="flows-page flows-page--onboarding dark min-h-screen text-[#f7fbf8]"
+  >
+    <section class="flows-onboarding-shell">
+      <div
+        v-if="error"
+        class="flows-onboarding-feedback rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
+      >
+        {{ error }}
+      </div>
+
+      <FlowCreationGuide compact @created="handleCreated" />
+    </section>
+  </main>
+
+  <main v-else class="flows-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
     <AppNavbar />
 
-    <section class="mx-auto max-w-7xl py-8 sm:py-10">
+    <section
+      v-if="isLoading"
+      class="mx-auto mt-6 max-w-7xl rounded-[8px] border border-white/12 bg-[#07100e]/86 px-5 py-12 text-center text-sm text-white/62 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+    >
+      {{ t('flowResource.index.loading') }}
+    </section>
+
+    <section v-else class="mx-auto max-w-7xl py-8 sm:py-10">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
@@ -218,7 +241,7 @@ onMounted(() => {
         {{ error }}
       </div>
 
-      <section v-if="totalFlows > 0" class="mt-6 grid gap-3 sm:grid-cols-2">
+      <section class="mt-6 grid gap-3 sm:grid-cols-2">
         <div class="flow-stat-panel">
           <span class="flow-stat-value">{{ totalFlows }}</span>
           <span class="flow-stat-label">{{ t('flowResource.index.total') }}</span>
@@ -232,27 +255,7 @@ onMounted(() => {
       </section>
 
       <section class="mt-6">
-        <div
-          v-if="isLoading"
-          class="rounded-[8px] border border-white/12 bg-[#07100e]/86 px-5 py-12 text-center text-sm text-white/62 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
-        >
-          {{ t('flowResource.index.loading') }}
-        </div>
-
-        <section v-else-if="sortedFlows.length === 0" class="flow-empty-layout">
-          <div class="flow-empty-copy">
-            <span class="flow-empty-mark" aria-hidden="true">🧠</span>
-            <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
-              {{ t('flowResource.empty.eyebrow') }}
-            </p>
-            <h2>{{ t('flowResource.empty.title') }}</h2>
-            <p>{{ t('flowResource.empty.subtitle') }}</p>
-          </div>
-
-          <FlowCreationGuide compact @created="handleCreated" />
-        </section>
-
-        <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <article
             v-for="flow in sortedFlows"
             :key="flow.id"
@@ -382,46 +385,21 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
-.flow-empty-layout {
+.flows-onboarding-shell {
   display: grid;
-  gap: 1.2rem;
-  align-items: start;
+  width: 100%;
+  min-height: 100svh;
+  place-items: stretch;
 }
 
-.flow-empty-copy {
-  max-width: 35rem;
-}
-
-.flow-empty-mark {
-  display: grid;
-  width: 3.4rem;
-  height: 3.4rem;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
-  font-size: 1.55rem;
-}
-
-.flow-empty-copy p:first-of-type {
-  margin-top: 1rem;
-}
-
-.flow-empty-copy h2 {
-  margin: 0.45rem 0 0;
-  color: #ffffff;
-  font-size: 2rem;
-  font-weight: 750;
-  letter-spacing: 0;
-  line-height: 1.1;
-}
-
-.flow-empty-copy p:last-child {
-  margin: 0.85rem 0 0;
-  color: rgba(255, 255, 255, 0.64);
-  font-size: 1rem;
-  line-height: 1.7;
+.flows-onboarding-feedback {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 4;
+  margin: 0 auto;
+  max-width: 36rem;
 }
 
 .flow-card {
@@ -565,12 +543,6 @@ onMounted(() => {
   margin: 0.85rem -0.25rem -0.25rem;
   border-top: 1px solid rgba(255, 255, 255, 0.09);
   padding-top: 0.55rem;
-}
-
-@media (min-width: 900px) {
-  .flow-empty-layout {
-    grid-template-columns: minmax(0, 0.7fr) minmax(25rem, 1fr);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

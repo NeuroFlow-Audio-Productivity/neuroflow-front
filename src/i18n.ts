@@ -871,11 +871,18 @@ const flowResourceMessages = {
       eyebrow: 'New flow',
       title: 'Create flow',
       subtitle: 'A two-step setup for naming the workspace before Pomodoro nodes arrive.',
+      initialQuestion: 'What do you need right now?',
+      suggestionQuestion: 'What are you focusing on?',
       stepOne: 'Step 1',
       stepTwo: 'Step 2',
       chooseCategory: 'Choose a category',
       chooseSuggestion: '{category} suggestions',
       customPlaceholder: 'Type a custom flow name',
+      placeholders: {
+        focus: 'Programming, Deep Work, Study...',
+        unwind: 'Gaming, Chill, Night Routine...',
+        sleep: 'Deep Sleep, Nap, Rain Sounds...',
+      },
     },
     categories: {
       focus: {
@@ -984,11 +991,18 @@ const flowResourceMessages = {
       eyebrow: '新しいフロー',
       title: 'フロー作成',
       subtitle: 'ポモドーロノードを追加する前に、2ステップでワークスペース名を決めます。',
+      initialQuestion: '今、何が必要ですか？',
+      suggestionQuestion: '何に集中しますか？',
       stepOne: 'ステップ 1',
       stepTwo: 'ステップ 2',
       chooseCategory: 'カテゴリを選択',
       chooseSuggestion: '{category} の候補',
       customPlaceholder: 'カスタムのフロー名を入力',
+      placeholders: {
+        focus: 'プログラミング、ディープワーク、勉強...',
+        unwind: 'ゲーム、チル、夜のルーティン...',
+        sleep: '深い睡眠、昼寝、雨音...',
+      },
     },
     categories: {
       focus: {
@@ -1099,11 +1113,18 @@ const flowResourceMessages = {
       title: 'Criar flow',
       subtitle:
         'Uma configuração em dois passos para nomear o workspace antes dos nós de Pomodoro.',
+      initialQuestion: 'O que você precisa agora?',
+      suggestionQuestion: 'No que você vai focar?',
       stepOne: 'Passo 1',
       stepTwo: 'Passo 2',
       chooseCategory: 'Escolha uma categoria',
       chooseSuggestion: 'Sugestões de {category}',
       customPlaceholder: 'Digite um nome personalizado',
+      placeholders: {
+        focus: 'Programação, Deep Work, Estudo...',
+        unwind: 'Gaming, Chill, Rotina noturna...',
+        sleep: 'Sono profundo, Cochilo, Sons de chuva...',
+      },
     },
     categories: {
       focus: {
@@ -1215,11 +1236,18 @@ const flowResourceMessages = {
       title: 'Crear flow',
       subtitle:
         'Una configuración en dos pasos para nombrar el workspace antes de los nodos de Pomodoro.',
+      initialQuestion: '¿Qué necesitas ahora?',
+      suggestionQuestion: '¿En qué vas a enfocarte?',
       stepOne: 'Paso 1',
       stepTwo: 'Paso 2',
       chooseCategory: 'Elige una categoría',
       chooseSuggestion: 'Sugerencias de {category}',
       customPlaceholder: 'Escribe un nombre personalizado',
+      placeholders: {
+        focus: 'Programación, Deep Work, Estudio...',
+        unwind: 'Gaming, Chill, Rutina nocturna...',
+        sleep: 'Sueño profundo, Siesta, Sonidos de lluvia...',
+      },
     },
     categories: {
       focus: {
@@ -1346,7 +1374,8 @@ const modeResourceMessages = {
       description: 'Description',
       color: 'Color',
       isSystem: 'System mode',
-      isSystemHint: 'Use this mode for application sounds like the session alarm instead of normal Pomodoro playback.',
+      isSystemHint:
+        'Use this mode for application sounds like the session alarm instead of normal Pomodoro playback.',
       createdAt: 'Created',
       updatedAt: 'Updated',
     },
@@ -1466,7 +1495,8 @@ const modeResourceMessages = {
       description: 'Descrição',
       color: 'Cor',
       isSystem: 'Modo do sistema',
-      isSystemHint: 'Use este modo para sons do aplicativo, como o alarme da sessão, em vez da reprodução normal do pomodoro.',
+      isSystemHint:
+        'Use este modo para sons do aplicativo, como o alarme da sessão, em vez da reprodução normal do pomodoro.',
       createdAt: 'Criado em',
       updatedAt: 'Atualizado em',
     },
@@ -1527,7 +1557,8 @@ const modeResourceMessages = {
       description: 'Descripción',
       color: 'Color',
       isSystem: 'Modo del sistema',
-      isSystemHint: 'Usa este modo para sonidos de la aplicación, como la alarma de sesión, en vez de la reproducción normal del pomodoro.',
+      isSystemHint:
+        'Usa este modo para sonidos de la aplicación, como la alarma de sesión, en vez de la reproducción normal del pomodoro.',
       createdAt: 'Creado',
       updatedAt: 'Actualizado',
     },
