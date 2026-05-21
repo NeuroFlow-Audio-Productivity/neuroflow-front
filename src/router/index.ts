@@ -5,6 +5,8 @@ import AudioFormView from '@/views/audios/AudioFormView.vue'
 import AudioIndexView from '@/views/audios/AudioIndexView.vue'
 import AudioShowView from '@/views/audios/AudioShowView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import FlowCreateView from '@/views/flows/FlowCreateView.vue'
+import FlowIndexView from '@/views/flows/FlowIndexView.vue'
 import HomeView from '@/views/HomeView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
 import GoogleCallbackView from '@/views/auth/GoogleCallbackView.vue'
@@ -84,6 +86,18 @@ const router = createRouter({
       path: '/core',
       name: 'core',
       component: DashboardView,
+    },
+    {
+      path: '/flows',
+      name: 'flows-index',
+      component: FlowIndexView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/flows/create',
+      name: 'flows-create',
+      component: FlowCreateView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/settings',

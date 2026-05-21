@@ -84,6 +84,10 @@ const hasModesProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/modes'),
 )
 
+const hasFlowsProfileItem = computed(() =>
+  profileItems.value.some((item) => normalizedItemRoute(item.route) === '/flows'),
+)
+
 const hasAudiosProfileItem = computed(() =>
   profileItems.value.some((item) => normalizedItemRoute(item.route) === '/audios'),
 )
@@ -121,6 +125,10 @@ const navigationItems = computed(() => {
 
   if (!hasCoreProfileItem.value) {
     items.push(fallbackItem('fallback-core', t('nav.core'), '/core'))
+  }
+
+  if (!hasFlowsProfileItem.value) {
+    items.push(fallbackItem('fallback-flows', t('nav.flows'), '/flows'))
   }
 
   if (!hasModesProfileItem.value) {
