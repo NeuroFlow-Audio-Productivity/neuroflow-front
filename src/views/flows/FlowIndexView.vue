@@ -91,10 +91,12 @@ const loadFlows = async () => {
   }
 }
 
-const handleCreated = (flow: Flow) => {
+const handleCreated = async (flow: Flow) => {
   flows.value = [flow, ...flows.value.filter((item) => item.id !== flow.id)]
   successMessage.value = t('flowResource.feedback.created')
   error.value = null
+
+  await router.push({ name: 'flows-edit', params: { id: flow.id } })
 }
 
 const startEditing = (flow: Flow) => {
@@ -320,6 +322,16 @@ onMounted(() => {
             </div>
 
             <div class="flow-card-footer">
+              <RouterLink :to="{ name: 'flows-edit', params: { id: flow.id } }">
+                <Button
+                  icon="pi pi-list-check"
+                  severity="secondary"
+                  text
+                  rounded
+                  :aria-label="t('flowResource.actions.builder')"
+                  class="!text-white/72 hover:!bg-white/10"
+                />
+              </RouterLink>
               <Button
                 icon="pi pi-pencil"
                 severity="secondary"

@@ -2,11 +2,12 @@
 import { useRouter } from 'vue-router'
 
 import FlowCreationGuide from '@/components/flows/FlowCreationGuide.vue'
+import type { Flow } from '@/types/flow'
 
 const router = useRouter()
 
-const handleCreated = async () => {
-  await router.push({ name: 'flows-index', query: { created: '1' } })
+const handleCreated = async (flow: Flow) => {
+  await router.push({ name: 'flows-edit', params: { id: flow.id } })
 }
 </script>
 

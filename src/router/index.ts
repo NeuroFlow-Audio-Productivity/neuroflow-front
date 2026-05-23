@@ -6,6 +6,7 @@ import AudioIndexView from '@/views/audios/AudioIndexView.vue'
 import AudioShowView from '@/views/audios/AudioShowView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import FlowCreateView from '@/views/flows/FlowCreateView.vue'
+import FlowEditView from '@/views/flows/FlowEditView.vue'
 import FlowIndexView from '@/views/flows/FlowIndexView.vue'
 import HomeView from '@/views/HomeView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
@@ -97,6 +98,12 @@ const router = createRouter({
       path: '/flows/create',
       name: 'flows-create',
       component: FlowCreateView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/flows/:id/edit',
+      name: 'flows-edit',
+      component: FlowEditView,
       meta: { requiresAuth: true },
     },
     {
