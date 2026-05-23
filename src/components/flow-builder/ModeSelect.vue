@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Select from 'primevue/select'
 
-import { modeSemanticKey } from '@/services/modeVisuals'
+import { isUserMode, modeSemanticKey } from '@/services/modeVisuals'
 import type { Mode } from '@/types/mode'
 
 const props = defineProps<{
@@ -26,13 +26,11 @@ const modeLabel = (mode: Mode) => {
 }
 
 const options = computed(() =>
-  props.modes
-    .filter((mode) => !mode.is_system)
-    .map((mode) => ({
-      label: modeLabel(mode),
-      value: mode.id,
-      color: mode.color,
-    })),
+  props.modes.filter(isUserMode).map((mode) => ({
+    label: modeLabel(mode),
+    value: mode.id,
+    color: mode.color,
+  })),
 )
 
 const selectedOption = computed(

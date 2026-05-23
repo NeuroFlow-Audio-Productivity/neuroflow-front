@@ -8,6 +8,7 @@ import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi } from '@/services/audioApi'
+import { isSystemMode, isUserMode } from '@/services/modeVisuals'
 import { flowNodeApi } from '@/services/flowNodeApi'
 import { modeApi } from '@/services/modeApi'
 import { useAuthStore } from '@/stores/auth'
@@ -37,10 +38,11 @@ const successMessage = ref<string | null>(null)
 const sortedNodes = computed(() =>
   [...nodes.value].sort((first, second) => first.order - second.order),
 )
-const availableModes = computed(() => modes.value.filter((mode) => !mode.is_system))
+const availableModes = computed(() => modes.value.filter(isUserMode))
 const alarmAudios = computed(() =>
   audios.value.filter(
-    (audio) => audio.mode?.is_system === true || audio.mode?.name === 'Session Alarm',
+    (audio) =>
+      (audio.mode !== null && isSystemMode(audio.mode)) || audio.mode?.name === 'Session Alarm',
   ),
 )
 const hasAvailableModes = computed(() => availableModes.value.length > 0)
