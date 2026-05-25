@@ -37,8 +37,11 @@ const suggestions = computed(() =>
   selectedMode.value ? getNodeTitleSuggestionsForMode(props.flow, selectedMode.value) : [],
 )
 const customTitleValue = computed(() => customTitle.value.trim())
+const suggestionLabel = (suggestion: string) =>
+  suggestion ? t('flowResource.builder.nodeSuggestions.' + suggestion) : ''
+
 const titleValue = computed(() =>
-  isCustomTitleSelected.value ? customTitleValue.value : selectedSuggestion.value.trim(),
+  isCustomTitleSelected.value ? customTitleValue.value : suggestionLabel(selectedSuggestion.value),
 )
 const canCreate = computed(() =>
   Boolean(selectedModeId.value && titleValue.value && !props.creating),
@@ -156,7 +159,7 @@ const confirm = () => {
             :disabled="creating"
             @click="selectSuggestion(suggestion)"
           >
-            {{ suggestion }}
+            {{ suggestionLabel(suggestion) }}
           </button>
           <button
             class="flow-node-suggestion flow-node-suggestion--custom"

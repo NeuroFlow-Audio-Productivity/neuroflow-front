@@ -80,15 +80,15 @@ const saveState = computed(() => {
     return t('flowResource.builder.saving')
   }
 
-  return 'Saved ✓'
+  return t('flowResource.builder.saved')
 })
 const saveStateClass = computed(() => ({
   'is-saving': isCreating.value || isReordering.value || savingNodeIds.value.size > 0,
 }))
 const flowSummary = computed(() => {
-  if (sectionCount.value === 0) return 'A blank ritual ready for its first intentional block.'
+  if (sectionCount.value === 0) return t('flowResource.builder.blankSummary')
 
-  return 'Designed as a calm sequence of attention, recovery, and completion.'
+  return t('flowResource.builder.activeSummary')
 })
 const previewSegments = computed(() =>
   sortedNodes.value.map((node) => {
@@ -110,10 +110,19 @@ const previewSegments = computed(() =>
   }),
 )
 const flowStats = computed(() => [
-  { label: 'Total Duration', value: totalDuration.value + ' min' },
-  { label: 'Sections', value: String(sectionCount.value) },
-  { label: 'Longest Session', value: longestDuration.value + ' min' },
-  { label: 'Average Block', value: averageDuration.value + ' min' },
+  {
+    label: t('flowResource.builder.stats.totalDuration'),
+    value: t('flowResource.builder.minutes', { count: totalDuration.value }),
+  },
+  { label: t('flowResource.builder.stats.sections'), value: String(sectionCount.value) },
+  {
+    label: t('flowResource.builder.stats.longestSession'),
+    value: t('flowResource.builder.minutes', { count: longestDuration.value }),
+  },
+  {
+    label: t('flowResource.builder.stats.averageBlock'),
+    value: t('flowResource.builder.minutes', { count: averageDuration.value }),
+  },
 ])
 const withOrders = (items: FlowNode[]) =>
   items.map((node, index) => ({
@@ -153,6 +162,10 @@ const decorateNode = (node: FlowNode): FlowNode => {
     mode: mode ?? node.mode,
     end_audio: endAudio,
   }
+}
+
+function nodeSuggestionLabel(suggestion: string) {
+  return t('flowResource.builder.nodeSuggestions.' + suggestion)
 }
 
 function fallbackNodeTitle(order: number) {
@@ -334,8 +347,17 @@ const updateNode = async (
       node.mode ?? modes.value.find((item) => Number(item.id) === Number(node.mode_id))
     const nextMode = modes.value.find((item) => Number(item.id) === Number(patch.mode_id))
 
-    if (nextMode && isGeneratedNodeTitle(node.title, props.flow, previousMode)) {
-      const nextTitle = getNodeTitleSuggestionsForMode(props.flow, nextMode)[0]
+    if (
+      nextMode &&
+      isGeneratedNodeTitle(
+        node.title,
+        previousMode
+          ? getNodeTitleSuggestionsForMode(props.flow, previousMode).map(nodeSuggestionLabel)
+          : [],
+      )
+    ) {
+      const nextTitleKey = getNodeTitleSuggestionsForMode(props.flow, nextMode)[0]
+      const nextTitle = nextTitleKey ? nodeSuggestionLabel(nextTitleKey) : null
 
       if (nextTitle) {
         nextPatch.title = ensureUniqueNodeTitle(
@@ -463,8 +485,18 @@ onMounted(() => {
 
         <h1>{{ flow.name }}</h1>
         <p class="flow-builder-meta">
-          {{ sectionCount }} {{ sectionCount === 1 ? 'Section' : 'Sections' }} •
-          {{ totalDuration }} min total • Ends around {{ estimatedCompletion }}
+          {{
+            t('flowResource.builder.meta', {
+              sections: sectionCount,
+              sectionLabel: t(
+                sectionCount === 1
+                  ? 'flowResource.builder.sectionSingular'
+                  : 'flowResource.builder.sectionPlural',
+              ),
+              minutes: totalDuration,
+              completion: estimatedCompletion,
+            })
+          }}
         </p>
         <p class="flow-builder-intent">{{ flowSummary }}</p>
       </div>
@@ -481,11 +513,15 @@ onMounted(() => {
       </div>
     </header>
 
-    <section v-if="!isLoading" class="flow-overview-grid" aria-label="Flow overview">
+    <section
+      v-if="!isLoading"
+      class="flow-overview-grid"
+      :aria-label="t('flowResource.builder.overviewLabel')"
+    >
       <div class="flow-preview-panel">
         <div class="flow-panel-heading">
-          <span>Journey Preview</span>
-          <strong>{{ totalDuration }}m</strong>
+          <span>{{ t('flowResource.builder.journeyPreview') }}</span>
+          <strong>{{ t('flowResource.builder.minutesShort', { count: totalDuration }) }}</strong>
         </div>
 
         <div v-if="previewSegments.length > 0" class="flow-preview-track">
@@ -494,7 +530,12 @@ onMounted(() => {
             :key="segment.id"
             class="flow-preview-segment"
             :style="segment.style"
-            :title="segment.label + ' • ' + segment.time + ' min'"
+            :title="
+              t('flowResource.builder.segmentTitle', {
+                title: segment.label,
+                minutes: segment.time,
+              })
+            "
           />
         </div>
         <div v-else class="flow-preview-empty" aria-hidden="true">
@@ -505,7 +546,12 @@ onMounted(() => {
 
         <div v-if="previewSegments.length > 0" class="flow-preview-legend">
           <span v-for="segment in previewSegments" :key="segment.id">
-            {{ segment.label }} · {{ segment.time }}m
+            {{
+              t('flowResource.builder.segmentLegend', {
+                title: segment.label,
+                minutes: segment.time,
+              })
+            }}
           </span>
         </div>
       </div>
@@ -550,7 +596,7 @@ onMounted(() => {
         <span />
       </div>
       <h2>{{ t('flowResource.builder.emptyTitle') }}</h2>
-      <p>Create your first block to start shaping the rhythm of this flow.</p>
+      <p>{{ t('flowResource.builder.emptyBuilderHint') }}</p>
       <Button
         :label="t('flowResource.builder.addFirstSection')"
         icon="pi pi-plus"

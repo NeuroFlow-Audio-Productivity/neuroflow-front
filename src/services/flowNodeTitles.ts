@@ -5,55 +5,57 @@ import type { Mode } from '@/types/mode'
 
 export type FlowNodeTitleFlowType = 'focus' | 'relaxation' | 'sleep'
 export type FlowNodeTitleMode = 'focus' | 'relaxation' | 'sleep'
+export type FlowNodeTitleSuggestionKey =
+  (typeof NODE_TITLE_SUGGESTIONS)[FlowNodeTitleFlowType][FlowNodeTitleMode][number]
 
 const MAX_NODE_TITLE_LENGTH = 255
 
 const NODE_TITLE_SUGGESTIONS: Record<FlowNodeTitleFlowType, Record<FlowNodeTitleMode, string[]>> = {
   focus: {
     focus: [
-      'Study Session',
-      'Focus Session',
-      'Deep Work Session',
-      'Learning Block',
-      'Concentration Block',
+      'studySession',
+      'focusSession',
+      'deepWorkSession',
+      'learningBlock',
+      'concentrationBlock',
     ],
     relaxation: [
-      'Short Break',
-      'Recovery Break',
-      'Mental Reset',
-      'Long Break',
-      'Quick Recharge',
-      'Pause',
+      'shortBreak',
+      'recoveryBreak',
+      'mentalReset',
+      'longBreak',
+      'quickRecharge',
+      'pause',
     ],
-    sleep: ['Power Nap', 'Recovery Nap', 'Rest Block', 'Sleep Reset', 'Deep Rest'],
+    sleep: ['powerNap', 'recoveryNap', 'restBlock', 'sleepReset', 'deepRest'],
   },
   relaxation: {
     relaxation: [
-      'Relaxation Session',
-      'Breathing Session',
-      'Calm Session',
-      'Mindful Session',
-      'Unwind Session',
+      'relaxationSession',
+      'breathingSession',
+      'calmSession',
+      'mindfulSession',
+      'unwindSession',
     ],
     focus: [
-      'Attention Exercise',
-      'Reflection Exercise',
-      'Mindful Focus',
-      'Journaling',
-      'Clarity Practice',
+      'attentionExercise',
+      'reflectionExercise',
+      'mindfulFocus',
+      'journaling',
+      'clarityPractice',
     ],
-    sleep: ['Sleep Preparation', 'Wind Down', 'Night Routine', 'Sleep Transition', 'Evening Reset'],
+    sleep: ['sleepPreparation', 'windDown', 'nightRoutine', 'sleepTransition', 'eveningReset'],
   },
   sleep: {
-    sleep: ['Sleep Phase', 'Sleep Cycle', 'Night Phase', 'Deep Sleep Block', 'Rest Phase'],
+    sleep: ['sleepPhase', 'sleepCycle', 'nightPhase', 'deepSleepBlock', 'restPhase'],
     relaxation: [
-      'Wind Down',
-      'Relaxation Phase',
-      'Body Relaxation',
-      'Breathing Phase',
-      'Sleep Preparation',
+      'windDown',
+      'relaxationPhase',
+      'bodyRelaxation',
+      'breathingPhase',
+      'sleepPreparation',
     ],
-    focus: ['Mental Clearing', 'Reflection', 'Brain Dump', 'Mind Reset', 'Thought Release'],
+    focus: ['mentalClearing', 'reflection', 'brainDump', 'mindReset', 'thoughtRelease'],
   },
 }
 
@@ -86,15 +88,8 @@ export const getNodeTitleSuggestions = (
 export const getNodeTitleSuggestionsForMode = (flow: Pick<Flow, 'name'>, mode: Mode) =>
   getNodeTitleSuggestions(flowTypeFromFlow(flow), nodeTitleModeFromMode(mode))
 
-export const isGeneratedNodeTitle = (
-  title: string,
-  flow: Pick<Flow, 'name'>,
-  mode: Mode | null | undefined,
-) => {
-  if (!mode) return false
-
-  return getNodeTitleSuggestionsForMode(flow, mode).includes(generatedBaseTitle(title))
-}
+export const isGeneratedNodeTitle = (title: string, generatedTitles: string[]) =>
+  generatedTitles.includes(generatedBaseTitle(title))
 
 const numberedTitle = (title: string, suffix: number) => {
   const suffixText = ' ' + suffix

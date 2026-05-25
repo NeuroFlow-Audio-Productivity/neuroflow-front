@@ -66,10 +66,10 @@ const fallbackTitle = computed(
 )
 const cardTitle = computed(() => props.node.title?.trim() || fallbackTitle.value)
 const cardSubtitle = computed(() => {
-  if (modeKey.value === 'sleep') return 'Settle into deep calm'
-  if (modeKey.value === 'relax') return 'Recover, reset, and soften'
+  if (modeKey.value === 'sleep') return t('flowResource.builder.cardSubtitles.sleep')
+  if (modeKey.value === 'relax') return t('flowResource.builder.cardSubtitles.relax')
 
-  return 'Move through focused attention'
+  return t('flowResource.builder.cardSubtitles.focus')
 })
 const nodeStyle = computed(() => {
   const color = selectedMode.value?.color ?? '#6ee7d8'
@@ -151,7 +151,7 @@ const updateAlarm = (audioId: number | null) => {
           <div class="flow-node-kicker">
             <span>{{ String(index + 1).padStart(2, '0') }}</span>
             <span v-if="saving">{{ t('flowResource.builder.saving') }}</span>
-            <span v-else-if="saved">Saved</span>
+            <span v-else-if="saved">{{ t('flowResource.builder.saved') }}</span>
           </div>
           <h2>{{ cardTitle }}</h2>
           <p>{{ cardSubtitle }}</p>
@@ -159,7 +159,7 @@ const updateAlarm = (audioId: number | null) => {
 
         <div class="flow-node-duration-pill">
           <strong>{{ node.time }}</strong>
-          <span>min</span>
+          <span>{{ t('flowResource.builder.minuteShort') }}</span>
         </div>
       </div>
 
@@ -217,7 +217,7 @@ const updateAlarm = (audioId: number | null) => {
 
       <div class="flow-node-footer">
         <span>
-          Ends with
+          {{ t('flowResource.builder.endsWith') }}
           <strong>{{ selectedAlarm?.name ?? t('flowResource.builder.alarmPlaceholder') }}</strong>
         </span>
         <Button
