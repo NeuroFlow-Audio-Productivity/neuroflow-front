@@ -28,6 +28,7 @@ const { t } = useI18n()
 const selectedModeId = ref<number | null>(null)
 const selectedSuggestion = ref('')
 const customTitle = ref('')
+const isCustomTitleSelected = ref(false)
 
 const selectedMode = computed(
   () => props.modes.find((mode) => Number(mode.id) === Number(selectedModeId.value)) ?? null,
@@ -36,7 +37,9 @@ const suggestions = computed(() =>
   selectedMode.value ? getNodeTitleSuggestionsForMode(props.flow, selectedMode.value) : [],
 )
 const customTitleValue = computed(() => customTitle.value.trim())
-const titleValue = computed(() => customTitleValue.value || selectedSuggestion.value.trim())
+const titleValue = computed(() =>
+  isCustomTitleSelected.value ? customTitleValue.value : selectedSuggestion.value.trim(),
+)
 const canCreate = computed(() =>
   Boolean(selectedModeId.value && titleValue.value && !props.creating),
 )
@@ -51,6 +54,7 @@ const selectInitialMode = () => {
 const resetDraft = () => {
   selectInitialMode()
   customTitle.value = ''
+  isCustomTitleSelected.value = false
   selectedSuggestion.value = suggestions.value[0] ?? ''
 }
 
@@ -62,8 +66,20 @@ watch(
 )
 
 watch(selectedModeId, () => {
+  customTitle.value = ''
+  isCustomTitleSelected.value = false
   selectedSuggestion.value = suggestions.value[0] ?? ''
 })
+
+const selectSuggestion = (suggestion: string) => {
+  selectedSuggestion.value = suggestion
+  isCustomTitleSelected.value = false
+  customTitle.value = ''
+}
+
+const selectCustomTitle = () => {
+  isCustomTitleSelected.value = true
+}
 
 const close = () => {
   if (props.creating) return
@@ -86,13 +102,27 @@ const confirm = () => {
     :visible="visible"
     modal
     :draggable="false"
-    :closable="!creating"
+    :closable="false"
     :close-on-escape="!creating"
     class="flow-node-title-dialog"
-    :pt="{ mask: { class: 'flow-node-title-mask' } }"
+    :pt="{
+      mask: { class: 'flow-node-title-mask' },
+      root: { class: 'flow-node-title-root' },
+      content: { class: 'flow-node-title-content' },
+    }"
     @update:visible="emit('update:visible', $event)"
   >
     <form class="flow-node-title-card" @submit.prevent="confirm">
+      <button
+        class="flow-node-title-close"
+        type="button"
+        :aria-label="t('auth.actions.cancel')"
+        :disabled="creating"
+        @click="close"
+      >
+        <i class="pi pi-times" aria-hidden="true" />
+      </button>
+
       <header class="flow-node-title-header">
         <p>{{ t('flowResource.builder.titleDialog.eyebrow') }}</p>
         <h2>{{ t('flowResource.builder.titleDialog.title') }}</h2>
@@ -121,17 +151,26 @@ const confirm = () => {
             v-for="suggestion in suggestions"
             :key="suggestion"
             class="flow-node-suggestion"
-            :class="{ 'is-selected': selectedSuggestion === suggestion && !customTitleValue }"
+            :class="{ 'is-selected': selectedSuggestion === suggestion && !isCustomTitleSelected }"
             type="button"
             :disabled="creating"
-            @click="selectedSuggestion = suggestion"
+            @click="selectSuggestion(suggestion)"
           >
             {{ suggestion }}
+          </button>
+          <button
+            class="flow-node-suggestion flow-node-suggestion--custom"
+            :class="{ 'is-selected': isCustomTitleSelected }"
+            type="button"
+            :disabled="creating"
+            @click="selectCustomTitle"
+          >
+            {{ t('flowResource.builder.titleDialog.custom') }}
           </button>
         </div>
       </section>
 
-      <label class="flow-node-title-field">
+      <label v-if="isCustomTitleSelected" class="flow-node-title-field">
         <span>{{ t('flowResource.builder.titleDialog.custom') }}</span>
         <InputText
           v-model="customTitle"
@@ -173,6 +212,7 @@ const confirm = () => {
   backdrop-filter: blur(12px);
 }
 
+:global(.flow-node-title-root),
 :deep(.p-dialog) {
   border: 0 !important;
   border-radius: 8px !important;
@@ -180,24 +220,65 @@ const confirm = () => {
   box-shadow: none !important;
 }
 
+:global(.flow-node-title-content),
 :deep(.p-dialog-content) {
   background: transparent !important;
   padding: 0 !important;
 }
 
 .flow-node-title-card {
-  width: min(calc(100vw - 2rem), 35rem);
+  position: relative;
+  width: min(calc(100vw - 2rem), 39rem);
   overflow: hidden;
   border: 1px solid rgba(var(--mode-glow-rgb), 0.32);
   border-radius: 8px;
   background:
     radial-gradient(circle at 18% 0%, rgba(var(--mode-glow-rgb), 0.2), transparent 16rem),
     linear-gradient(145deg, rgba(13, 28, 24, 0.98), rgba(4, 10, 10, 0.98));
-  padding: clamp(1rem, 3vw, 1.35rem);
+  padding: clamp(1.2rem, 3.2vw, 1.65rem);
   color: #f7fbf8;
   box-shadow:
     0 30px 100px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.flow-node-title-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.68);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.flow-node-title-close:hover {
+  border-color: rgba(var(--mode-glow-rgb), 0.42);
+  background: rgba(var(--mode-glow-rgb), 0.12);
+  color: #ffffff;
+}
+
+.flow-node-title-close:active {
+  transform: scale(0.96);
+}
+
+.flow-node-title-close:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.flow-node-title-header {
+  padding-right: 2.8rem;
 }
 
 .flow-node-title-header p,
