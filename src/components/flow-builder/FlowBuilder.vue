@@ -4,11 +4,17 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 
 import FlowNodeList from '@/components/flow-builder/FlowNodeList.vue'
+import FlowNodeTitleDialog from '@/components/flow-builder/FlowNodeTitleDialog.vue'
 import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi } from '@/services/audioApi'
 import { flowNodeApi } from '@/services/flowNodeApi'
+import {
+  ensureUniqueNodeTitle,
+  getNodeTitleSuggestionsForMode,
+  isGeneratedNodeTitle,
+} from '@/services/flowNodeTitles'
 import { isSystemMode, isUserMode, modeRgbString, modeSemanticKey } from '@/services/modeVisuals'
 import { modeApi } from '@/services/modeApi'
 import { useAuthStore } from '@/stores/auth'
@@ -30,7 +36,8 @@ const audios = ref<Audio[]>([])
 const isLoading = ref(false)
 const isCreating = ref(false)
 const isReordering = ref(false)
-const showAddPanel = ref(false)
+const isTitleDialogVisible = ref(false)
+const titleDialogModeId = ref<number | string | null>(null)
 const savingNodeIds = ref(new Set<number>())
 const deletingNodeIds = ref(new Set<number>())
 const recentlySavedNodeIds = ref(new Set<number>())
@@ -108,19 +115,6 @@ const flowStats = computed(() => [
   { label: 'Longest Session', value: longestDuration.value + ' min' },
   { label: 'Average Block', value: averageDuration.value + ' min' },
 ])
-const addModeOptions = computed(() =>
-  availableModes.value.map((mode) => ({
-    mode,
-    title: modeLabel(mode),
-    subtitle: modeOptionSubtitle(mode),
-    time: defaultTimeForMode(mode),
-    icon: iconForMode(mode),
-    style: {
-      '--option-rgb': modeRgbString(mode.color),
-    },
-  })),
-)
-
 const withOrders = (items: FlowNode[]) =>
   items.map((node, index) => ({
     ...node,
@@ -171,16 +165,6 @@ function normalizeNodeTitle(title: string | null | undefined, order: number) {
   return (normalizedTitle || fallbackNodeTitle(order)).slice(0, 255)
 }
 
-function defaultTitleForMode(mode: Mode, order: number) {
-  return normalizeNodeTitle(modeLabel(mode), order)
-}
-
-function modeLabel(mode: Mode) {
-  const key = modeSemanticKey(mode)
-
-  return key ? t('modes.' + key + '.label') : mode.name
-}
-
 function defaultTimeForMode(mode: Mode) {
   const key = modeSemanticKey(mode)
   const name = mode.name.toLowerCase()
@@ -188,23 +172,6 @@ function defaultTimeForMode(mode: Mode) {
   if (key === 'sleep') return 45
   if (key === 'relax' || name.includes('break')) return 10
   return 25
-}
-
-function modeOptionSubtitle(mode: Mode) {
-  const key = modeSemanticKey(mode)
-  const name = mode.name.toLowerCase()
-
-  if (key === 'sleep') return 'Deep calm block'
-  if (key === 'relax' || name.includes('break')) return 'Reset and recover'
-  return 'Focused attention block'
-}
-
-function iconForMode(mode: Mode) {
-  const key = modeSemanticKey(mode)
-
-  if (key === 'sleep') return 'pi pi-moon'
-  if (key === 'relax') return 'pi pi-sparkles'
-  return 'pi pi-bolt'
 }
 
 const markSaved = (nodeIds: number[]) => {
@@ -287,13 +254,33 @@ const focusNode = async (nodeId: number) => {
   element?.querySelector<HTMLElement>('.flow-title-input')?.focus()
 }
 
-const createNode = async (modeId?: number | string) => {
-  if (!auth.token || isCreating.value) return
+const openCreateDialog = (modeId?: number | string) => {
+  if (isCreating.value) return
 
   const mode =
     modeId === undefined
       ? availableModes.value[0]
       : availableModes.value.find((item) => Number(item.id) === Number(modeId))
+  const alarm = alarmAudios.value[0]
+
+  if (!mode) {
+    error.value = t('flowResource.builder.errors.noModes')
+    return
+  }
+
+  if (!alarm) {
+    error.value = t('flowResource.builder.errors.noAlarms')
+    return
+  }
+
+  titleDialogModeId.value = mode.id
+  isTitleDialogVisible.value = true
+}
+
+const createNode = async ({ modeId, title }: { modeId: number | string; title: string }) => {
+  if (!auth.token || isCreating.value) return
+
+  const mode = availableModes.value.find((item) => Number(item.id) === Number(modeId))
   const alarm = alarmAudios.value[0]
 
   if (!mode) {
@@ -313,7 +300,7 @@ const createNode = async (modeId?: number | string) => {
   try {
     const order = sortedNodes.value.length + 1
     const flowNode = await flowNodeApi.createFlowNode(auth.token, {
-      title: defaultTitleForMode(mode, order),
+      title: ensureUniqueNodeTitle(normalizeNodeTitle(title, order), sortedNodes.value),
       flow_id: props.flow.id,
       mode_id: mode.id,
       end_audio_id: alarm.id,
@@ -322,7 +309,8 @@ const createNode = async (modeId?: number | string) => {
     })
 
     nodes.value = withOrders([...sortedNodes.value, decorateNode(flowNode)])
-    showAddPanel.value = false
+    isTitleDialogVisible.value = false
+    titleDialogModeId.value = null
     markSaved([flowNode.id])
     await focusNode(flowNode.id)
   } catch (caughtError) {
@@ -339,7 +327,26 @@ const updateNode = async (
   if (!auth.token) return
 
   const previousNodes = nodes.value
-  const nextNode = decorateNode({ ...node, ...patch })
+  const nextPatch = { ...patch }
+
+  if (patch.mode_id !== undefined && patch.title === undefined) {
+    const previousMode =
+      node.mode ?? modes.value.find((item) => Number(item.id) === Number(node.mode_id))
+    const nextMode = modes.value.find((item) => Number(item.id) === Number(patch.mode_id))
+
+    if (nextMode && isGeneratedNodeTitle(node.title, props.flow, previousMode)) {
+      const nextTitle = getNodeTitleSuggestionsForMode(props.flow, nextMode)[0]
+
+      if (nextTitle) {
+        nextPatch.title = ensureUniqueNodeTitle(
+          nextTitle,
+          sortedNodes.value.filter((item) => item.id !== node.id),
+        )
+      }
+    }
+  }
+
+  const nextNode = decorateNode({ ...node, ...nextPatch })
 
   nodes.value = nodes.value.map((item) => (item.id === node.id ? nextNode : item))
   setSaving(node.id, true)
@@ -464,12 +471,12 @@ onMounted(() => {
 
       <div class="flow-builder-actions">
         <Button
-          :label="showAddPanel ? 'Close' : t('flowResource.builder.addSection')"
-          :icon="showAddPanel ? 'pi pi-times' : 'pi pi-plus'"
+          :label="t('flowResource.builder.addSection')"
+          icon="pi pi-plus"
           class="theme-primary-button flow-builder-add"
           :loading="isCreating"
           :disabled="isLoading || !hasAvailableModes || !hasAlarmAudios"
-          @click="showAddPanel = !showAddPanel"
+          @click="openCreateDialog()"
         />
       </div>
     </header>
@@ -511,33 +518,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <Transition name="flow-add-panel">
-      <section v-if="showAddPanel && !isLoading" class="flow-add-panel">
-        <div>
-          <h2>Choose the next block</h2>
-          <p>Start with a sensible duration, then tune it in the timeline.</p>
-        </div>
-
-        <div class="flow-add-options">
-          <button
-            v-for="option in addModeOptions"
-            :key="option.mode.id"
-            class="flow-add-option"
-            type="button"
-            :style="option.style"
-            :disabled="isCreating"
-            @click="createNode(option.mode.id)"
-          >
-            <span class="flow-add-option-icon"><i :class="option.icon" aria-hidden="true" /></span>
-            <span>
-              <strong>{{ option.title }}</strong>
-              <small>{{ option.subtitle }} · {{ option.time }} min</small>
-            </span>
-          </button>
-        </div>
-      </section>
-    </Transition>
-
     <div
       v-if="successMessage"
       class="theme-success-panel mt-5 rounded-[8px] border px-4 py-3 text-sm leading-6"
@@ -577,7 +557,7 @@ onMounted(() => {
         class="theme-primary-button !justify-center"
         :loading="isCreating"
         :disabled="!hasAvailableModes || !hasAlarmAudios"
-        @click="showAddPanel = true"
+        @click="openCreateDialog()"
       />
     </section>
 
@@ -594,6 +574,14 @@ onMounted(() => {
       @update="updateNode"
       @delete="deleteNode"
       @reorder="reorderNodes"
+    />
+    <FlowNodeTitleDialog
+      v-model:visible="isTitleDialogVisible"
+      :flow="flow"
+      :modes="availableModes"
+      :initial-mode-id="titleDialogModeId"
+      :creating="isCreating"
+      @create="createNode"
     />
   </section>
 </template>
