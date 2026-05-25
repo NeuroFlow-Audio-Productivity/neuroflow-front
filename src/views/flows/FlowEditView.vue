@@ -88,7 +88,7 @@ onMounted(() => {
         {{ error }}
       </div>
 
-      <FlowBuilder v-else-if="flow" class="mt-6" :flow="flow" />
+      <FlowBuilder v-else-if="flow" class="mt-6" :flow="flow" @update:flow="flow = $event" />
     </section>
   </main>
 </template>

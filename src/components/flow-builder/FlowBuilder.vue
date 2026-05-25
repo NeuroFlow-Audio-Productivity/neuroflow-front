@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 
 import FlowNodeList from '@/components/flow-builder/FlowNodeList.vue'
 import FlowNodeTitleDialog from '@/components/flow-builder/FlowNodeTitleDialog.vue'
@@ -9,6 +10,7 @@ import { useThemedConfirm } from '@/composables/useThemedConfirm'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi } from '@/services/audioApi'
+import { flowApi } from '@/services/flowApi'
 import { flowNodeApi } from '@/services/flowNodeApi'
 import {
   ensureUniqueNodeTitle,
@@ -26,6 +28,10 @@ const props = defineProps<{
   flow: Flow
 }>()
 
+const emit = defineEmits<{
+  'update:flow': [flow: Flow]
+}>()
+
 const { t } = useI18n()
 const auth = useAuthStore()
 const { confirmDanger } = useThemedConfirm()
@@ -36,6 +42,8 @@ const audios = ref<Audio[]>([])
 const isLoading = ref(false)
 const isCreating = ref(false)
 const isReordering = ref(false)
+const isSavingFlowName = ref(false)
+const flowNameDraft = ref(props.flow.name)
 const isTitleDialogVisible = ref(false)
 const titleDialogModeId = ref<number | string | null>(null)
 const savingNodeIds = ref(new Set<number>())
@@ -76,14 +84,23 @@ const estimatedCompletion = computed(() => {
 })
 const saveState = computed(() => {
   if (isLoading.value) return t('flowResource.builder.loading')
-  if (isCreating.value || isReordering.value || savingNodeIds.value.size > 0) {
+  if (
+    isCreating.value ||
+    isReordering.value ||
+    isSavingFlowName.value ||
+    savingNodeIds.value.size > 0
+  ) {
     return t('flowResource.builder.saving')
   }
 
   return t('flowResource.builder.saved')
 })
 const saveStateClass = computed(() => ({
-  'is-saving': isCreating.value || isReordering.value || savingNodeIds.value.size > 0,
+  'is-saving':
+    isCreating.value ||
+    isReordering.value ||
+    isSavingFlowName.value ||
+    savingNodeIds.value.size > 0,
 }))
 const flowSummary = computed(() => {
   if (sectionCount.value === 0) return t('flowResource.builder.blankSummary')
@@ -199,6 +216,42 @@ const markSaved = (nodeIds: number[]) => {
     nodeIds.forEach((id) => currentIds.delete(id))
     recentlySavedNodeIds.value = currentIds
   }, 900)
+}
+
+watch(
+  () => props.flow.name,
+  (name) => {
+    flowNameDraft.value = name
+  },
+)
+
+const saveFlowName = async () => {
+  if (!auth.token || isSavingFlowName.value) return
+
+  const name = flowNameDraft.value.trim()
+
+  if (!name) {
+    flowNameDraft.value = props.flow.name
+    return
+  }
+
+  if (name === props.flow.name) return
+
+  isSavingFlowName.value = true
+  error.value = null
+  successMessage.value = null
+
+  try {
+    const savedFlow = await flowApi.updateFlow(auth.token, props.flow.id, { name })
+
+    flowNameDraft.value = savedFlow.name
+    emit('update:flow', savedFlow)
+  } catch (caughtError) {
+    flowNameDraft.value = props.flow.name
+    setError(caughtError, 'flowResource.errors.save')
+  } finally {
+    isSavingFlowName.value = false
+  }
 }
 
 const setError = (caughtError: unknown, fallbackKey: string) => {
@@ -483,7 +536,16 @@ onMounted(() => {
           <span class="flow-save-state" :class="saveStateClass">{{ saveState }}</span>
         </div>
 
-        <h1>{{ flow.name }}</h1>
+        <label class="flow-name-editor" :aria-label="t('flowResource.fields.name')">
+          <InputText
+            v-model="flowNameDraft"
+            maxlength="255"
+            class="flow-name-editor-input"
+            :disabled="isSavingFlowName"
+            @blur="saveFlowName"
+            @keydown.enter.prevent="saveFlowName"
+          />
+        </label>
         <p class="flow-builder-meta">
           {{
             t('flowResource.builder.meta', {
@@ -691,14 +753,31 @@ onMounted(() => {
   color: #ffffff;
 }
 
-.flow-builder-hero h1 {
-  margin: 0.55rem 0 0;
-  color: #ffffff;
-  font-size: clamp(2.8rem, 7vw, 5.2rem);
-  font-weight: 780;
-  letter-spacing: 0;
-  line-height: 0.92;
+.flow-name-editor {
+  display: block;
+  margin-top: 0.55rem;
+}
+
+:deep(.flow-name-editor-input) {
+  width: 100%;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: clamp(2.8rem, 7vw, 5.2rem) !important;
+  font-weight: 780 !important;
+  letter-spacing: 0 !important;
+  line-height: 0.92 !important;
+  padding: 0 !important;
   overflow-wrap: anywhere;
+  box-shadow: none !important;
+}
+
+:deep(.flow-name-editor-input:hover),
+:deep(.flow-name-editor-input:focus) {
+  border-color: rgba(var(--mode-glow-rgb), 0.34) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  padding: 0.15rem 0.35rem !important;
 }
 
 .flow-builder-meta {
