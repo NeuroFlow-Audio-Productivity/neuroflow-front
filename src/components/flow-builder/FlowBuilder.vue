@@ -609,7 +609,6 @@ onMounted(() => {
 
     <FlowNodeList
       v-else
-      class="mt-6"
       :nodes="sortedNodes"
       :modes="availableModes"
       :alarms="alarmAudios"

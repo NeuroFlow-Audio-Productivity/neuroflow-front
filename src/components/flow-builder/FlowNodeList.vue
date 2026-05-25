@@ -62,6 +62,7 @@ const onDragEnd = (event: DragEndEvent) => {
 <style scoped>
 .flow-node-timeline {
   position: relative;
+  margin-top: 1.5rem;
   display: grid;
   gap: 0;
 }
