@@ -29,8 +29,7 @@ const flows = ref<Flow[]>([])
 const isLoading = ref(false)
 const deletingFlowId = ref<number | null>(null)
 const savingFlowId = ref<number | null>(null)
-const editingFlowId = ref<number | null>(null)
-const editName = ref('')
+const flowNameDrafts = ref<Record<number, string>>({})
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
@@ -99,22 +98,30 @@ const handleCreated = async (flow: Flow) => {
   await router.push({ name: 'flows-edit', params: { id: flow.id } })
 }
 
-const startEditing = (flow: Flow) => {
-  editingFlowId.value = flow.id
-  editName.value = flow.name
-  successMessage.value = null
-  error.value = null
+const flowNameDraft = (flow: Flow) => flowNameDrafts.value[flow.id] ?? flow.name
+
+const updateFlowNameDraft = (flow: Flow, value: string) => {
+  flowNameDrafts.value = {
+    ...flowNameDrafts.value,
+    [flow.id]: value,
+  }
 }
 
-const cancelEditing = () => {
-  editingFlowId.value = null
-  editName.value = ''
+const resetFlowNameDraft = (flow: Flow) => {
+  const nextDrafts = { ...flowNameDrafts.value }
+
+  delete nextDrafts[flow.id]
+  flowNameDrafts.value = nextDrafts
+}
+
+const openFlow = async (flow: Flow) => {
+  await router.push({ name: 'flows-edit', params: { id: flow.id } })
 }
 
 const saveFlowName = async (flow: Flow) => {
   if (!auth.token) return
 
-  const name = editName.value.trim()
+  const name = flowNameDraft(flow).trim()
   successMessage.value = null
   error.value = null
 
@@ -124,7 +131,7 @@ const saveFlowName = async (flow: Flow) => {
   }
 
   if (name === flow.name) {
-    cancelEditing()
+    resetFlowNameDraft(flow)
     return
   }
 
@@ -134,8 +141,8 @@ const saveFlowName = async (flow: Flow) => {
     const savedFlow = await flowApi.updateFlow(auth.token, flow.id, { name })
 
     flows.value = flows.value.map((item) => (item.id === savedFlow.id ? savedFlow : item))
+    resetFlowNameDraft(savedFlow)
     successMessage.value = t('flowResource.feedback.saved')
-    cancelEditing()
   } catch (caughtError) {
     setError(caughtError, 'flowResource.errors.save')
   } finally {
@@ -161,7 +168,7 @@ const deleteFlow = async (flow: Flow) => {
 
     flows.value = flows.value.filter((item) => item.id !== flow.id)
     successMessage.value = t('flowResource.feedback.deleted')
-    if (editingFlowId.value === flow.id) cancelEditing()
+    resetFlowNameDraft(flow)
   } catch (caughtError) {
     setError(caughtError, 'flowResource.errors.delete')
   } finally {
@@ -263,6 +270,11 @@ onMounted(() => {
             :key="flow.id"
             class="flow-card"
             :style="flowCardStyle(flow)"
+            role="button"
+            tabindex="0"
+            @click="openFlow(flow)"
+            @keydown.enter.prevent="openFlow(flow)"
+            @keydown.space.prevent="openFlow(flow)"
           >
             <div class="flow-card-top">
               <span class="flow-card-symbol" aria-hidden="true">{{ flowCategoryEmoji(flow) }}</span>
@@ -273,48 +285,27 @@ onMounted(() => {
             </div>
 
             <form
-              v-if="editingFlowId === flow.id"
-              class="flow-edit-form"
+              class="flow-card-name-form"
               @submit.prevent="saveFlowName(flow)"
+              @click.stop
+              @keydown.stop
             >
-              <div class="auth-field">
-                <label class="auth-field-label" :for="`flow-name-${flow.id}`">
-                  {{ t('flowResource.fields.name') }}
-                </label>
-                <InputText
-                  :id="`flow-name-${flow.id}`"
-                  v-model="editName"
-                  class="!w-full"
-                  autocomplete="off"
-                  maxlength="255"
-                />
-              </div>
-              <div class="flow-edit-actions">
-                <Button
-                  type="button"
-                  icon="pi pi-times"
-                  severity="secondary"
-                  text
-                  rounded
-                  :aria-label="t('flowResource.actions.cancel')"
-                  class="!text-white/70 hover:!bg-white/10"
-                  @click="cancelEditing"
-                />
-                <Button
-                  type="submit"
-                  icon="pi pi-check"
-                  rounded
-                  :loading="savingFlowId === flow.id"
-                  :aria-label="t('flowResource.actions.save')"
-                  class="theme-primary-button"
-                />
-              </div>
+              <label class="sr-only" :for="`flow-name-${flow.id}`">
+                {{ t('flowResource.fields.name') }}
+              </label>
+              <InputText
+                :id="`flow-name-${flow.id}`"
+                :model-value="flowNameDraft(flow)"
+                class="flow-card-name-input"
+                autocomplete="off"
+                maxlength="255"
+                :disabled="savingFlowId === flow.id"
+                @update:model-value="updateFlowNameDraft(flow, String($event ?? ''))"
+                @blur="saveFlowName(flow)"
+                @keydown.enter.prevent="saveFlowName(flow)"
+              />
             </form>
-
-            <template v-else>
-              <h2>{{ flow.name }}</h2>
-              <p>{{ t('flowResource.index.cardSubtitle') }}</p>
-            </template>
+            <p>{{ t('flowResource.index.cardSubtitle') }}</p>
 
             <div class="flow-card-meta">
               <span>{{ t('flowResource.fields.createdAt') }}</span>
@@ -322,25 +313,6 @@ onMounted(() => {
             </div>
 
             <div class="flow-card-footer">
-              <RouterLink :to="{ name: 'flows-edit', params: { id: flow.id } }">
-                <Button
-                  icon="pi pi-list-check"
-                  severity="secondary"
-                  text
-                  rounded
-                  :aria-label="t('flowResource.actions.builder')"
-                  class="!text-white/72 hover:!bg-white/10"
-                />
-              </RouterLink>
-              <Button
-                icon="pi pi-pencil"
-                severity="secondary"
-                text
-                rounded
-                :aria-label="t('flowResource.actions.edit')"
-                class="!text-white/72 hover:!bg-white/10"
-                @click="startEditing(flow)"
-              />
               <Button
                 icon="pi pi-trash"
                 severity="danger"
@@ -349,7 +321,7 @@ onMounted(() => {
                 :loading="deletingFlowId === flow.id"
                 :aria-label="t('flowResource.actions.delete')"
                 class="hover:!bg-red-500/10"
-                @click="deleteFlow(flow)"
+                @click.stop="deleteFlow(flow)"
               />
             </div>
           </article>
@@ -429,6 +401,12 @@ onMounted(() => {
   padding: 1rem;
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(20px);
+  cursor: pointer;
+}
+
+.flow-card:focus-visible {
+  outline: 2px solid rgba(var(--flow-accent-rgb), 0.76);
+  outline-offset: 3px;
 }
 
 .flow-card::before {
@@ -461,8 +439,7 @@ onMounted(() => {
 }
 
 .flow-card-top,
-.flow-card-footer,
-.flow-edit-actions {
+.flow-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -498,14 +475,33 @@ onMounted(() => {
   overflow-wrap: anywhere;
 }
 
-.flow-card h2 {
+.flow-card-name-form {
   margin: 2.2rem 0 0;
-  color: #ffffff;
-  font-size: 2.15rem;
-  font-weight: 760;
-  letter-spacing: 0;
-  line-height: 1.05;
+}
+
+:deep(.flow-card-name-input) {
+  width: 100%;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 2.15rem !important;
+  font-weight: 760 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.05 !important;
   overflow-wrap: anywhere;
+  padding: 0.15rem 0.25rem !important;
+  box-shadow: none !important;
+}
+
+:deep(.flow-card-name-input:hover),
+:deep(.flow-card-name-input:focus) {
+  border-color: rgba(var(--flow-accent-rgb), 0.36) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+:deep(.flow-card-name-input:disabled) {
+  opacity: 0.66;
 }
 
 .flow-card p {
@@ -514,16 +510,6 @@ onMounted(() => {
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.92rem;
   line-height: 1.6;
-}
-
-.flow-edit-form {
-  display: grid;
-  align-self: center;
-  gap: 0.85rem;
-}
-
-.flow-edit-actions {
-  justify-content: flex-end;
 }
 
 .flow-card-meta {
