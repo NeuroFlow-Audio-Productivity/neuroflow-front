@@ -11,6 +11,7 @@ export type Flow = {
 
 export type FlowNode = {
   id: number
+  title: string
   flow_id: number
   mode_id: number
   end_audio_id: number | null

@@ -13,11 +13,15 @@ defineProps<{
   alarms: Audio[]
   savingNodeIds: Set<number>
   deletingNodeIds: Set<number>
+  recentlySavedNodeIds: Set<number>
   disabled?: boolean
 }>()
 
 const emit = defineEmits<{
-  update: [node: FlowNode, patch: Partial<Pick<FlowNode, 'mode_id' | 'time' | 'end_audio_id'>>]
+  update: [
+    node: FlowNode,
+    patch: Partial<Pick<FlowNode, 'title' | 'mode_id' | 'time' | 'end_audio_id'>>,
+  ]
   delete: [node: FlowNode]
   reorder: [fromIndex: number, toIndex: number]
 }>()
@@ -35,16 +39,18 @@ const onDragEnd = (event: DragEndEvent) => {
 
 <template>
   <DragDropProvider @dragEnd="onDragEnd">
-    <div class="flow-node-list">
+    <div class="flow-node-timeline" role="list" aria-label="Flow sections">
       <FlowNodeCard
         v-for="(node, index) in nodes"
         :key="node.id"
         :node="node"
         :index="index"
+        :is-last="index === nodes.length - 1"
         :modes="modes"
         :alarms="alarms"
         :saving="savingNodeIds.has(node.id)"
         :deleting="deletingNodeIds.has(node.id)"
+        :saved="recentlySavedNodeIds.has(node.id)"
         :disabled="disabled"
         @update="(node, patch) => emit('update', node, patch)"
         @delete="emit('delete', $event)"
@@ -54,8 +60,9 @@ const onDragEnd = (event: DragEndEvent) => {
 </template>
 
 <style scoped>
-.flow-node-list {
+.flow-node-timeline {
+  position: relative;
   display: grid;
-  gap: 0.85rem;
+  gap: 0;
 }
 </style>

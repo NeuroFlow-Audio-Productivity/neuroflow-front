@@ -6,6 +6,7 @@ export type FlowNodesResponse = {
 }
 
 export type FlowNodePayload = {
+  title: string
   flow_id: number | string
   mode_id: number | string
   end_audio_id: number | string | null
@@ -19,6 +20,7 @@ export type UpdateFlowNodePayload = FlowNodePayload
 
 const flowNodePath = (id: string | number) => '/flow-nodes/' + encodeURIComponent(String(id))
 const flowNodePayload = (node: FlowNode): FlowNodePayload => ({
+  title: node.title,
   flow_id: node.flow_id,
   mode_id: node.mode_id,
   end_audio_id: node.end_audio_id,
