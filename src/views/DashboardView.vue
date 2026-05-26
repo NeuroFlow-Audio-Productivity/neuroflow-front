@@ -9,11 +9,27 @@ import AppNavbar from '@/components/AppNavbar.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi, audioSourceUrl } from '@/services/audioApi'
+import {
+  completeCurrentFlowNode,
+  createFlowExecutionState,
+  flowProgressPercent,
+  flowSectionViews,
+  nodeDurationSeconds,
+  resolveFlowNodeEndAudio,
+  resolveFlowNodeMode,
+  restartFlowExecutionState,
+  sortFlowNodes,
+  type FlowExecutionState,
+  type FlowSession,
+} from '@/services/flowExecution'
+import { flowApi } from '@/services/flowApi'
+import { flowNodeApi } from '@/services/flowNodeApi'
 import { modeApi } from '@/services/modeApi'
 import { modeRhythmStyle, modeSemanticKey } from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import { useVisualThemeStore } from '@/stores/visualTheme'
 import type { Audio } from '@/types/audio'
+import type { Flow } from '@/types/flow'
 import type { Mode } from '@/types/mode'
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak'
@@ -26,6 +42,7 @@ const defaultPhaseDurations: Record<TimerPhase, number> = {
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
+const FLOW_EXECUTION_STORAGE_KEY = 'neuroflow-core-flow-session'
 
 const phaseDurations = ref<Record<TimerPhase, number>>({ ...defaultPhaseDurations })
 
@@ -83,6 +100,13 @@ const visualTheme = useVisualThemeStore()
 const modes = ref<Mode[]>([])
 const audios = ref<Audio[]>([])
 const alarmAudios = ref<Audio[]>([])
+const flowCompletionAudios = ref<Audio[]>([])
+const flows = ref<Flow[]>([])
+const selectedFlowId = ref<number | null>(null)
+const flowSession = ref<FlowSession | null>(null)
+const flowExecutionState = ref<FlowExecutionState | null>(null)
+const isLoadingFlows = ref(false)
+const isLoadingSelectedFlow = ref(false)
 const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
 const selectedAlarmAudioId = ref<string | number | null>(null)
@@ -127,7 +151,8 @@ function normalizedModeName(mode: Mode) {
 }
 
 function modeSystemFlag(mode: Mode) {
-  const flag = (mode as { isSystem?: unknown; is_system?: unknown }).is_system ??
+  const flag =
+    (mode as { isSystem?: unknown; is_system?: unknown }).is_system ??
     (mode as { isSystem?: unknown; is_system?: unknown }).isSystem
 
   if (typeof flag === 'boolean') return flag
@@ -151,13 +176,35 @@ const sortedSystemModes = computed(() =>
 const sortedModes = computed(() =>
   [...modes.value].filter((mode) => !isSystemMode(mode)).sort((a, b) => a.id - b.id),
 )
-const sessionAlarmMode = computed(() =>
-  sortedSystemModes.value.find((mode) => isSessionAlarmMode(mode)) ??
-  sortedSystemModes.value[0] ??
-  null,
+const sessionAlarmMode = computed(
+  () =>
+    sortedSystemModes.value.find((mode) => isSessionAlarmMode(mode)) ??
+    sortedSystemModes.value[0] ??
+    null,
 )
+const sortedFlows = computed(() =>
+  [...flows.value].sort((first, second) => first.name.localeCompare(second.name)),
+)
+const flowOptions = computed(() => [
+  { label: t('coreTimer.flow.defaultMode'), value: null },
+  ...sortedFlows.value.map((flow) => ({ label: flow.name, value: flow.id })),
+])
+const isFlowLoaded = computed(() => Boolean(flowSession.value && flowExecutionState.value))
+const flowNodes = computed(() => flowSession.value?.nodes ?? [])
+const activeFlowNode = computed(() => {
+  const session = flowSession.value
+  const state = flowExecutionState.value
+
+  if (!session || !state || state.isComplete) return null
+
+  return session.nodes[state.currentNodeIndex] ?? null
+})
+const activeFlowMode = computed(() => resolveFlowNodeMode(activeFlowNode.value, modes.value))
 const selectedMode = computed(
-  () => sortedModes.value.find((mode) => mode.id === selectedModeId.value) ?? null,
+  () =>
+    activeFlowMode.value ??
+    sortedModes.value.find((mode) => mode.id === selectedModeId.value) ??
+    null,
 )
 const selectedModeKey = computed(() => modeSemanticKey(selectedMode.value))
 const selectedModeName = computed(() => translatedModeName(selectedMode.value))
@@ -190,14 +237,22 @@ const selectedAudio = computed(
 )
 const selectedAlarmAudio = computed(
   () =>
-    sortedAlarmAudios.value.find((audio) => audioId(audio) === String(selectedAlarmAudioId.value)) ??
-    null,
+    sortedAlarmAudios.value.find(
+      (audio) => audioId(audio) === String(selectedAlarmAudioId.value),
+    ) ?? null,
+)
+const currentFlowCompletionAudio = computed(() =>
+  resolveFlowNodeEndAudio(activeFlowNode.value, flowCompletionAudios.value),
 )
 const selectedAudioSource = computed(() => audioSourceUrl(selectedAudio.value))
-const selectedAlarmAudioSource = computed(() => audioSourceUrl(selectedAlarmAudio.value))
+const selectedAlarmAudioSource = computed(() =>
+  audioSourceUrl(isFlowLoaded.value ? currentFlowCompletionAudio.value : selectedAlarmAudio.value),
+)
 const selectedTrackLabel = computed(() => selectedAudio.value?.name ?? t('coreTimer.audio.noTrack'))
 const selectedAlarmLabel = computed(() =>
-  selectedAlarmAudio.value?.name ?? t('coreTimer.settings.defaultAlarm'),
+  isFlowLoaded.value
+    ? (currentFlowCompletionAudio.value?.name ?? t('coreTimer.flow.noAlarm'))
+    : (selectedAlarmAudio.value?.name ?? t('coreTimer.settings.defaultAlarm')),
 )
 const alarmOptions = computed(() => [
   { label: t('coreTimer.settings.defaultAlarm'), value: null },
@@ -217,7 +272,11 @@ const audioVolumeIcon = computed(() => {
   return 'pi pi-volume-up'
 })
 
-const currentPhaseTotalSeconds = computed(() => phaseDurations.value[timerPhase.value])
+const currentPhaseTotalSeconds = computed(() =>
+  activeFlowNode.value
+    ? nodeDurationSeconds(activeFlowNode.value)
+    : phaseDurations.value[timerPhase.value],
+)
 const formattedRemaining = computed(() => formatClock(remainingSeconds.value))
 const timerProgress = computed(() => {
   const totalSeconds = currentPhaseTotalSeconds.value
@@ -243,6 +302,54 @@ const minimalModeIcon = computed(() =>
 const activeCycleStep = computed(() => cycleIndex.value + 1)
 const trackCountLabel = computed(() =>
   t('coreTimer.audio.trackCount', { count: sortedAudios.value.length }),
+)
+const flowSectionList = computed(() =>
+  flowSession.value
+    ? flowSectionViews(flowSession.value, flowExecutionState.value, modes.value)
+    : [],
+)
+const completedFlowSections = computed(() => flowExecutionState.value?.completedNodeIds.length ?? 0)
+const totalFlowSections = computed(() => flowNodes.value.length)
+const currentFlowSectionNumber = computed(() =>
+  flowExecutionState.value && totalFlowSections.value > 0
+    ? Math.min(flowExecutionState.value.currentNodeIndex + 1, totalFlowSections.value)
+    : 0,
+)
+const flowProgressLabel = computed(() =>
+  t('coreTimer.flow.progress', {
+    completed: completedFlowSections.value,
+    total: totalFlowSections.value,
+  }),
+)
+const flowProgressStyle = computed(() => ({
+  '--flow-progress':
+    String(flowProgressPercent(flowExecutionState.value, totalFlowSections.value)) + '%',
+}))
+const sessionTitle = computed(() => flowSession.value?.flow.name ?? selectedModeName.value)
+const sessionSubtitle = computed(() => {
+  if (flowExecutionState.value?.isComplete && flowSession.value) {
+    return t('coreTimer.flow.completedSubtitle', { flow: flowSession.value.flow.name })
+  }
+
+  if (activeFlowNode.value) {
+    return t('coreTimer.flow.activeSection', {
+      current: currentFlowSectionNumber.value,
+      total: totalFlowSections.value,
+      title: activeFlowNode.value.title,
+    })
+  }
+
+  return selectedModeDescription.value
+})
+const timerEyebrow = computed(
+  () => activeFlowNode.value?.title ?? t('coreTimer.phases.' + timerPhase.value),
+)
+const isFlowEmpty = computed(() => Boolean(flowSession.value && totalFlowSections.value === 0))
+const canRunTimer = computed(
+  () => Boolean(selectedMode.value) && !isFlowEmpty.value && !flowExecutionState.value?.isComplete,
+)
+const flowEditRoute = computed(() =>
+  flowSession.value ? { name: 'flows-edit', params: { id: flowSession.value.flow.id } } : '/flows',
 )
 
 function translatedModeName(mode: Mode | null | undefined) {
@@ -287,6 +394,121 @@ function setError(caughtError: unknown, fallbackKey: string) {
   }
 
   error.value = translateApiKey(fallbackKey)
+}
+
+function browserStorage() {
+  return typeof localStorage === 'undefined' ? null : localStorage
+}
+
+function readPersistedFlowExecutionState() {
+  const rawState = browserStorage()?.getItem(FLOW_EXECUTION_STORAGE_KEY)
+
+  if (!rawState) return null
+
+  try {
+    const parsed = JSON.parse(rawState) as Partial<FlowExecutionState>
+
+    if (typeof parsed.flowId === 'number') return parsed
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function persistFlowExecutionState() {
+  const state = flowExecutionState.value
+
+  if (!state || !flowSession.value) return
+
+  browserStorage()?.setItem(FLOW_EXECUTION_STORAGE_KEY, JSON.stringify(state))
+}
+
+function clearPersistedFlowExecutionState() {
+  browserStorage()?.removeItem(FLOW_EXECUTION_STORAGE_KEY)
+}
+
+function syncActiveFlowMode() {
+  const node = activeFlowNode.value
+
+  if (!node) return
+
+  selectedModeId.value = Number(node.mode_id)
+}
+
+async function loadFlows() {
+  if (!auth.token) return
+
+  isLoadingFlows.value = true
+
+  try {
+    const response = await flowApi.listFlows(auth.token)
+    flows.value = response.data
+  } catch (caughtError) {
+    setError(caughtError, 'coreTimer.errors.loadFlows')
+  } finally {
+    isLoadingFlows.value = false
+  }
+}
+
+async function loadFlowSession(flowId: number, persistedState = readPersistedFlowExecutionState()) {
+  if (!auth.token) return
+
+  isLoadingSelectedFlow.value = true
+  error.value = null
+  pauseSession()
+
+  try {
+    const [flow, nodesResponse] = await Promise.all([
+      flowApi.getFlow(auth.token, flowId),
+      flowNodeApi.listFlowNodes(auth.token, flowId),
+    ])
+    const session = { flow, nodes: sortFlowNodes(nodesResponse.data) }
+
+    try {
+      const audiosResponse = await audioApi.listAllAudios(auth.token)
+      flowCompletionAudios.value = audiosResponse.data
+    } catch {
+      flowCompletionAudios.value = session.nodes
+        .map((node) => node.end_audio)
+        .filter((audio): audio is Audio => Boolean(audio))
+    }
+    flowSession.value = session
+    flowExecutionState.value = createFlowExecutionState(session, persistedState)
+    remainingSeconds.value = flowExecutionState.value.remainingSeconds
+    syncActiveFlowMode()
+    persistFlowExecutionState()
+  } catch (caughtError) {
+    flowSession.value = null
+    flowExecutionState.value = null
+    selectedFlowId.value = null
+    clearPersistedFlowExecutionState()
+    setError(caughtError, 'coreTimer.errors.loadFlow')
+  } finally {
+    isLoadingSelectedFlow.value = false
+  }
+}
+
+function clearLoadedFlow() {
+  pauseSession()
+  selectedFlowId.value = null
+  flowSession.value = null
+  flowExecutionState.value = null
+  flowCompletionAudios.value = []
+  clearPersistedFlowExecutionState()
+  remainingSeconds.value = phaseDurations.value[timerPhase.value]
+}
+
+function restartLoadedFlow() {
+  const session = flowSession.value
+
+  if (!session) return
+
+  pauseSession()
+  flowExecutionState.value = restartFlowExecutionState(session)
+  remainingSeconds.value = flowExecutionState.value.remainingSeconds
+  syncActiveFlowMode()
+  persistFlowExecutionState()
 }
 
 async function loadModes() {
@@ -469,14 +691,30 @@ async function playCompletionAlarm() {
       await alarmAudio.play()
       return
     } catch {
+      if (isFlowLoaded.value) return
       // Fall back to the generated bell if the uploaded alarm cannot play.
     }
   }
 
-  await ringCompletionBell()
+  if (!isFlowLoaded.value) {
+    await ringCompletionBell()
+  }
 }
 
 function completePhase() {
+  if (flowSession.value && flowExecutionState.value) {
+    flowExecutionState.value = completeCurrentFlowNode(flowExecutionState.value, flowSession.value)
+    remainingSeconds.value = flowExecutionState.value.remainingSeconds
+    syncActiveFlowMode()
+    persistFlowExecutionState()
+
+    if (flowExecutionState.value.isComplete) {
+      pauseSession()
+    }
+
+    return
+  }
+
   if (timerPhase.value === 'work') {
     completedBlocks.value += 1
   }
@@ -489,7 +727,12 @@ function completePhase() {
 }
 
 function completeExpiredPhase() {
-  pauseSession()
+  const shouldContinueFlow = isFlowLoaded.value
+
+  if (!shouldContinueFlow) {
+    pauseSession()
+  }
+
   void playCompletionAlarm()
   completePhase()
 }
@@ -501,6 +744,14 @@ function tickTimer() {
   }
 
   remainingSeconds.value -= 1
+
+  if (flowExecutionState.value) {
+    flowExecutionState.value = {
+      ...flowExecutionState.value,
+      remainingSeconds: remainingSeconds.value,
+    }
+    persistFlowExecutionState()
+  }
 }
 
 function syncAudioVolume() {
@@ -530,6 +781,8 @@ function pauseAudio() {
 }
 
 async function startSession() {
+  if (!canRunTimer.value) return
+
   isRunning.value = true
   void prepareCompletionBell()
   await nextTick()
@@ -553,6 +806,18 @@ function toggleSession() {
 
 function resetSession() {
   pauseSession()
+
+  if (flowExecutionState.value && activeFlowNode.value) {
+    flowExecutionState.value = {
+      ...flowExecutionState.value,
+      remainingSeconds: nodeDurationSeconds(activeFlowNode.value),
+      isComplete: false,
+    }
+    remainingSeconds.value = flowExecutionState.value.remainingSeconds
+    persistFlowExecutionState()
+    return
+  }
+
   remainingSeconds.value = phaseDurations.value[timerPhase.value]
 }
 
@@ -600,7 +865,7 @@ function toggleMinimalMode() {
 }
 
 function selectPhase(phase: TimerPhase) {
-  if (timerPhase.value === phase) return
+  if (isFlowLoaded.value || timerPhase.value === phase) return
 
   pauseSession()
   timerPhase.value = phase
@@ -642,6 +907,32 @@ watch(selectedModeId, (modeId) => {
   }
 })
 
+watch(selectedFlowId, (flowId) => {
+  if (!auth.isAuthenticated) return
+
+  if (flowId === null) {
+    if (flowSession.value) clearLoadedFlow()
+    return
+  }
+
+  if (flowSession.value?.flow.id === flowId) return
+
+  void loadFlowSession(flowId)
+})
+
+watch(
+  () => auth.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      void loadFlows()
+      return
+    }
+
+    flows.value = []
+    clearLoadedFlow()
+  },
+)
+
 watch(selectedAudioSource, async () => {
   const audio = audioElement.value
 
@@ -670,10 +961,23 @@ watch(selectedAlarmAudioSource, () => {
 })
 
 onMounted(() => {
-  void loadModes()
+  void (async () => {
+    await loadModes()
+
+    if (!auth.isAuthenticated) return
+
+    await loadFlows()
+
+    const persistedState = readPersistedFlowExecutionState()
+
+    if (persistedState?.flowId) {
+      selectedFlowId.value = persistedState.flowId
+    }
+  })()
 })
 
 onBeforeUnmount(() => {
+  persistFlowExecutionState()
   clearTimerInterval()
   pauseAudio()
 
@@ -780,7 +1084,24 @@ onBeforeUnmount(() => {
       <section class="core-workspace" :class="{ 'core-workspace--minimal': isMinimalMode }">
         <section class="core-stage">
           <header class="core-topbar">
-            <div class="core-mode-field auth-field">
+            <div v-if="auth.isAuthenticated" class="core-flow-field auth-field">
+              <label class="sr-only" for="core-flow-select">
+                {{ t('coreTimer.flow.selectLabel') }}
+              </label>
+              <Select
+                input-id="core-flow-select"
+                v-model="selectedFlowId"
+                :options="flowOptions"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('coreTimer.flow.selectPlaceholder')"
+                :loading="isLoadingFlows || isLoadingSelectedFlow"
+                :disabled="isLoadingFlows || isLoadingSelectedFlow"
+                class="!w-full"
+              />
+            </div>
+
+            <div v-if="!isFlowLoaded" class="core-mode-field auth-field">
               <label class="sr-only" for="core-mode-select">
                 {{ t('coreTimer.mode.label') }}
               </label>
@@ -808,14 +1129,57 @@ onBeforeUnmount(() => {
             />
           </header>
 
-          <div v-if="isLoadingModes" class="core-empty-state">
+          <div v-if="isLoadingModes || isLoadingSelectedFlow" class="core-empty-state">
             <i class="pi pi-spin pi-spinner" aria-hidden="true" />
-            <span>{{ t('coreTimer.mode.loading') }}</span>
+            <span>{{
+              isLoadingSelectedFlow ? t('coreTimer.flow.loading') : t('coreTimer.mode.loading')
+            }}</span>
           </div>
 
-          <div v-else-if="sortedModes.length === 0" class="core-empty-state">
+          <div v-else-if="!isFlowLoaded && sortedModes.length === 0" class="core-empty-state">
             <i class="pi pi-wave-pulse" aria-hidden="true" />
             <span>{{ t('coreTimer.mode.empty') }}</span>
+          </div>
+
+          <div v-else-if="isFlowEmpty" class="core-flow-message">
+            <i class="pi pi-list-check" aria-hidden="true" />
+            <h2>{{ t('coreTimer.flow.emptyTitle') }}</h2>
+            <p>{{ t('coreTimer.flow.emptyBody') }}</p>
+            <RouterLink :to="flowEditRoute" class="core-flow-link">
+              <i class="pi pi-pencil" aria-hidden="true" />
+              <span>{{ t('coreTimer.flow.editFlow') }}</span>
+            </RouterLink>
+          </div>
+
+          <div v-else-if="flowExecutionState?.isComplete" class="core-flow-message">
+            <i class="pi pi-check-circle" aria-hidden="true" />
+            <h2>{{ t('coreTimer.flow.completeTitle') }}</h2>
+            <p>{{ sessionSubtitle }}</p>
+            <div class="core-flow-actions">
+              <Button
+                type="button"
+                icon="pi pi-refresh"
+                :label="t('coreTimer.flow.restartFlow')"
+                class="core-flow-primary"
+                @click="restartLoadedFlow"
+              />
+              <Button
+                type="button"
+                icon="pi pi-list"
+                :label="t('coreTimer.flow.loadAnother')"
+                text
+                class="core-flow-secondary"
+                @click="clearLoadedFlow"
+              />
+              <Button
+                type="button"
+                icon="pi pi-times"
+                :label="t('coreTimer.flow.returnDefault')"
+                text
+                class="core-flow-secondary"
+                @click="clearLoadedFlow"
+              />
+            </div>
           </div>
 
           <template v-else>
@@ -826,7 +1190,7 @@ onBeforeUnmount(() => {
                   <span class="core-timer-ring core-timer-ring--inner" aria-hidden="true" />
 
                   <div class="core-timer-readout">
-                    <span class="core-eyebrow">{{ t(`coreTimer.phases.${timerPhase}`) }}</span>
+                    <span class="core-eyebrow">{{ timerEyebrow }}</span>
                     <strong>{{ formattedRemaining }}</strong>
                     <span class="core-track-label">{{ selectedTrackLabel }}</span>
                   </div>
@@ -837,8 +1201,8 @@ onBeforeUnmount(() => {
                 <p class="text-sm font-semibold uppercase text-[var(--resource-mode-color)]">
                   {{ t('coreTimer.eyebrow') }}
                 </p>
-                <h1>{{ selectedModeName }}</h1>
-                <p>{{ selectedModeDescription }}</p>
+                <h1>{{ sessionTitle }}</h1>
+                <p>{{ sessionSubtitle }}</p>
               </div>
             </div>
 
@@ -858,6 +1222,7 @@ onBeforeUnmount(() => {
                   type="button"
                   :icon="playPauseIcon"
                   :label="playPauseLabel"
+                  :disabled="!canRunTimer"
                   class="core-play-button"
                   @click="toggleSession"
                 />
@@ -873,6 +1238,7 @@ onBeforeUnmount(() => {
                 />
 
                 <Button
+                  v-if="!isFlowLoaded"
                   type="button"
                   icon="pi pi-plus"
                   :label="t('coreTimer.actions.addFive')"
@@ -880,6 +1246,7 @@ onBeforeUnmount(() => {
                   @click="extendSession"
                 />
                 <Button
+                  v-if="!isFlowLoaded"
                   type="button"
                   icon="pi pi-cog"
                   :label="t('coreTimer.actions.configureDurations')"
@@ -891,12 +1258,28 @@ onBeforeUnmount(() => {
 
             <dl class="core-session-stats">
               <div>
-                <dt>{{ t('coreTimer.stats.completed') }}</dt>
-                <dd>{{ completedBlocks }}</dd>
+                <dt>
+                  {{
+                    isFlowLoaded
+                      ? t('coreTimer.flow.completedSections')
+                      : t('coreTimer.stats.completed')
+                  }}
+                </dt>
+                <dd>{{ isFlowLoaded ? flowProgressLabel : completedBlocks }}</dd>
               </div>
               <div>
-                <dt>{{ t('coreTimer.stats.cycle') }}</dt>
-                <dd>{{ activeCycleStep }}/{{ phaseCycle.length }}</dd>
+                <dt>
+                  {{
+                    isFlowLoaded ? t('coreTimer.flow.currentSection') : t('coreTimer.stats.cycle')
+                  }}
+                </dt>
+                <dd>
+                  {{
+                    isFlowLoaded
+                      ? currentFlowSectionNumber + '/' + totalFlowSections
+                      : activeCycleStep + '/' + phaseCycle.length
+                  }}
+                </dd>
               </div>
               <div>
                 <dt>{{ t('coreTimer.stats.mode') }}</dt>
@@ -917,7 +1300,12 @@ onBeforeUnmount(() => {
             <span>{{ trackCountLabel }}</span>
           </div>
 
-          <div class="core-phase-tabs" role="tablist" :aria-label="t('coreTimer.phaseLabel')">
+          <div
+            v-if="!isFlowLoaded"
+            class="core-phase-tabs"
+            role="tablist"
+            :aria-label="t('coreTimer.phaseLabel')"
+          >
             <button
               v-for="phase in phaseOptions"
               :key="phase.key"
@@ -932,6 +1320,33 @@ onBeforeUnmount(() => {
               <span>{{ phase.label }}</span>
               <small>{{ t('coreTimer.minutes', { count: phase.minutes }) }}</small>
             </button>
+          </div>
+
+          <div v-else class="core-flow-sections" :style="flowProgressStyle">
+            <div class="core-flow-progress" aria-hidden="true">
+              <span />
+            </div>
+            <div class="core-flow-progress-label">{{ flowProgressLabel }}</div>
+            <div
+              v-for="section in flowSectionList"
+              :key="section.id"
+              class="core-flow-section"
+              :class="{
+                'core-flow-section--active': section.isActive,
+                'core-flow-section--complete': section.isComplete,
+              }"
+            >
+              <span class="core-flow-section-index">{{
+                String(section.order).padStart(2, '0')
+              }}</span>
+              <span class="core-flow-section-copy">
+                <strong>{{ section.title }}</strong>
+                <small>{{ section.modeName || selectedModeName }}</small>
+              </span>
+              <span class="core-flow-section-time">{{
+                t('coreTimer.minutes', { count: section.minutes })
+              }}</span>
+            </div>
           </div>
 
           <div v-if="isLoadingAudios" class="core-list-state">
@@ -1139,11 +1554,13 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
 }
 
-.core-mode-field {
+.core-mode-field,
+.core-flow-field {
   width: min(100%, 17rem);
 }
 
-.core-mode-field :deep(.p-select) {
+.core-mode-field :deep(.p-select),
+.core-flow-field :deep(.p-select) {
   align-items: center;
   min-height: 3.1rem;
   border-color: rgba(255, 255, 255, 0.16) !important;
@@ -1151,7 +1568,8 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
-.core-mode-field :deep(.p-select-label) {
+.core-mode-field :deep(.p-select-label),
+.core-flow-field :deep(.p-select-label) {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -1211,7 +1629,8 @@ onBeforeUnmount(() => {
   right: 1rem;
 }
 
-.core-workspace--minimal .core-mode-field {
+.core-workspace--minimal .core-mode-field,
+.core-workspace--minimal .core-flow-field {
   display: none;
 }
 
@@ -1390,6 +1809,82 @@ onBeforeUnmount(() => {
   filter: brightness(1.06);
 }
 
+.core-flow-message {
+  display: grid;
+  flex: 1;
+  min-height: 24rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.85rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.core-flow-message > i {
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  place-items: center;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.3);
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.14);
+  color: var(--resource-mode-color);
+  font-size: 1.3rem;
+}
+
+.core-flow-message h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.7rem, 5vw, 3.2rem);
+  font-weight: 760;
+  line-height: 1.05;
+}
+
+.core-flow-message p {
+  max-width: 32rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.55;
+}
+
+.core-flow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.core-flow-primary {
+  border-color: transparent !important;
+  background: var(--resource-mode-color) !important;
+  color: var(--resource-mode-ink) !important;
+  font-weight: 760 !important;
+}
+
+.core-flow-secondary {
+  color: rgba(255, 255, 255, 0.74) !important;
+}
+
+.core-flow-secondary:hover {
+  background: rgba(var(--resource-mode-rgb), 0.14) !important;
+  color: #ffffff !important;
+}
+
+.core-flow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  background: var(--resource-mode-color);
+  color: var(--resource-mode-ink);
+  font-size: 0.9rem;
+  font-weight: 760;
+  line-height: 1;
+  padding: 0.8rem 1rem;
+  text-decoration: none;
+}
+
 .core-empty-state,
 .core-list-state {
   display: grid;
@@ -1549,6 +2044,100 @@ onBeforeUnmount(() => {
 .core-player-footer {
   position: relative;
   z-index: 3;
+}
+
+.core-flow-sections {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.core-flow-progress {
+  height: 0.46rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.core-flow-progress span {
+  display: block;
+  width: var(--flow-progress);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--resource-mode-color);
+  transition: width 220ms ease;
+}
+
+.core-flow-progress-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.74rem;
+  font-weight: 780;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.core-flow-section {
+  display: grid;
+  min-height: 3.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  padding: 0.58rem;
+}
+
+.core-flow-section--active {
+  border-color: rgba(var(--resource-mode-rgb), 0.42);
+  background: rgba(var(--resource-mode-rgb), 0.14);
+  color: #ffffff;
+}
+
+.core-flow-section--complete {
+  opacity: 0.62;
+}
+
+.core-flow-section-index {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.16);
+  color: var(--resource-mode-color);
+  font-size: 0.72rem;
+  font-weight: 820;
+}
+
+.core-flow-section-copy {
+  min-width: 0;
+}
+
+.core-flow-section-copy strong,
+.core-flow-section-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.core-flow-section-copy strong {
+  font-size: 0.86rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.core-flow-section-copy small,
+.core-flow-section-time {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.core-flow-section-time {
+  white-space: nowrap;
 }
 
 .core-phase-tabs {
