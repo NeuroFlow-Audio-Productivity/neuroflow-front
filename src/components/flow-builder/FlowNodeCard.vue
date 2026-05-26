@@ -130,23 +130,8 @@ const updateAlarm = (audioId: number | null) => {
     :data-flow-node-id="node.id"
     role="listitem"
   >
-    <div class="flow-node-rail" aria-hidden="true">
-      <span class="flow-node-dot">{{ String(index + 1).padStart(2, '0') }}</span>
-      <span class="flow-node-line" />
-    </div>
-
     <section class="flow-node-card">
       <div class="flow-node-card-top">
-        <button
-          ref="handleRef"
-          class="flow-node-handle"
-          type="button"
-          :aria-label="t('flowResource.builder.dragHandle')"
-          :disabled="isInteractionDisabled"
-        >
-          <i class="pi pi-align-justify" aria-hidden="true" />
-        </button>
-
         <div class="flow-node-title-group">
           <div class="flow-node-kicker">
             <span>{{ String(index + 1).padStart(2, '0') }}</span>
@@ -157,9 +142,21 @@ const updateAlarm = (audioId: number | null) => {
           <p>{{ cardSubtitle }}</p>
         </div>
 
-        <div class="flow-node-duration-pill">
-          <strong>{{ node.time }}</strong>
-          <span>{{ t('flowResource.builder.minuteShort') }}</span>
+        <div class="flow-node-card-actions">
+          <div class="flow-node-duration-pill">
+            <strong>{{ node.time }}</strong>
+            <span>{{ t('flowResource.builder.minuteShort') }}</span>
+          </div>
+
+          <button
+            ref="handleRef"
+            class="flow-node-handle"
+            type="button"
+            :aria-label="t('flowResource.builder.dragHandle')"
+            :disabled="isInteractionDisabled"
+          >
+            <i class="pi pi-align-justify" aria-hidden="true" />
+          </button>
         </div>
       </div>
 
@@ -233,6 +230,11 @@ const updateAlarm = (audioId: number | null) => {
         />
       </div>
     </section>
+
+    <div class="flow-node-rail" aria-hidden="true">
+      <span class="flow-node-dot">{{ String(index + 1).padStart(2, '0') }}</span>
+      <span class="flow-node-line" />
+    </div>
   </article>
 </template>
 
@@ -241,7 +243,7 @@ const updateAlarm = (audioId: number | null) => {
   --node-rgb: 110, 231, 216;
   position: relative;
   display: grid;
-  grid-template-columns: 3.7rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 3.7rem;
   min-height: 10rem;
   transition:
     transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -348,9 +350,15 @@ const updateAlarm = (audioId: number | null) => {
 
 .flow-node-card-top {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.9rem;
   align-items: start;
+}
+
+.flow-node-card-actions {
+  display: flex;
+  align-items: start;
+  gap: 0.7rem;
 }
 
 .flow-node-handle {
@@ -535,7 +543,7 @@ const updateAlarm = (audioId: number | null) => {
 
 @media (max-width: 640px) {
   .flow-node-row {
-    grid-template-columns: 2.6rem minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 2.6rem;
   }
 
   .flow-node-dot {
@@ -549,12 +557,15 @@ const updateAlarm = (audioId: number | null) => {
   }
 
   .flow-node-card-top {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .flow-node-card-actions {
+    justify-content: space-between;
   }
 
   .flow-node-handle {
-    grid-column: 1 / -1;
-    width: 100%;
+    width: 2.55rem;
   }
 }
 </style>
