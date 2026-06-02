@@ -316,7 +316,7 @@ function createJourneyNodeView(node: FlowNode, index: number): JourneyNodeView {
   const mode = resolveFlowNodeMode(node, props.modes)
   const kind = journeyKindForNode(node)
   const visual = journeyNodeVisual(kind)
-  const accent = mode?.color || visual.accent
+  const accent = visual.accent
   const accentRgb = hexToRgbTriplet(accent)
   const minutes = Math.max(1, Math.round(Number(node.time) || 1))
 
@@ -338,6 +338,75 @@ function createJourneyNodeView(node: FlowNode, index: number): JourneyNodeView {
       '--energy-height': `${Math.max(22, visual.energy)}%`,
     },
   }
+}
+
+function signatureKindOffset(kind: JourneyNodeKind) {
+  if (kind === 'focus') return -6
+  if (kind === 'creative') return 11
+  if (kind === 'recovery') return 18
+
+  return 32
+}
+
+function signatureBreathScale(kind: JourneyNodeKind) {
+  if (kind === 'focus') return '1.16'
+  if (kind === 'creative') return '1.1'
+  if (kind === 'recovery') return '1.07'
+
+  return '1.04'
+}
+
+function signatureOrbitSpeed(kind: JourneyNodeKind, totalMinutes: number, minutes: number) {
+  const journeyWeight = Math.min(totalMinutes, 180) / 180
+  const durationWeight = Math.min(minutes, 90) / 90
+  const baseSpeed = {
+    focus: 8.2,
+    creative: 9.8,
+    recovery: 12.8,
+    sleep: 17.5,
+  }[kind]
+
+  return (baseSpeed + journeyWeight * 3.2 + durationWeight * 2.4).toFixed(1) + 's'
+}
+
+function applySignatureNodeStyles(
+  nodeViews: JourneyNodeView[],
+  totalMinutes: number,
+): JourneyNodeView[] {
+  const largestDuration = Math.max(...nodeViews.map((node) => node.minutes), 1)
+  const signatureTilt = (totalMinutes % 37) - 18
+
+  return nodeViews.map((node, index) => {
+    const progress = nodeViews.length <= 1 ? 0 : index / nodeViews.length
+    const durationRatio = node.minutes / largestDuration
+    const typeRadius =
+      node.kind === 'sleep' ? 8 : node.kind === 'recovery' ? 4 : node.kind === 'creative' ? 1 : -2
+    const radius = 24 + durationRatio * 13 + typeRadius
+    const angle = -90 + progress * 360 + signatureTilt + signatureKindOffset(node.kind)
+    const radians = (angle * Math.PI) / 180
+    const x = 50 + Math.cos(radians) * radius
+    const y = 50 + Math.sin(radians) * (radius * 0.76) + (node.kind === 'sleep' ? 3.5 : 0)
+    const size = 0.9 + durationRatio * 1.15 + node.energy / 170
+    const glow = 0.26 + node.energy / 210
+
+    return {
+      ...node,
+      style: {
+        ...node.style,
+        '--signature-angle': angle + 'deg',
+        '--signature-left': Math.min(88, Math.max(12, x)).toFixed(2) + '%',
+        '--signature-top': Math.min(84, Math.max(16, y)).toFixed(2) + '%',
+        '--signature-radius': radius.toFixed(2) + '%',
+        '--signature-size': size.toFixed(2) + 'rem',
+        '--signature-glow': glow.toFixed(2),
+        '--signature-breath': signatureBreathScale(node.kind),
+        '--signature-speed': signatureOrbitSpeed(node.kind, totalMinutes, node.minutes),
+        '--signature-delay': Math.min(index * 170, 1200) + 'ms',
+        '--particle-left': Math.min(92, Math.max(8, 50 + Math.cos(radians + 0.65) * (radius + 9))).toFixed(2) + '%',
+        '--particle-top': Math.min(88, Math.max(12, 50 + Math.sin(radians + 0.65) * (radius * 0.72 + 5))).toFixed(2) + '%',
+      },
+    }
+  })
 }
 
 function createEnergyPoints(nodes: JourneyNodeView[]): EnergyPoint[] {
@@ -489,7 +558,7 @@ function createFlowPickerSummary(flow: Flow, nodes: FlowNode[]): FlowPickerSumma
     (total, node) => total + Math.max(1, Math.round(Number(node.time) || 1)),
     0,
   )
-  const nodeViews = sortedNodes.map(createJourneyNodeView)
+  const nodeViews = applySignatureNodeStyles(sortedNodes.map(createJourneyNodeView), totalMinutes)
   const energyPoints = createEnergyPoints(nodeViews)
   const energyPath = createEnergyPath(energyPoints)
 
@@ -681,31 +750,44 @@ function isFlowSummaryLoading(flowId: number) {
                   <p>{{ t('coreTimer.flow.energySignature') }}</p>
                   <strong>{{ t('coreTimer.flow.howItFeels') }}</strong>
                 </div>
-                <div class="core-energy-chart" aria-hidden="true">
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
-                    <path
-                      v-if="selectedFlowPickerSummary.energyFillPath"
-                      class="core-energy-fill"
-                      :d="selectedFlowPickerSummary.energyFillPath"
-                    />
-                    <path
-                      v-if="selectedFlowPickerSummary.energyPath"
-                      class="core-energy-line"
-                      :d="selectedFlowPickerSummary.energyPath"
-                    />
-                  </svg>
+                <div class="core-cognitive-signature">
+                  <span class="core-signature-aurora" aria-hidden="true" />
+                  <span class="core-signature-ring core-signature-ring--outer" aria-hidden="true" />
+                  <span class="core-signature-ring core-signature-ring--inner" aria-hidden="true" />
                   <span
                     v-for="node in selectedFlowPickerSummary.nodeViews"
-                    :key="node.id"
-                    class="core-energy-beacon"
-                    :class="'core-energy-beacon--' + node.kind"
+                    :key="'link-' + node.id"
+                    class="core-signature-link"
+                    :class="'core-signature-link--' + node.kind"
                     :style="node.style"
+                    aria-hidden="true"
                   />
-                </div>
-                <div class="core-energy-legend">
-                  <span>{{ t('coreTimer.flow.nodeRoles.focus') }}</span>
-                  <span>{{ t('coreTimer.flow.nodeRoles.recovery') }}</span>
-                  <span>{{ t('coreTimer.flow.nodeRoles.sleep') }}</span>
+                  <span
+                    v-for="node in selectedFlowPickerSummary.nodeViews"
+                    :key="'particle-' + node.id"
+                    class="core-signature-particle"
+                    :class="'core-signature-particle--' + node.kind"
+                    :style="node.style"
+                    aria-hidden="true"
+                  />
+                  <span class="core-signature-core" aria-hidden="true">
+                    <span />
+                  </span>
+                  <button
+                    v-for="node in selectedFlowPickerSummary.nodeViews"
+                    :key="'signature-' + node.id"
+                    type="button"
+                    class="core-signature-node"
+                    :class="'core-signature-node--' + node.kind"
+                    :style="node.style"
+                    :aria-label="node.title"
+                  >
+                    <span class="core-signature-node-orb" aria-hidden="true" />
+                    <span class="core-signature-tooltip">
+                      <strong>{{ node.title }}</strong>
+                      <small>{{ node.modeName }} / {{ t("coreTimer.minutes", { count: node.minutes }) }}</small>
+                    </span>
+                  </button>
                 </div>
               </section>
             </div>
@@ -1378,109 +1460,242 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-energy-panel {
   display: grid;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 0.9rem;
 }
 
-.core-energy-chart {
+.core-cognitive-signature {
   position: relative;
-  height: 11rem;
+  min-height: clamp(18rem, 42vw, 30rem);
   overflow: hidden;
   border-radius: 8px;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    radial-gradient(circle at 20% 20%, rgba(var(--flow-card-rgb), 0.18), transparent 16rem),
+    radial-gradient(circle at 50% 50%, rgba(var(--flow-card-rgb), 0.2), transparent 7rem),
+    radial-gradient(circle at 28% 24%, rgba(183, 140, 255, 0.14), transparent 11rem),
+    radial-gradient(circle at 74% 72%, rgba(120, 167, 255, 0.13), transparent 12rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
     rgba(0, 0, 0, 0.18);
-  background-size:
-    100% 25%,
-    25% 100%,
-    auto,
-    auto;
+  isolation: isolate;
 }
 
-.core-energy-chart svg {
+.core-cognitive-signature::before,
+.core-cognitive-signature::after {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: 12%;
+  border-radius: 48% 52% 44% 56%;
+  content: "";
+  pointer-events: none;
 }
 
-.core-energy-fill {
-  fill: rgba(var(--flow-card-rgb), 0.16);
-  opacity: 0;
-  animation: core-energy-fill 680ms 240ms ease both;
+.core-cognitive-signature::before {
+  border: 1px solid rgba(var(--flow-card-rgb), 0.14);
+  filter: drop-shadow(0 0 1.6rem rgba(var(--flow-card-rgb), 0.16));
+  animation: core-signature-breathe 8s ease-in-out infinite;
 }
 
-.core-energy-line {
-  fill: none;
-  stroke: var(--flow-card-accent);
-  stroke-dasharray: 220;
-  stroke-dashoffset: 220;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.8;
-  filter: drop-shadow(0 0 0.65rem rgba(var(--flow-card-rgb), 0.72));
-  animation: core-energy-draw 780ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.core-cognitive-signature::after {
+  inset: 23%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transform: rotate(28deg);
+  animation: core-signature-drift 18s linear infinite;
 }
 
-.core-energy-beacon {
+.core-signature-aurora {
   position: absolute;
-  bottom: 0.7rem;
-  width: 0.5rem;
-  height: var(--energy-height);
+  inset: -18%;
+  background:
+    conic-gradient(
+      from 124deg,
+      transparent,
+      rgba(var(--flow-card-rgb), 0.16),
+      rgba(183, 140, 255, 0.1),
+      rgba(120, 167, 255, 0.12),
+      transparent
+    );
+  filter: blur(2.1rem);
+  opacity: 0.7;
+  animation: core-signature-drift 28s linear infinite reverse;
+}
+
+.core-signature-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(var(--flow-card-rgb), 0.16);
   border-radius: 999px;
-  background: linear-gradient(to top, rgba(var(--node-rgb), 0.16), var(--node-accent));
-  box-shadow: 0 0 1rem rgba(var(--node-rgb), 0.34);
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-12deg);
+}
+
+.core-signature-ring--outer {
+  width: 68%;
+  height: 48%;
+  box-shadow: 0 0 2.6rem rgba(var(--flow-card-rgb), 0.1);
+}
+
+.core-signature-ring--inner {
+  width: 42%;
+  height: 29%;
+  border-color: rgba(255, 255, 255, 0.07);
+  transform: translate(-50%, -50%) rotate(24deg);
+}
+
+.core-signature-link {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--signature-radius);
+  height: 1px;
+  background: linear-gradient(90deg, rgba(var(--node-rgb), 0), rgba(var(--node-rgb), 0.5), rgba(var(--node-rgb), 0));
+  box-shadow: 0 0 0.9rem rgba(var(--node-rgb), 0.28);
+  opacity: 0.52;
+  transform: rotate(var(--signature-angle)) scaleX(0);
+  transform-origin: left center;
+  animation: core-signature-link 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--signature-delay);
+}
+
+.core-signature-particle {
+  position: absolute;
+  left: var(--particle-left);
+  top: var(--particle-top);
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--node-accent);
+  box-shadow: 0 0 1rem rgba(var(--node-rgb), 0.72);
+  opacity: 0.72;
+  transform: translate(-50%, -50%);
+  animation: core-signature-particle var(--signature-speed) ease-in-out infinite;
+  animation-delay: var(--signature-delay);
+}
+
+.core-signature-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  width: clamp(3.8rem, 10vw, 5.8rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.92) 0 9%, rgba(var(--flow-card-rgb), 0.9) 10% 32%, rgba(var(--flow-card-rgb), 0.18) 33% 66%, transparent 68%),
+    rgba(var(--flow-card-rgb), 0.06);
+  box-shadow:
+    0 0 2.5rem rgba(var(--flow-card-rgb), 0.5),
+    0 0 5rem rgba(var(--flow-card-rgb), 0.18);
+  transform: translate(-50%, -50%);
+  animation: core-signature-core 5.8s ease-in-out infinite;
+}
+
+.core-signature-core span {
+  width: 36%;
+  aspect-ratio: 1;
+  border-radius: inherit;
+  background: #ffffff;
+  box-shadow: 0 0 1.4rem rgba(255, 255, 255, 0.72);
+}
+
+.core-signature-node {
+  position: absolute;
+  left: var(--signature-left);
+  top: var(--signature-top);
+  display: grid;
+  width: max(2.45rem, var(--signature-size));
+  aspect-ratio: 1;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  animation: core-signature-float var(--signature-speed) ease-in-out infinite;
+  animation-delay: var(--signature-delay);
+  z-index: 2;
+}
+
+.core-signature-node:focus-visible {
+  outline: 2px solid rgba(var(--node-rgb), 0.9);
+  outline-offset: 0.35rem;
+}
+
+.core-signature-node-orb {
+  width: 74%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.18) 16%, transparent 28%),
+    radial-gradient(circle, var(--node-accent), rgba(var(--node-rgb), 0.28) 58%, transparent 70%);
+  box-shadow:
+    0 0 calc(1.6rem * var(--signature-glow)) rgba(var(--node-rgb), 0.88),
+    0 0 calc(4.4rem * var(--signature-glow)) rgba(var(--node-rgb), 0.28),
+    inset 0 0 1rem rgba(255, 255, 255, 0.15);
+  animation: core-signature-orb 4.8s ease-in-out infinite;
+}
+
+.core-signature-node--focus .core-signature-node-orb {
+  animation-duration: 2.8s;
+}
+
+.core-signature-node--recovery .core-signature-node-orb {
+  animation-duration: 5.6s;
+}
+
+.core-signature-node--sleep .core-signature-node-orb {
+  animation-duration: 7.8s;
+}
+
+.core-signature-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.65rem);
+  min-width: min(12rem, 64vw);
+  border: 1px solid rgba(var(--node-rgb), 0.24);
+  border-radius: 8px;
+  background: rgba(5, 9, 12, 0.86);
+  box-shadow:
+    0 1rem 2.5rem rgba(0, 0, 0, 0.32),
+    0 0 1.8rem rgba(var(--node-rgb), 0.18);
   opacity: 0;
-  transform: translateY(0.7rem) scaleY(0.62);
-  transform-origin: bottom;
-  animation: core-node-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(var(--node-delay) + 280ms);
+  padding: 0.58rem 0.68rem;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 0.35rem) scale(0.96);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
-.core-energy-beacon:nth-of-type(1) {
-  left: 7%;
+.core-signature-tooltip strong,
+.core-signature-tooltip small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.core-energy-beacon:nth-of-type(2) {
-  left: 21%;
-}
-
-.core-energy-beacon:nth-of-type(3) {
-  left: 35%;
-}
-
-.core-energy-beacon:nth-of-type(4) {
-  left: 49%;
-}
-
-.core-energy-beacon:nth-of-type(5) {
-  left: 63%;
-}
-
-.core-energy-beacon:nth-of-type(6) {
-  left: 77%;
-}
-
-.core-energy-beacon:nth-of-type(n + 7) {
-  left: 90%;
-}
-
-.core-energy-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.42rem;
-}
-
-.core-energy-legend span {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.7rem;
+.core-signature-tooltip strong {
+  color: #ffffff;
+  font-size: 0.82rem;
   font-weight: 780;
-  padding: 0.36rem 0.5rem;
+  line-height: 1.12;
 }
+
+.core-signature-tooltip small {
+  margin-top: 0.22rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.68rem;
+  font-weight: 720;
+}
+
+.core-signature-node:hover .core-signature-tooltip,
+.core-signature-node:focus-visible .core-signature-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
 
 .core-flow-metrics {
   display: grid;
@@ -1749,6 +1964,79 @@ function isFlowSummaryLoading(flowId: number) {
   }
 }
 
+@keyframes core-signature-link {
+  to {
+    transform: rotate(var(--signature-angle)) scaleX(1);
+  }
+}
+
+@keyframes core-signature-breathe {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: scale(0.96) rotate(-3deg);
+  }
+
+  50% {
+    opacity: 0.86;
+    transform: scale(1.04) rotate(5deg);
+  }
+}
+
+@keyframes core-signature-drift {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes core-signature-core {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes core-signature-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) translateY(-0.45rem) scale(var(--signature-breath));
+  }
+}
+
+@keyframes core-signature-orb {
+  0%,
+  100% {
+    filter: saturate(0.94) brightness(0.96);
+    transform: scale(0.92);
+  }
+
+  50% {
+    filter: saturate(1.18) brightness(1.08);
+    transform: scale(1.08);
+  }
+}
+
+@keyframes core-signature-particle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+
+  50% {
+    opacity: 0.86;
+    transform: translate(-50%, -50%) scale(1.28);
+  }
+}
+
 @keyframes core-sleep-waves {
   0%,
   100% {
@@ -1826,6 +2114,14 @@ function isFlowSummaryLoading(flowId: number) {
     white-space: nowrap;
   }
 
+  .core-cognitive-signature {
+    min-height: 19.5rem;
+  }
+
+  .core-signature-tooltip {
+    min-width: min(10.5rem, 58vw);
+  }
+
   .core-map-terminal,
   .core-map-node {
     grid-template-columns: 2.15rem minmax(0, 1fr);
@@ -1850,6 +2146,13 @@ function isFlowSummaryLoading(flowId: number) {
   .core-map-path::before,
   .core-card-energy span,
   .core-energy-beacon,
+  .core-signature-aurora,
+  .core-signature-ring,
+  .core-signature-link,
+  .core-signature-particle,
+  .core-signature-core,
+  .core-signature-node,
+  .core-signature-node-orb,
   .core-energy-line,
   .core-energy-fill,
   .core-flow-preview-ambient::before {
