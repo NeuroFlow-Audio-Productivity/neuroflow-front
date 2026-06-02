@@ -6,6 +6,7 @@ import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
 import { audioApi, audioSourceUrl } from '@/services/audioApi'
@@ -29,7 +30,7 @@ import { modeRhythmStyle, modeSemanticKey } from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import { useVisualThemeStore } from '@/stores/visualTheme'
 import type { Audio } from '@/types/audio'
-import type { Flow } from '@/types/flow'
+import type { Flow, FlowNode } from '@/types/flow'
 import type { Mode } from '@/types/mode'
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak'
@@ -102,6 +103,9 @@ const audios = ref<Audio[]>([])
 const alarmAudios = ref<Audio[]>([])
 const flowCompletionAudios = ref<Audio[]>([])
 const flows = ref<Flow[]>([])
+const flowPickerNodesByFlowId = ref<Record<number, FlowNode[]>>({})
+const isFlowPickerVisible = ref(false)
+const loadingFlowSummaryIds = ref<number[]>([])
 const selectedFlowId = ref<number | null>(null)
 const flowSession = ref<FlowSession | null>(null)
 const flowExecutionState = ref<FlowExecutionState | null>(null)
@@ -185,10 +189,6 @@ const sessionAlarmMode = computed(
 const sortedFlows = computed(() =>
   [...flows.value].sort((first, second) => first.name.localeCompare(second.name)),
 )
-const flowOptions = computed(() => [
-  { label: t('coreTimer.flow.defaultMode'), value: null },
-  ...sortedFlows.value.map((flow) => ({ label: flow.name, value: flow.id })),
-])
 const isFlowLoaded = computed(() => Boolean(flowSession.value && flowExecutionState.value))
 const flowNodes = computed(() => flowSession.value?.nodes ?? [])
 const activeFlowNode = computed(() => {
@@ -444,6 +444,7 @@ async function loadFlows() {
   try {
     const response = await flowApi.listFlows(auth.token)
     flows.value = response.data
+    void loadFlowPickerSummaries(response.data)
   } catch (caughtError) {
     setError(caughtError, 'coreTimer.errors.loadFlows')
   } finally {
@@ -509,6 +510,51 @@ function restartLoadedFlow() {
   remainingSeconds.value = flowExecutionState.value.remainingSeconds
   syncActiveFlowMode()
   persistFlowExecutionState()
+}
+
+async function loadFlowPickerSummaries(targetFlows = flows.value) {
+  if (!auth.token) return
+
+  const flowsMissingNodes = targetFlows.filter((flow) => !flowPickerNodesByFlowId.value[flow.id])
+
+  if (flowsMissingNodes.length === 0) return
+
+  loadingFlowSummaryIds.value = flowsMissingNodes.map((flow) => flow.id)
+
+  try {
+    const summaryEntries = await Promise.all(
+      flowsMissingNodes.map(async (flow) => {
+        const response = await flowNodeApi.listFlowNodes(auth.token as string, flow.id)
+
+        return [flow.id, sortFlowNodes(response.data)] as const
+      }),
+    )
+
+    flowPickerNodesByFlowId.value = {
+      ...flowPickerNodesByFlowId.value,
+      ...Object.fromEntries(summaryEntries),
+    }
+  } catch (caughtError) {
+    setError(caughtError, 'coreTimer.errors.loadFlow')
+  } finally {
+    loadingFlowSummaryIds.value = []
+  }
+}
+
+async function openFlowPicker() {
+  isFlowPickerVisible.value = true
+
+  if (flows.value.length === 0) {
+    await loadFlows()
+  }
+
+  void loadFlowPickerSummaries()
+}
+
+async function startFlowJourney(flowId: number) {
+  await loadFlowSession(flowId, null)
+  selectedFlowId.value = flowId
+  isFlowPickerVisible.value = false
 }
 
 async function loadModes() {
@@ -1073,6 +1119,20 @@ onBeforeUnmount(() => {
       </form>
     </Dialog>
 
+    <FlowJourneyPicker
+      v-model:visible="isFlowPickerVisible"
+      :flows="sortedFlows"
+      :modes="sortedModes"
+      :nodes-by-flow-id="flowPickerNodesByFlowId"
+      :selected-flow-id="selectedFlowId"
+      :is-loading-flows="isLoadingFlows"
+      :is-loading-selected-flow="isLoadingSelectedFlow"
+      :loading-flow-summary-ids="loadingFlowSummaryIds"
+      @request-summaries="loadFlowPickerSummaries"
+      @start="startFlowJourney"
+      @clear="clearLoadedFlow"
+    />
+
     <section class="core-shell flex min-h-[calc(100svh-5.5rem)] flex-col pt-4 sm:pt-5">
       <div
         v-if="error"
@@ -1084,22 +1144,19 @@ onBeforeUnmount(() => {
       <section class="core-workspace" :class="{ 'core-workspace--minimal': isMinimalMode }">
         <section class="core-stage">
           <header class="core-topbar">
-            <div v-if="auth.isAuthenticated" class="core-flow-field auth-field">
-              <label class="sr-only" for="core-flow-select">
-                {{ t('coreTimer.flow.selectLabel') }}
-              </label>
-              <Select
-                input-id="core-flow-select"
-                v-model="selectedFlowId"
-                :options="flowOptions"
-                option-label="label"
-                option-value="value"
-                :placeholder="t('coreTimer.flow.selectPlaceholder')"
-                :loading="isLoadingFlows || isLoadingSelectedFlow"
-                :disabled="isLoadingFlows || isLoadingSelectedFlow"
-                class="!w-full"
-              />
-            </div>
+            <button
+              v-if="auth.isAuthenticated"
+              type="button"
+              class="core-flow-trigger"
+              :disabled="isLoadingFlows || isLoadingSelectedFlow"
+              @click="openFlowPicker"
+            >
+              <span>
+                <small>{{ t('coreTimer.flow.triggerEyebrow') }}</small>
+                <strong>{{ flowSession?.flow.name ?? t('coreTimer.flow.chooseFlow') }}</strong>
+              </span>
+              <i class="pi pi-arrow-up-right" aria-hidden="true" />
+            </button>
 
             <div v-if="!isFlowLoaded" class="core-mode-field auth-field">
               <label class="sr-only" for="core-mode-select">
@@ -1554,13 +1611,11 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
 }
 
-.core-mode-field,
-.core-flow-field {
+.core-mode-field {
   width: min(100%, 17rem);
 }
 
-.core-mode-field :deep(.p-select),
-.core-flow-field :deep(.p-select) {
+.core-mode-field :deep(.p-select) {
   align-items: center;
   min-height: 3.1rem;
   border-color: rgba(255, 255, 255, 0.16) !important;
@@ -1568,14 +1623,92 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
-.core-mode-field :deep(.p-select-label),
-.core-flow-field :deep(.p-select-label) {
+.core-mode-field :deep(.p-select-label) {
   display: flex;
   min-width: 0;
   align-items: center;
   align-self: stretch;
   padding-block: 0;
   line-height: 1.2;
+}
+
+.core-flow-trigger {
+  display: inline-grid;
+  min-width: min(100%, 15.5rem);
+  min-height: 3.1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.18), transparent 52%),
+    rgba(13, 10, 18, 0.72);
+  color: #ffffff;
+  padding: 0.46rem 0.5rem 0.46rem 1rem;
+  text-align: left;
+  box-shadow:
+    0 0.85rem 2.5rem rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.core-flow-trigger:hover {
+  border-color: rgba(var(--resource-mode-rgb), 0.48);
+  background:
+    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.28), transparent 56%),
+    rgba(13, 10, 18, 0.82);
+  box-shadow:
+    0 1rem 3rem rgba(var(--resource-mode-rgb), 0.16),
+    0 1.2rem 3rem rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.core-flow-trigger:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.core-flow-trigger span {
+  min-width: 0;
+}
+
+.core-flow-trigger small,
+.core-flow-trigger strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.core-flow-trigger small {
+  color: var(--resource-mode-color);
+  font-size: 0.66rem;
+  font-weight: 820;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.core-flow-trigger strong {
+  margin-top: 0.18rem;
+  font-size: 0.9rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.core-flow-trigger i {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--resource-mode-color);
+  color: var(--resource-mode-ink);
+  font-size: 0.78rem;
 }
 
 .core-minimal-toggle {
@@ -1630,7 +1763,7 @@ onBeforeUnmount(() => {
 }
 
 .core-workspace--minimal .core-mode-field,
-.core-workspace--minimal .core-flow-field {
+.core-workspace--minimal .core-flow-trigger {
   display: none;
 }
 
