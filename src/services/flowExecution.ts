@@ -123,6 +123,7 @@ export const resolveFlowNodeMode = (node: FlowNode | null | undefined, modes: Mo
 export const resolveFlowNodeEndAudio = (node: FlowNode | null | undefined, audios: Audio[]) => {
   if (!node) return null
   if (node.end_audio) return node.end_audio
+  if (node.end_sound_alarm) return node.end_sound_alarm
 
   return audios.find((audio) => String(audio.id) === String(node.end_audio_id)) ?? null
 }

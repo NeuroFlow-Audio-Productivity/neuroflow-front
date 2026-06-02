@@ -20,6 +20,7 @@ export type FlowNode = {
   flow?: Flow
   mode?: Mode
   end_audio?: Audio | null
+  end_sound_alarm?: Audio | null
   created_at: string
   updated_at: string
 }

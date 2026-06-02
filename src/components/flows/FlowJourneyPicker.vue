@@ -245,14 +245,25 @@ function isFlowSummaryLoading(flowId: number) {
           <p>{{ t('coreTimer.flow.pickerEyebrow') }}</p>
           <h2>{{ t('coreTimer.flow.pickerTitle') }}</h2>
         </div>
-        <button
-          type="button"
-          class="core-flow-picker-close"
-          :aria-label="t('auth.actions.cancel')"
-          @click="close"
-        >
-          <i class="pi pi-times" aria-hidden="true" />
-        </button>
+        <div class="core-flow-picker-header-actions">
+          <button
+            v-if="selectedFlowId"
+            type="button"
+            class="core-picker-reset"
+            @click="clearFlow"
+          >
+            <i class="pi pi-times" aria-hidden="true" />
+            <span>{{ t('coreTimer.flow.returnDefault') }}</span>
+          </button>
+          <button
+            type="button"
+            class="core-flow-picker-close"
+            :aria-label="t('auth.actions.cancel')"
+            @click="close"
+          >
+            <i class="pi pi-times" aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <div v-if="isLoadingFlows && flowPickerSummaries.length === 0" class="core-flow-picker-state">
@@ -266,7 +277,7 @@ function isFlowSummaryLoading(flowId: number) {
       </div>
 
       <div v-else class="core-flow-picker-body">
-        <div class="core-flow-card-grid">
+        <TransitionGroup name="core-journey-list" tag="div" class="core-flow-card-grid">
           <button
             v-for="summary in flowPickerSummaries"
             :key="summary.flow.id"
@@ -297,9 +308,14 @@ function isFlowSummaryLoading(flowId: number) {
               <i class="pi pi-spin pi-spinner" aria-hidden="true" />
             </span>
           </button>
-        </div>
+        </TransitionGroup>
 
-        <aside v-if="selectedFlowPickerSummary" class="core-flow-preview">
+        <Transition name="core-preview-swap" mode="out-in">
+          <aside
+            v-if="selectedFlowPickerSummary"
+            :key="selectedFlowPickerSummary.flow.id"
+            class="core-flow-preview"
+          >
           <div
             class="core-flow-preview-heading"
             :style="flowPickerCardStyle(selectedFlowPickerSummary)"
@@ -354,17 +370,9 @@ function isFlowSummaryLoading(flowId: number) {
               :disabled="isLoadingSelectedFlow || selectedFlowPickerSummary.sectionCount === 0"
               @click="startJourney"
             />
-            <Button
-              v-if="selectedFlowId"
-              type="button"
-              icon="pi pi-times"
-              :label="t('coreTimer.flow.returnDefault')"
-              text
-              class="core-picker-secondary"
-              @click="clearFlow"
-            />
           </div>
-        </aside>
+          </aside>
+        </Transition>
       </div>
     </section>
   </Dialog>
@@ -438,6 +446,43 @@ function isFlowSummaryLoading(flowId: number) {
   line-height: 0.98;
 }
 
+.core-flow-picker-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.core-picker-reset {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0 0.85rem;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.core-picker-reset:hover {
+  border-color: rgba(110, 231, 216, 0.34);
+  background: rgba(110, 231, 216, 0.08);
+  color: #d9fff8;
+  transform: translateY(-1px);
+}
+
+.core-picker-reset i {
+  font-size: 0.75rem;
+}
+
 .core-flow-picker-close {
   display: grid;
   width: 2.65rem;
@@ -479,10 +524,11 @@ function isFlowSummaryLoading(flowId: number) {
   text-align: left;
   box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
   transition:
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    transform 220ms ease,
-    min-height 220ms ease;
+    border-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .core-journey-card:hover,
@@ -496,6 +542,23 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-journey-card--selected {
   min-height: 15.5rem;
+}
+
+.core-journey-list-move,
+.core-journey-list-enter-active,
+.core-journey-list-leave-active {
+  transition: all 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.core-journey-list-enter-from,
+.core-journey-list-leave-to {
+  opacity: 0;
+  transform: translateY(0.75rem) scale(0.98);
+}
+
+.core-journey-list-leave-active {
+  position: absolute;
+  width: 100%;
 }
 
 .core-journey-visual {
@@ -597,7 +660,24 @@ function isFlowSummaryLoading(flowId: number) {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.055);
   padding: 1rem;
-  animation: core-preview-reveal 260ms ease both;
+  animation: core-preview-reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.core-preview-swap-enter-active,
+.core-preview-swap-leave-active {
+  transition:
+    opacity 240ms ease,
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.core-preview-swap-enter-from {
+  opacity: 0;
+  transform: translateY(0.65rem) scale(0.985);
+}
+
+.core-preview-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-0.35rem) scale(0.99);
 }
 
 .core-flow-preview-heading {
@@ -678,7 +758,7 @@ function isFlowSummaryLoading(flowId: number) {
   border-radius: 8px;
   background: rgba(var(--flow-card-rgb), 0.08);
   padding: 0.65rem 0.7rem;
-  animation: core-preview-reveal 260ms ease both;
+  animation: core-preview-reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .core-flow-preview-timeline li span,
@@ -737,9 +817,6 @@ function isFlowSummaryLoading(flowId: number) {
   font-weight: 800 !important;
 }
 
-.core-picker-secondary {
-  color: rgba(255, 255, 255, 0.74) !important;
-}
 
 @keyframes core-flow-pulse {
   0%,

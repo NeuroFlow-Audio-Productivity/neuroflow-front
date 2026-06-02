@@ -44,6 +44,8 @@ const defaultPhaseDurations: Record<TimerPhase, number> = {
   longBreak: 15 * 60,
 }
 const FLOW_EXECUTION_STORAGE_KEY = 'neuroflow-core-flow-session'
+const MAX_COMPLETION_ALARM_SECONDS = 10
+const ENDING_WARNING_SECONDS = 10
 
 const phaseDurations = ref<Record<TimerPhase, number>>({ ...defaultPhaseDurations })
 
@@ -139,6 +141,8 @@ const isAudioWaiting = ref(false)
 const hasAudioError = ref(false)
 
 let timerInterval: ReturnType<typeof window.setInterval> | undefined
+let completionAlarmTimeout: ReturnType<typeof window.setTimeout> | undefined
+let activeCompletionBellGain: GainNode | undefined
 let completionAudioContext: AudioContext | undefined
 
 const phaseOptions = computed(() =>
@@ -288,6 +292,9 @@ const timerProgress = computed(() => {
 const timerProgressStyle = computed(() => ({
   '--timer-progress': `${timerProgress.value}%`,
 }))
+const isTimerEndingSoon = computed(
+  () => isRunning.value && remainingSeconds.value > 0 && remainingSeconds.value <= ENDING_WARNING_SECONDS,
+)
 const playPauseLabel = computed(() =>
   isRunning.value ? t('coreTimer.actions.pause') : t('coreTimer.actions.start'),
 )
@@ -471,7 +478,7 @@ async function loadFlowSession(flowId: number, persistedState = readPersistedFlo
       flowCompletionAudios.value = audiosResponse.data
     } catch {
       flowCompletionAudios.value = session.nodes
-        .map((node) => node.end_audio)
+        .map((node) => node.end_audio ?? node.end_sound_alarm)
         .filter((audio): audio is Audio => Boolean(audio))
     }
     flowSession.value = session
@@ -656,6 +663,29 @@ function clearTimerInterval() {
   timerInterval = undefined
 }
 
+function clearCompletionAlarmTimeout() {
+  if (completionAlarmTimeout === undefined) return
+
+  window.clearTimeout(completionAlarmTimeout)
+  completionAlarmTimeout = undefined
+}
+
+function stopCompletionAlarm() {
+  clearCompletionAlarmTimeout()
+
+  if (activeCompletionBellGain) {
+    activeCompletionBellGain.disconnect()
+    activeCompletionBellGain = undefined
+  }
+
+  const alarmAudio = alarmAudioElement.value
+
+  if (!alarmAudio) return
+
+  alarmAudio.pause()
+  alarmAudio.currentTime = 0
+}
+
 function getCompletionAudioContext() {
   const AudioContextConstructor =
     window.AudioContext ?? (window as BrowserWindowWithLegacyAudioContext).webkitAudioContext
@@ -695,54 +725,73 @@ async function ringCompletionBell() {
 
     masterGain.gain.setValueAtTime(0.0001, now)
     masterGain.gain.exponentialRampToValueAtTime(0.48, now + 0.02)
-    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.05)
+    masterGain.gain.setValueAtTime(0.48, now + MAX_COMPLETION_ALARM_SECONDS - 0.15)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + MAX_COMPLETION_ALARM_SECONDS)
     masterGain.connect(audioContext.destination)
+    activeCompletionBellGain = masterGain
 
-    bellFrequencies.forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator()
-      const noteGain = audioContext.createGain()
-      const startTime = now + index * 0.14
-      const stopTime = startTime + 0.72
+    const ringCount = Math.ceil(MAX_COMPLETION_ALARM_SECONDS / 1.25)
 
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(frequency, startTime)
-      noteGain.gain.setValueAtTime(0.0001, startTime)
-      noteGain.gain.exponentialRampToValueAtTime(1, startTime + 0.02)
-      noteGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+    Array.from({ length: ringCount }).forEach((_, ringIndex) => {
+      bellFrequencies.forEach((frequency, noteIndex) => {
+        const oscillator = audioContext.createOscillator()
+        const noteGain = audioContext.createGain()
+        const startTime = now + ringIndex * 1.25 + noteIndex * 0.14
+        const stopTime = Math.min(startTime + 0.72, now + MAX_COMPLETION_ALARM_SECONDS)
 
-      oscillator.connect(noteGain).connect(masterGain)
-      oscillator.start(startTime)
-      oscillator.stop(stopTime)
-      oscillator.onended = () => {
-        oscillator.disconnect()
-        noteGain.disconnect()
+        oscillator.type = 'sine'
+        oscillator.frequency.setValueAtTime(frequency, startTime)
+        noteGain.gain.setValueAtTime(0.0001, startTime)
+        noteGain.gain.exponentialRampToValueAtTime(1, startTime + 0.02)
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
 
-        if (index === bellFrequencies.length - 1) {
-          masterGain.disconnect()
+        oscillator.connect(noteGain).connect(masterGain)
+        oscillator.start(startTime)
+        oscillator.stop(stopTime)
+        oscillator.onended = () => {
+          oscillator.disconnect()
+          noteGain.disconnect()
         }
-      }
+      })
     })
+
+    completionAlarmTimeout = window.setTimeout(() => {
+      masterGain.disconnect()
+      activeCompletionBellGain = undefined
+      completionAlarmTimeout = undefined
+    }, MAX_COMPLETION_ALARM_SECONDS * 1000)
   } catch {
     // Bell playback is best-effort and should never block the next phase.
   }
 }
 
-async function playCompletionAlarm() {
-  const alarmAudio = alarmAudioElement.value
+async function playCompletionAlarm(source = selectedAlarmAudioSource.value, isFlowAlarm = isFlowLoaded.value) {
+  if (source) {
+    const alarmAudio = alarmAudioElement.value
 
-  if (alarmAudio && selectedAlarmAudioSource.value) {
     try {
-      alarmAudio.pause()
+      stopCompletionAlarm()
+
+      if (!alarmAudio) throw new Error('Missing alarm audio element')
+      if (alarmAudio.src !== source) {
+        alarmAudio.src = source
+        alarmAudio.load()
+      }
+
       alarmAudio.currentTime = 0
       await alarmAudio.play()
+      completionAlarmTimeout = window.setTimeout(
+        stopCompletionAlarm,
+        MAX_COMPLETION_ALARM_SECONDS * 1000,
+      )
       return
     } catch {
-      if (isFlowLoaded.value) return
+      if (isFlowAlarm) return
       // Fall back to the generated bell if the uploaded alarm cannot play.
     }
   }
 
-  if (!isFlowLoaded.value) {
+  if (!isFlowAlarm) {
     await ringCompletionBell()
   }
 }
@@ -753,10 +802,6 @@ function completePhase() {
     remainingSeconds.value = flowExecutionState.value.remainingSeconds
     syncActiveFlowMode()
     persistFlowExecutionState()
-
-    if (flowExecutionState.value.isComplete) {
-      pauseSession()
-    }
 
     return
   }
@@ -773,13 +818,11 @@ function completePhase() {
 }
 
 function completeExpiredPhase() {
-  const shouldContinueFlow = isFlowLoaded.value
+  const completionAlarmSource = selectedAlarmAudioSource.value
+  const isFlowAlarm = isFlowLoaded.value
 
-  if (!shouldContinueFlow) {
-    pauseSession()
-  }
-
-  void playCompletionAlarm()
+  pauseSession()
+  void playCompletionAlarm(completionAlarmSource, isFlowAlarm)
   completePhase()
 }
 
@@ -838,6 +881,7 @@ async function startSession() {
 function pauseSession() {
   isRunning.value = false
   clearTimerInterval()
+  stopCompletionAlarm()
   pauseAudio()
 }
 
@@ -868,6 +912,7 @@ function resetSession() {
 }
 
 function skipPhase() {
+  pauseSession()
   completePhase()
 }
 
@@ -1002,7 +1047,7 @@ watch(selectedAlarmAudioSource, () => {
 
   if (!alarmAudio) return
 
-  alarmAudio.pause()
+  stopCompletionAlarm()
   alarmAudio.load()
 })
 
@@ -1025,6 +1070,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   persistFlowExecutionState()
   clearTimerInterval()
+  stopCompletionAlarm()
   pauseAudio()
 
   if (completionAudioContext && completionAudioContext.state !== 'closed') {
@@ -1242,7 +1288,11 @@ onBeforeUnmount(() => {
           <template v-else>
             <div class="core-focus-layout">
               <div class="core-timer-zone">
-                <div class="core-timer-orbit" :style="timerProgressStyle">
+                <div
+                  class="core-timer-orbit"
+                  :class="{ 'core-timer-orbit--ending': isTimerEndingSoon }"
+                  :style="timerProgressStyle"
+                >
                   <span class="core-timer-ring core-timer-ring--outer" aria-hidden="true" />
                   <span class="core-timer-ring core-timer-ring--inner" aria-hidden="true" />
 
@@ -1795,6 +1845,34 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
+.core-timer-orbit--ending {
+  animation: core-ending-pulse 1.6s ease-in-out infinite;
+}
+
+.core-timer-orbit--ending::before {
+  background: conic-gradient(
+    #ff6b75 var(--timer-progress),
+    rgba(255, 255, 255, 0.08) 0
+  );
+  filter: drop-shadow(0 0 0.65rem rgba(255, 92, 104, 0.24));
+  opacity: 0.9;
+}
+
+.core-timer-orbit--ending::after {
+  border-color: rgba(255, 92, 104, 0.16);
+  box-shadow: inset 0 0 2rem rgba(255, 92, 104, 0.08);
+}
+
+.core-timer-orbit--ending .core-timer-ring {
+  border-color: rgba(255, 92, 104, 0.22);
+  box-shadow: none;
+}
+
+.core-timer-orbit--ending .core-timer-readout strong {
+  color: #ff7b84;
+  text-shadow: 0 0 0.65rem rgba(255, 92, 104, 0.22), 0 1.2rem 4rem rgba(0, 0, 0, 0.55);
+}
+
 .core-workspace--minimal .core-timer-readout strong {
   font-size: clamp(5.2rem, 16vw, 10rem);
 }
@@ -2123,8 +2201,10 @@ onBeforeUnmount(() => {
 
 .core-timer-readout strong {
   display: block;
-  width: 4.7ch;
+  box-sizing: border-box;
+  width: 100%;
   margin-top: 0.35rem;
+  padding: 0 1rem;
   color: #ffffff;
   font-size: clamp(4.6rem, 15vw, 8.9rem);
   font-variant-numeric: tabular-nums lining-nums;
@@ -2734,6 +2814,20 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .core-track--active .core-track-wave span {
     animation: none;
+  }
+}
+
+
+@keyframes core-ending-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.96;
+  }
+
+  50% {
+    transform: scale(1.008);
+    opacity: 1;
   }
 }
 

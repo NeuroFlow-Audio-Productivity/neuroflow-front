@@ -51,6 +51,9 @@ input[type='submit']:not(:disabled),
 input[type='reset']:not(:disabled),
 select:not(:disabled),
 summary,
+.flow-category-card,
+.flow-suggestion-card,
+.flow-selected-category,
 .p-button:not(.p-disabled):not(:disabled) {
   cursor: pointer;
 }
