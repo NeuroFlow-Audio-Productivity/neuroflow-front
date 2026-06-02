@@ -202,8 +202,8 @@ function flowVisualIdentity(flow: Flow, mode: Mode | null): FlowVisualIdentity {
     return {
       key: 'relax',
       label: t('coreTimer.flow.identities.relax'),
-      accent: mode?.color || '#b78cff',
-      accentRgb: hexToRgbTriplet(mode?.color || '#b78cff'),
+      accent: mode?.color || '#f59e5b',
+      accentRgb: hexToRgbTriplet(mode?.color || '#f59e5b'),
       ink: '#10061c',
     }
   }
@@ -212,8 +212,8 @@ function flowVisualIdentity(flow: Flow, mode: Mode | null): FlowVisualIdentity {
     return {
       key: 'sleep',
       label: t('coreTimer.flow.identities.sleep'),
-      accent: mode?.color || '#78a7ff',
-      accentRgb: hexToRgbTriplet(mode?.color || '#78a7ff'),
+      accent: mode?.color || '#a78bfa',
+      accentRgb: hexToRgbTriplet(mode?.color || '#a78bfa'),
       ink: '#05101d',
     }
   }
@@ -281,7 +281,7 @@ function journeyNodeVisual(kind: JourneyNodeKind) {
     return {
       roleLabel: t('coreTimer.flow.nodeRoles.recovery'),
       icon: 'pi pi-sparkles',
-      accent: '#b78cff',
+      accent: '#f59e5b',
       energy: 34,
     }
   }
@@ -290,7 +290,7 @@ function journeyNodeVisual(kind: JourneyNodeKind) {
     return {
       roleLabel: t('coreTimer.flow.nodeRoles.sleep'),
       icon: 'pi pi-moon',
-      accent: '#78a7ff',
+      accent: '#a78bfa',
       energy: 20,
     }
   }
