@@ -1633,39 +1633,29 @@ onBeforeUnmount(() => {
 }
 
 .core-flow-trigger {
+  cursor: pointer;
   display: inline-grid;
-  min-width: min(100%, 15.5rem);
-  min-height: 3.1rem;
+  min-width: min(100%, 14.25rem);
+  min-height: 2.9rem;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
-  border-radius: 999px;
-  background:
-    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.18), transparent 52%),
-    rgba(13, 10, 18, 0.72);
+  gap: 0.65rem;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.24);
+  border-radius: 10px;
+  background: rgba(13, 10, 18, 0.64);
   color: #ffffff;
-  padding: 0.46rem 0.5rem 0.46rem 1rem;
+  padding: 0.44rem 0.6rem 0.44rem 0.95rem;
   text-align: left;
-  box-shadow:
-    0 0.85rem 2.5rem rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition:
     border-color 180ms ease,
     background 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    color 180ms ease;
 }
 
 .core-flow-trigger:hover {
-  border-color: rgba(var(--resource-mode-rgb), 0.48);
-  background:
-    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.28), transparent 56%),
-    rgba(13, 10, 18, 0.82);
-  box-shadow:
-    0 1rem 3rem rgba(var(--resource-mode-rgb), 0.16),
-    0 1.2rem 3rem rgba(0, 0, 0, 0.28);
-  transform: translateY(-1px);
+  border-color: rgba(var(--resource-mode-rgb), 0.42);
+  background: rgba(13, 10, 18, 0.78);
 }
 
 .core-flow-trigger:disabled {
@@ -1687,28 +1677,29 @@ onBeforeUnmount(() => {
 
 .core-flow-trigger small {
   color: var(--resource-mode-color);
-  font-size: 0.66rem;
-  font-weight: 820;
+  font-size: 0.62rem;
+  font-weight: 760;
   line-height: 1.1;
   text-transform: uppercase;
 }
 
 .core-flow-trigger strong {
-  margin-top: 0.18rem;
-  font-size: 0.9rem;
-  font-weight: 760;
+  margin-top: 0.14rem;
+  font-size: 0.88rem;
+  font-weight: 720;
   line-height: 1.2;
 }
 
 .core-flow-trigger i {
   display: grid;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.85rem;
+  height: 1.85rem;
   place-items: center;
   border-radius: 999px;
-  background: var(--resource-mode-color);
-  color: var(--resource-mode-ink);
-  font-size: 0.78rem;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.36);
+  background: rgba(var(--resource-mode-rgb), 0.08);
+  color: var(--resource-mode-color);
+  font-size: 0.72rem;
 }
 
 .core-minimal-toggle {

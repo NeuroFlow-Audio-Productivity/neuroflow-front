@@ -43,6 +43,18 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+button:not(:disabled),
+a[href],
+[role='button'],
+input[type='button']:not(:disabled),
+input[type='submit']:not(:disabled),
+input[type='reset']:not(:disabled),
+select:not(:disabled),
+summary,
+.p-button:not(.p-disabled):not(:disabled) {
+  cursor: pointer;
+}
+
 #app {
   min-height: 100vh;
 }
