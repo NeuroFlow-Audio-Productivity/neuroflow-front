@@ -116,6 +116,10 @@ const isLoadingSelectedFlow = ref(false)
 const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
 const selectedAlarmAudioId = ref<string | number | null>(null)
+const isEnvironmentExplorerVisible = ref(false)
+const hoveredEnvironmentId = ref<string | null>(null)
+const selectingEnvironmentId = ref<string | null>(null)
+const isEnvironmentLanding = ref(false)
 const timerPhase = ref<TimerPhase>('work')
 const remainingSeconds = ref(defaultPhaseDurations.work)
 const cycleIndex = ref(0)
@@ -134,6 +138,7 @@ const error = ref<string | null>(null)
 
 const audioElement = ref<HTMLAudioElement | null>(null)
 const alarmAudioElement = ref<HTMLAudioElement | null>(null)
+const environmentPreviewAudioElement = ref<HTMLAudioElement | null>(null)
 const audioVolume = ref(0.74)
 const isAudioMuted = ref(false)
 const isAudioPlaying = ref(false)
@@ -142,8 +147,23 @@ const hasAudioError = ref(false)
 
 let timerInterval: ReturnType<typeof window.setInterval> | undefined
 let completionAlarmTimeout: ReturnType<typeof window.setTimeout> | undefined
+let environmentSelectionTimeout: ReturnType<typeof window.setTimeout> | undefined
+let environmentLandingTimeout: ReturnType<typeof window.setTimeout> | undefined
+let environmentPreviewFrame: number | undefined
 let activeCompletionBellGain: GainNode | undefined
 let completionAudioContext: AudioContext | undefined
+
+const environmentPalettes = [
+  { aura: '#8fd3ff', rgb: '143, 211, 255', ink: '#07111a' },
+  { aura: '#b8f4ce', rgb: '184, 244, 206', ink: '#06140b' },
+  { aura: '#ffd166', rgb: '255, 209, 102', ink: '#1b1204' },
+  { aura: '#f7a8b8', rgb: '247, 168, 184', ink: '#19070c' },
+  { aura: '#a7f3d0', rgb: '167, 243, 208', ink: '#06140e' },
+  { aura: '#f0abfc', rgb: '240, 171, 252', ink: '#17051a' },
+  { aura: '#67e8f9', rgb: '103, 232, 249', ink: '#031316' },
+  { aura: '#fde68a', rgb: '253, 230, 138', ink: '#181203' },
+]
+const defaultEnvironmentPalette = environmentPalettes[0]!
 
 const phaseOptions = computed(() =>
   (['work', 'shortBreak', 'longBreak'] as TimerPhase[]).map((phase) => ({
@@ -253,6 +273,27 @@ const selectedAlarmAudioSource = computed(() =>
   audioSourceUrl(isFlowLoaded.value ? currentFlowCompletionAudio.value : selectedAlarmAudio.value),
 )
 const selectedTrackLabel = computed(() => selectedAudio.value?.name ?? t('coreTimer.audio.noTrack'))
+const activeEnvironmentLabel = computed(() =>
+  selectedAudio.value
+    ? formatEnvironmentTitle(selectedAudio.value.name)
+    : t('coreTimer.audio.noTrack'),
+)
+const activeEnvironmentSubtitle = computed(() => selectedModeName.value + ' Environment')
+const activeEnvironmentIcon = computed(() => environmentIcon(selectedAudio.value))
+const hoveredEnvironment = computed(
+  () =>
+    sortedAudios.value.find((audio) => audioId(audio) === hoveredEnvironmentId.value) ??
+    selectedAudio.value,
+)
+const environmentExplorerStyle = computed(() => {
+  const palette = environmentPaletteForAudio(hoveredEnvironment.value, 0)
+
+  return {
+    '--environment-aura': palette.aura,
+    '--environment-rgb': palette.rgb,
+    '--environment-ink': palette.ink,
+  }
+})
 const selectedAlarmLabel = computed(() =>
   isFlowLoaded.value
     ? (currentFlowCompletionAudio.value?.name ?? t('coreTimer.flow.noAlarm'))
@@ -293,7 +334,10 @@ const timerProgressStyle = computed(() => ({
   '--timer-progress': `${timerProgress.value}%`,
 }))
 const isTimerEndingSoon = computed(
-  () => isRunning.value && remainingSeconds.value > 0 && remainingSeconds.value <= ENDING_WARNING_SECONDS,
+  () =>
+    isRunning.value &&
+    remainingSeconds.value > 0 &&
+    remainingSeconds.value <= ENDING_WARNING_SECONDS,
 )
 const playPauseLabel = computed(() =>
   isRunning.value ? t('coreTimer.actions.pause') : t('coreTimer.actions.start'),
@@ -381,6 +425,55 @@ function audioId(audio: Audio) {
 
 function isSelectedAudio(audio: Audio) {
   return audioId(audio) === String(selectedAudioId.value)
+}
+
+function formatEnvironmentTitle(name: string) {
+  return name
+    .replace(/[\-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/(^|\s)(\S)/g, (_match, space: string, letter: string) => space + letter.toUpperCase())
+}
+
+function environmentHash(input: string) {
+  return Array.from(input).reduce((hash, character) => hash + character.charCodeAt(0), 0)
+}
+
+function environmentPaletteForAudio(audio: Audio | null | undefined, index: number) {
+  const hash = audio ? environmentHash(String(audio.id) + audio.name) : index
+
+  return (
+    environmentPalettes[Math.abs(hash + index) % environmentPalettes.length] ??
+    defaultEnvironmentPalette
+  )
+}
+
+function environmentCardStyle(audio: Audio, index: number) {
+  const palette = environmentPaletteForAudio(audio, index)
+
+  return {
+    '--environment-card-aura': palette.aura,
+    '--environment-card-rgb': palette.rgb,
+    '--environment-card-ink': palette.ink,
+  }
+}
+
+function environmentPrimeIcon(icon: string) {
+  return 'pi pi-' + icon
+}
+
+function environmentIcon(audio: Audio | null | undefined) {
+  const name = (audio?.name ?? selectedModeName.value).toLowerCase()
+
+  if (/sleep|dream|night|moon|rain/.test(name)) return 'moon'
+  if (/forest|wood|leaf|nature/.test(name)) return 'tree'
+  if (/ocean|sea|wave|drift/.test(name)) return 'wave'
+  if (/cosmic|space|star|aurora/.test(name)) return 'sparkles'
+  if (/library|book|study/.test(name)) return 'book'
+  if (/temple|focus|deep|protocol/.test(name)) return 'bolt'
+
+  return 'music'
 }
 
 function formatClock(totalSeconds: number) {
@@ -765,7 +858,10 @@ async function ringCompletionBell() {
   }
 }
 
-async function playCompletionAlarm(source = selectedAlarmAudioSource.value, isFlowAlarm = isFlowLoaded.value) {
+async function playCompletionAlarm(
+  source = selectedAlarmAudioSource.value,
+  isFlowAlarm = isFlowLoaded.value,
+) {
   if (source) {
     const alarmAudio = alarmAudioElement.value
 
@@ -968,6 +1064,126 @@ function selectTrack(audio: Audio) {
   selectedAudioId.value = audio.id
 }
 
+function openEnvironmentExplorer() {
+  if (sortedAudios.value.length === 0) return
+
+  hoveredEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
+  selectingEnvironmentId.value = null
+  isEnvironmentExplorerVisible.value = true
+}
+
+function closeEnvironmentExplorer() {
+  isEnvironmentExplorerVisible.value = false
+  selectingEnvironmentId.value = null
+  clearEnvironmentPreview()
+}
+
+function finishEnvironmentLanding() {
+  isEnvironmentLanding.value = false
+}
+
+function clearEnvironmentSelectionTimeout() {
+  if (environmentSelectionTimeout === undefined) return
+
+  window.clearTimeout(environmentSelectionTimeout)
+  environmentSelectionTimeout = undefined
+}
+
+function clearEnvironmentLandingTimeout() {
+  if (environmentLandingTimeout === undefined) return
+
+  window.clearTimeout(environmentLandingTimeout)
+  environmentLandingTimeout = undefined
+}
+
+function fadeEnvironmentPreviewVolume(targetVolume: number, onComplete?: () => void) {
+  const previewAudio = environmentPreviewAudioElement.value
+
+  if (!previewAudio) {
+    onComplete?.()
+    return
+  }
+
+  if (environmentPreviewFrame !== undefined) {
+    window.cancelAnimationFrame(environmentPreviewFrame)
+  }
+
+  const startVolume = previewAudio.volume
+  const startedAt = performance.now()
+  const duration = 260
+
+  const step = (time: number) => {
+    const progress = Math.min(1, (time - startedAt) / duration)
+    previewAudio.volume = startVolume + (targetVolume - startVolume) * progress
+
+    if (progress < 1) {
+      environmentPreviewFrame = window.requestAnimationFrame(step)
+      return
+    }
+
+    environmentPreviewFrame = undefined
+    onComplete?.()
+  }
+
+  environmentPreviewFrame = window.requestAnimationFrame(step)
+}
+
+function clearEnvironmentPreview() {
+  hoveredEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
+  fadeEnvironmentPreviewVolume(0, () => {
+    const previewAudio = environmentPreviewAudioElement.value
+
+    if (!previewAudio) return
+
+    previewAudio.pause()
+    delete previewAudio.dataset.previewSource
+    previewAudio.removeAttribute('src')
+    previewAudio.load()
+  })
+}
+
+function previewEnvironment(audio: Audio) {
+  if (!isEnvironmentExplorerVisible.value || selectingEnvironmentId.value) return
+
+  hoveredEnvironmentId.value = audioId(audio)
+
+  const previewAudio = environmentPreviewAudioElement.value
+  const source = audioSourceUrl(audio)
+
+  if (!previewAudio || !source) return
+
+  if (previewAudio.dataset.previewSource !== source) {
+    previewAudio.dataset.previewSource = source
+    previewAudio.src = source
+    previewAudio.currentTime = 0
+    previewAudio.load()
+  }
+
+  previewAudio.loop = true
+  previewAudio.volume = Math.min(previewAudio.volume, 0.08)
+
+  void previewAudio
+    .play()
+    .then(() => fadeEnvironmentPreviewVolume(0.22))
+    .catch(() => undefined)
+}
+
+function selectEnvironment(audio: Audio) {
+  clearEnvironmentSelectionTimeout()
+  clearEnvironmentPreview()
+  selectedAudioId.value = audio.id
+  hoveredEnvironmentId.value = audioId(audio)
+  selectingEnvironmentId.value = audioId(audio)
+
+  environmentSelectionTimeout = window.setTimeout(() => {
+    isEnvironmentExplorerVisible.value = false
+    selectingEnvironmentId.value = null
+    isEnvironmentLanding.value = true
+    clearEnvironmentLandingTimeout()
+    environmentLandingTimeout = window.setTimeout(finishEnvironmentLanding, 720)
+  }, 440)
+}
+
 function changeVolume(event: Event) {
   const value = Number((event.target as HTMLInputElement).value)
 
@@ -1073,6 +1289,16 @@ onBeforeUnmount(() => {
   stopCompletionAlarm()
   pauseAudio()
 
+  clearEnvironmentSelectionTimeout()
+  clearEnvironmentLandingTimeout()
+
+  if (environmentPreviewFrame !== undefined) {
+    window.cancelAnimationFrame(environmentPreviewFrame)
+    environmentPreviewFrame = undefined
+  }
+
+  clearEnvironmentPreview()
+
   if (completionAudioContext && completionAudioContext.state !== 'closed') {
     void completionAudioContext.close()
   }
@@ -1112,6 +1338,8 @@ onBeforeUnmount(() => {
       :src="selectedAlarmAudioSource || undefined"
       preload="auto"
     />
+
+    <audio ref="environmentPreviewAudioElement" class="sr-only" preload="metadata" />
 
     <Dialog
       v-model:visible="isDurationDialogVisible"
@@ -1178,6 +1406,79 @@ onBeforeUnmount(() => {
       @start="startFlowJourney"
       @clear="clearLoadedFlow"
     />
+
+    <Transition name="core-environment-portal">
+      <div
+        v-if="isEnvironmentExplorerVisible"
+        class="core-environment-backdrop"
+        @click.self="closeEnvironmentExplorer"
+      >
+        <section
+          class="core-environment-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="core-environment-title"
+          :style="environmentExplorerStyle"
+        >
+          <div class="core-environment-modal-glow" aria-hidden="true" />
+          <header class="core-environment-header">
+            <div>
+              <p>Audio Worlds</p>
+              <h2 id="core-environment-title">Choose Your Cognitive Environment</h2>
+              <span>Each environment shapes how your journey feels.</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Close environment explorer"
+              @click="closeEnvironmentExplorer"
+            >
+              <i class="pi pi-times" aria-hidden="true" />
+            </button>
+          </header>
+
+          <section class="core-active-environment">
+            <span>Currently Active</span>
+            <div>
+              <i :class="environmentPrimeIcon(activeEnvironmentIcon)" aria-hidden="true" />
+              <strong>{{ activeEnvironmentLabel }}</strong>
+              <small>Selected</small>
+            </div>
+          </section>
+
+          <section class="core-environment-discovery" aria-label="Cognitive environments">
+            <button
+              v-for="(audio, index) in sortedAudios"
+              :key="audioId(audio)"
+              type="button"
+              class="core-environment-card"
+              :class="[
+                isSelectedAudio(audio) && 'core-environment-card--active',
+                hoveredEnvironmentId === audioId(audio) && 'core-environment-card--hovered',
+                selectingEnvironmentId === audioId(audio) && 'core-environment-card--selecting',
+              ]"
+              :style="environmentCardStyle(audio, index)"
+              @focus="previewEnvironment(audio)"
+              @mouseenter="previewEnvironment(audio)"
+              @mouseleave="clearEnvironmentPreview"
+              @blur="clearEnvironmentPreview"
+              @click="selectEnvironment(audio)"
+            >
+              <span class="core-environment-card-aura" aria-hidden="true" />
+              <span class="core-environment-card-particles" aria-hidden="true">
+                <span v-for="particle in 9" :key="particle" />
+              </span>
+              <span class="core-environment-card-copy">
+                <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
+                <small>{{ selectedModeName }} Environment</small>
+              </span>
+              <span class="core-environment-card-status">
+                {{ isSelectedAudio(audio) ? 'Selected' : 'Enter' }}
+              </span>
+            </button>
+          </section>
+        </section>
+      </div>
+    </Transition>
 
     <section class="core-shell flex min-h-[calc(100svh-5.5rem)] flex-col pt-4 sm:pt-5">
       <div
@@ -1466,29 +1767,26 @@ onBeforeUnmount(() => {
             <span>{{ t('coreTimer.audio.empty') }}</span>
           </div>
 
-          <div v-else class="core-track-list">
-            <button
-              v-for="audio in sortedAudios"
-              :key="audioId(audio)"
-              type="button"
-              class="core-track"
-              :class="{ 'core-track--active': isSelectedAudio(audio) }"
-              :aria-label="t('coreTimer.actions.chooseTrack', { name: audio.name })"
-              @click="selectTrack(audio)"
-            >
-              <span class="core-track-wave" aria-hidden="true">
-                <span v-for="beat in 7" :key="beat" />
-              </span>
-              <span class="core-track-copy">
-                <strong>{{ audio.name }}</strong>
-                <small>{{ selectedModeName }}</small>
-              </span>
-              <i
-                :class="isSelectedAudio(audio) ? 'pi pi-check' : 'pi pi-play'"
-                aria-hidden="true"
-              />
-            </button>
-          </div>
+          <button
+            v-else
+            type="button"
+            class="core-current-environment"
+            :class="[isEnvironmentLanding && 'core-current-environment--landing']"
+            @animationend="finishEnvironmentLanding"
+            @click="openEnvironmentExplorer"
+          >
+            <span class="core-current-environment-copy">
+              <span>Current Environment</span>
+              <strong>
+                {{ activeEnvironmentLabel }}
+              </strong>
+              <small>{{ activeEnvironmentSubtitle }}</small>
+            </span>
+            <span class="core-current-environment-action">
+              <i class="pi pi-compass" aria-hidden="true" />
+              <span>Change Music</span>
+            </span>
+          </button>
 
           <div class="core-audio-console">
             <div class="core-now-playing">
@@ -1850,10 +2148,7 @@ onBeforeUnmount(() => {
 }
 
 .core-timer-orbit--ending::before {
-  background: conic-gradient(
-    #ff6b75 var(--timer-progress),
-    rgba(255, 255, 255, 0.08) 0
-  );
+  background: conic-gradient(#ff6b75 var(--timer-progress), rgba(255, 255, 255, 0.08) 0);
   filter: drop-shadow(0 0 0.65rem rgba(255, 92, 104, 0.24));
   opacity: 0.9;
 }
@@ -1870,7 +2165,9 @@ onBeforeUnmount(() => {
 
 .core-timer-orbit--ending .core-timer-readout strong {
   color: #ff7b84;
-  text-shadow: 0 0 0.65rem rgba(255, 92, 104, 0.22), 0 1.2rem 4rem rgba(0, 0, 0, 0.55);
+  text-shadow:
+    0 0 0.65rem rgba(255, 92, 104, 0.22),
+    0 1.2rem 4rem rgba(0, 0, 0, 0.55);
 }
 
 .core-workspace--minimal .core-timer-readout strong {
@@ -2544,6 +2841,450 @@ onBeforeUnmount(() => {
   padding: 0.45rem 0.65rem;
 }
 
+.core-current-environment {
+  position: relative;
+  display: grid;
+  gap: 0.85rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.18);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(var(--resource-mode-rgb), 0.2), transparent 32%),
+    rgba(255, 255, 255, 0.055);
+  padding: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.core-current-environment:hover,
+.core-current-environment:focus-visible {
+  border-color: rgba(var(--resource-mode-rgb), 0.38);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(var(--resource-mode-rgb), 0.26), transparent 32%),
+    rgba(255, 255, 255, 0.075);
+  transform: translateY(-1px);
+}
+
+.core-current-environment:focus-visible {
+  outline: 2px solid rgba(var(--resource-mode-rgb), 0.48);
+  outline-offset: 3px;
+}
+
+.core-current-environment::before {
+  position: absolute;
+  inset: -45% 18% 18% -30%;
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.2);
+  content: '';
+  filter: blur(28px);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.core-current-environment-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.core-current-environment-copy span {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.72rem;
+  font-weight: 820;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.core-current-environment-copy strong {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.52rem;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.core-current-environment-copy i {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.16);
+  color: var(--resource-mode-color);
+  font-size: 0.82rem;
+}
+
+.core-current-environment-copy small {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.78rem;
+  font-weight: 680;
+  line-height: 1.2;
+}
+
+.core-current-environment-action {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  background: var(--resource-mode-color);
+  color: var(--resource-mode-ink);
+  font-size: 0.78rem;
+  font-weight: 820;
+  line-height: 1;
+  padding: 0.58rem 0.7rem;
+}
+
+.core-current-environment-action i {
+  font-size: 0.78rem;
+}
+
+.core-environment-trigger {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  justify-content: center;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+  background: var(--resource-mode-color) !important;
+  color: var(--resource-mode-ink) !important;
+  font-weight: 780 !important;
+}
+
+.core-current-environment--landing {
+  animation: core-environment-land 720ms cubic-bezier(0.18, 0.9, 0.24, 1);
+}
+
+.core-environment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 5, 8, 0.42);
+  padding: clamp(0.7rem, 2vw, 1.5rem);
+  backdrop-filter: blur(30px) saturate(1.15);
+}
+
+.core-environment-modal {
+  position: relative;
+  display: grid;
+  width: min(95vw, 78rem);
+  height: min(94svh, 50rem);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(var(--environment-rgb), 0.3), transparent 28%),
+    radial-gradient(circle at 82% 0%, rgba(255, 255, 255, 0.14), transparent 22%),
+    linear-gradient(145deg, rgba(8, 14, 18, 0.96), rgba(5, 8, 11, 0.92));
+  color: #ffffff;
+  padding: clamp(1rem, 2.2vw, 1.7rem);
+  box-shadow:
+    0 2.4rem 7rem rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.core-environment-modal-glow {
+  position: absolute;
+  inset: -26% -18% auto;
+  height: 22rem;
+  background: radial-gradient(circle, rgba(var(--environment-rgb), 0.26), transparent 64%);
+  filter: blur(28px);
+  opacity: 0.9;
+  pointer-events: none;
+  transition: background 260ms ease;
+}
+
+.core-environment-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.core-environment-header p,
+.core-active-environment > span {
+  margin: 0;
+  color: var(--environment-aura);
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.core-environment-header h2 {
+  margin: 0.35rem 0 0;
+  color: #ffffff;
+  font-size: clamp(1.6rem, 4vw, 3.4rem);
+  font-weight: 780;
+  letter-spacing: 0;
+  line-height: 0.96;
+}
+
+.core-environment-header span {
+  display: block;
+  margin-top: 0.65rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.core-environment-header button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.core-active-environment {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.55rem;
+  width: min(100%, 32rem);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.075);
+  padding: 0.75rem;
+}
+
+.core-active-environment div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.core-active-environment i {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(var(--environment-rgb), 0.18);
+  color: var(--environment-aura);
+}
+
+.core-active-environment strong {
+  min-width: 0;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 780;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.core-active-environment small {
+  border-radius: 999px;
+  background: rgba(var(--environment-rgb), 0.18);
+  color: var(--environment-aura);
+  font-size: 0.7rem;
+  font-weight: 820;
+  line-height: 1;
+  padding: 0.45rem 0.58rem;
+}
+
+.core-environment-discovery {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.85rem;
+  overflow: auto;
+  padding: 0.1rem 0.15rem 0.25rem;
+}
+
+.core-environment-card {
+  position: relative;
+  display: grid;
+  min-height: 12rem;
+  align-content: end;
+  gap: 0.7rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(var(--environment-card-rgb), 0.3), transparent 32%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  color: #ffffff;
+  padding: 1rem;
+  text-align: left;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 220ms ease;
+}
+
+.core-environment-card:hover,
+.core-environment-card--hovered {
+  border-color: rgba(var(--environment-card-rgb), 0.48);
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.24);
+  transform: translateY(-0.22rem) scale(1.018);
+}
+
+.core-environment-card--selecting {
+  animation: core-environment-confirm 440ms cubic-bezier(0.2, 0.9, 0.24, 1) forwards;
+  border-color: var(--environment-card-aura);
+}
+
+.core-environment-card-aura {
+  position: absolute;
+  inset: -30% -25% 18% 8%;
+  background: radial-gradient(circle, rgba(var(--environment-card-rgb), 0.32), transparent 62%);
+  filter: blur(16px);
+  opacity: 0.82;
+  pointer-events: none;
+  transform: scale(0.88);
+  transition:
+    transform 220ms ease,
+    opacity 220ms ease;
+}
+
+.core-environment-card:hover .core-environment-card-aura,
+.core-environment-card--hovered .core-environment-card-aura {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.core-environment-card-particles {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.core-environment-card:hover .core-environment-card-particles,
+.core-environment-card--hovered .core-environment-card-particles {
+  opacity: 1;
+}
+
+.core-environment-card-particles span {
+  position: absolute;
+  width: 0.22rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: var(--environment-card-aura);
+  box-shadow: 0 0 0.8rem rgba(var(--environment-card-rgb), 0.8);
+}
+
+.core-environment-card-particles span:nth-child(1) {
+  left: 18%;
+  top: 24%;
+}
+.core-environment-card-particles span:nth-child(2) {
+  left: 34%;
+  top: 16%;
+}
+.core-environment-card-particles span:nth-child(3) {
+  left: 72%;
+  top: 24%;
+}
+.core-environment-card-particles span:nth-child(4) {
+  left: 84%;
+  top: 48%;
+}
+.core-environment-card-particles span:nth-child(5) {
+  left: 62%;
+  top: 62%;
+}
+.core-environment-card-particles span:nth-child(6) {
+  left: 24%;
+  top: 70%;
+}
+.core-environment-card-particles span:nth-child(7) {
+  left: 48%;
+  top: 36%;
+}
+.core-environment-card-particles span:nth-child(8) {
+  left: 12%;
+  top: 50%;
+}
+.core-environment-card-particles span:nth-child(9) {
+  left: 78%;
+  top: 76%;
+}
+
+.core-environment-card-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 1px solid rgba(var(--environment-card-rgb), 0.34);
+  border-radius: 999px;
+  background: rgba(var(--environment-card-rgb), 0.14);
+  color: var(--environment-card-aura);
+}
+
+.core-environment-card-copy,
+.core-environment-card-status {
+  position: relative;
+  z-index: 1;
+}
+
+.core-environment-card-copy {
+  display: grid;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.core-environment-card-copy strong {
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 780;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.core-environment-card-copy small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.76rem;
+  font-weight: 680;
+  line-height: 1.2;
+}
+
+.core-environment-card-status {
+  justify-self: start;
+  border-radius: 999px;
+  background: rgba(var(--environment-card-rgb), 0.16);
+  color: var(--environment-card-aura);
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1;
+  padding: 0.45rem 0.58rem;
+  text-transform: uppercase;
+}
+
 .core-track-list {
   display: grid;
   align-content: start;
@@ -2798,6 +3539,60 @@ onBeforeUnmount(() => {
   line-height: 1.35;
 }
 
+.core-environment-portal-enter-active,
+.core-environment-portal-leave-active {
+  transition: opacity 220ms ease;
+}
+
+.core-environment-portal-enter-active .core-environment-modal,
+.core-environment-portal-leave-active .core-environment-modal {
+  transition:
+    opacity 260ms ease,
+    transform 300ms cubic-bezier(0.18, 0.9, 0.24, 1);
+}
+
+.core-environment-portal-enter-from,
+.core-environment-portal-leave-to {
+  opacity: 0;
+}
+
+.core-environment-portal-enter-from .core-environment-modal,
+.core-environment-portal-leave-to .core-environment-modal {
+  opacity: 0;
+  transform: scale(0.96) translateY(1rem);
+}
+
+@keyframes core-environment-confirm {
+  0% {
+    transform: translateY(-0.22rem) scale(1.018);
+  }
+
+  58% {
+    transform: translateY(-0.4rem) scale(1.055);
+  }
+
+  100% {
+    transform: translateY(-0.18rem) scale(1.035);
+  }
+}
+
+@keyframes core-environment-land {
+  0% {
+    opacity: 0.2;
+    transform: translateY(-28vh) scale(2.8);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translateY(0) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes core-wave-pulse {
   0%,
   100% {
@@ -2811,12 +3606,57 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .core-track--active .core-track-wave span {
-    animation: none;
+@media (max-width: 640px) {
+  .core-environment-backdrop {
+    padding: 0;
+  }
+
+  .core-environment-modal {
+    width: 100vw;
+    height: 100svh;
+    border-width: 0;
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  .core-environment-header {
+    align-items: flex-start;
+  }
+
+  .core-environment-header h2 {
+    font-size: clamp(1.65rem, 10vw, 2.45rem);
+  }
+
+  .core-active-environment {
+    width: 100%;
+  }
+
+  .core-environment-discovery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .core-environment-card {
+    min-height: 10.5rem;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .core-track--active .core-track-wave span,
+  .core-current-environment--landing,
+  .core-environment-card--selecting {
+    animation: none;
+  }
+
+  .core-environment-card,
+  .core-environment-card-aura,
+  .core-environment-card-particles,
+  .core-environment-portal-enter-active,
+  .core-environment-portal-leave-active,
+  .core-environment-portal-enter-active .core-environment-modal,
+  .core-environment-portal-leave-active .core-environment-modal {
+    transition: none;
+  }
+}
 
 @keyframes core-ending-pulse {
   0%,
