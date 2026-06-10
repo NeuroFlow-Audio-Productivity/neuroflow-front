@@ -117,7 +117,8 @@ const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
 const selectedAlarmAudioId = ref<string | number | null>(null)
 const isEnvironmentExplorerVisible = ref(false)
-const hoveredEnvironmentId = ref<string | null>(null)
+const environmentSearchQuery = ref('')
+const previewEnvironmentId = ref<string | null>(null)
 const selectingEnvironmentId = ref<string | null>(null)
 const isEnvironmentLanding = ref(false)
 const timerPhase = ref<TimerPhase>('work')
@@ -278,15 +279,30 @@ const activeEnvironmentLabel = computed(() =>
     ? formatEnvironmentTitle(selectedAudio.value.name)
     : t('coreTimer.audio.noTrack'),
 )
-const activeEnvironmentSubtitle = computed(() => selectedModeName.value + ' Environment')
-const activeEnvironmentIcon = computed(() => environmentIcon(selectedAudio.value))
-const hoveredEnvironment = computed(
+const activeEnvironmentSubtitle = computed(() =>
+  selectedAudio.value ? audioModeLabel(selectedAudio.value) : selectedModeName.value,
+)
+const filteredEnvironmentAudios = computed(() => {
+  const query = environmentSearchQuery.value.trim().toLowerCase()
+
+  if (!query) return sortedAudios.value
+
+  return sortedAudios.value.filter((audio) => {
+    const name = formatEnvironmentTitle(audio.name).toLowerCase()
+    const mode = audioModeLabel(audio).toLowerCase()
+
+    return name.includes(query) || mode.includes(query)
+  })
+})
+const previewEnvironmentAudio = computed(
   () =>
-    sortedAudios.value.find((audio) => audioId(audio) === hoveredEnvironmentId.value) ??
-    selectedAudio.value,
+    sortedAudios.value.find((audio) => audioId(audio) === previewEnvironmentId.value) ??
+    selectedAudio.value ??
+    sortedAudios.value[0] ??
+    null,
 )
 const environmentExplorerStyle = computed(() => {
-  const palette = environmentPaletteForAudio(hoveredEnvironment.value, 0)
+  const palette = environmentPaletteForAudio(previewEnvironmentAudio.value, 0)
 
   return {
     '--environment-aura': palette.aura,
@@ -427,6 +443,26 @@ function isSelectedAudio(audio: Audio) {
   return audioId(audio) === String(selectedAudioId.value)
 }
 
+function isPreviewEnvironment(audio: Audio) {
+  return (
+    audioId(audio) ===
+    String(previewEnvironmentAudio.value ? audioId(previewEnvironmentAudio.value) : '')
+  )
+}
+
+function audioModeLabel(audio: Audio | null | undefined) {
+  return audio?.mode ? translatedModeName(audio.mode) : selectedModeName.value
+}
+
+function audioModeSemanticKey(audio: Audio | null | undefined) {
+  const label = audioModeLabel(audio).toLowerCase()
+
+  if (/sleep|sleeping|sono|sueno|dormir|delta/.test(label)) return 'sleep'
+  if (/relax|relaxed|relaxing|relajar|relaxamento|relajacion|theta/.test(label)) return 'relax'
+
+  return 'focus'
+}
+
 function formatEnvironmentTitle(name: string) {
   return name
     .replace(/[\-_]+/g, ' ')
@@ -437,11 +473,16 @@ function formatEnvironmentTitle(name: string) {
 }
 
 function environmentHash(input: string) {
-  return Array.from(input).reduce((hash, character) => hash + character.charCodeAt(0), 0)
+  return Array.from(input).reduce(
+    (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
+    2166136261,
+  )
 }
 
 function environmentPaletteForAudio(audio: Audio | null | undefined, index: number) {
-  const hash = audio ? environmentHash(String(audio.id) + audio.name) : index
+  const hash = audio
+    ? environmentHash(formatEnvironmentTitle(audio.name) + audioModeLabel(audio))
+    : index
 
   return (
     environmentPalettes[Math.abs(hash + index) % environmentPalettes.length] ??
@@ -449,31 +490,29 @@ function environmentPaletteForAudio(audio: Audio | null | undefined, index: numb
   )
 }
 
-function environmentCardStyle(audio: Audio, index: number) {
+function environmentCoverStyle(audio: Audio | null | undefined, index = 0) {
   const palette = environmentPaletteForAudio(audio, index)
+  const hash = audio
+    ? environmentHash(formatEnvironmentTitle(audio.name) + audioModeLabel(audio))
+    : index
+  const secondary =
+    environmentPalettes[(hash >>> 3) % environmentPalettes.length] ?? defaultEnvironmentPalette
+  const tertiary =
+    environmentPalettes[(hash >>> 6) % environmentPalettes.length] ?? defaultEnvironmentPalette
 
   return {
     '--environment-card-aura': palette.aura,
     '--environment-card-rgb': palette.rgb,
     '--environment-card-ink': palette.ink,
+    '--environment-cover-secondary': secondary.aura,
+    '--environment-cover-tertiary': tertiary.aura,
+    '--environment-cover-shift': `${hash % 42}%`,
+    '--environment-cover-tilt': `${(hash % 28) - 14}deg`,
   }
 }
 
-function environmentPrimeIcon(icon: string) {
-  return 'pi pi-' + icon
-}
-
-function environmentIcon(audio: Audio | null | undefined) {
-  const name = (audio?.name ?? selectedModeName.value).toLowerCase()
-
-  if (/sleep|dream|night|moon|rain/.test(name)) return 'moon'
-  if (/forest|wood|leaf|nature/.test(name)) return 'tree'
-  if (/ocean|sea|wave|drift/.test(name)) return 'wave'
-  if (/cosmic|space|star|aurora/.test(name)) return 'sparkles'
-  if (/library|book|study/.test(name)) return 'book'
-  if (/temple|focus|deep|protocol/.test(name)) return 'bolt'
-
-  return 'music'
+function environmentCardStyle(audio: Audio, index: number) {
+  return environmentCoverStyle(audio, index)
 }
 
 function formatClock(totalSeconds: number) {
@@ -1067,7 +1106,8 @@ function selectTrack(audio: Audio) {
 function openEnvironmentExplorer() {
   if (sortedAudios.value.length === 0) return
 
-  hoveredEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
+  environmentSearchQuery.value = ''
+  previewEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
   selectingEnvironmentId.value = null
   isEnvironmentExplorerVisible.value = true
 }
@@ -1075,6 +1115,8 @@ function openEnvironmentExplorer() {
 function closeEnvironmentExplorer() {
   isEnvironmentExplorerVisible.value = false
   selectingEnvironmentId.value = null
+  previewEnvironmentId.value = null
+  environmentSearchQuery.value = ''
   clearEnvironmentPreview()
 }
 
@@ -1129,7 +1171,6 @@ function fadeEnvironmentPreviewVolume(targetVolume: number, onComplete?: () => v
 }
 
 function clearEnvironmentPreview() {
-  hoveredEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
   fadeEnvironmentPreviewVolume(0, () => {
     const previewAudio = environmentPreviewAudioElement.value
 
@@ -1145,8 +1186,7 @@ function clearEnvironmentPreview() {
 function previewEnvironment(audio: Audio) {
   if (!isEnvironmentExplorerVisible.value || selectingEnvironmentId.value) return
 
-  hoveredEnvironmentId.value = audioId(audio)
-
+  previewEnvironmentId.value = audioId(audio)
   const previewAudio = environmentPreviewAudioElement.value
   const source = audioSourceUrl(audio)
 
@@ -1168,11 +1208,16 @@ function previewEnvironment(audio: Audio) {
     .catch(() => undefined)
 }
 
+function selectPreviewEnvironment() {
+  if (!previewEnvironmentAudio.value) return
+
+  selectEnvironment(previewEnvironmentAudio.value)
+}
+
 function selectEnvironment(audio: Audio) {
   clearEnvironmentSelectionTimeout()
   clearEnvironmentPreview()
   selectedAudioId.value = audio.id
-  hoveredEnvironmentId.value = audioId(audio)
   selectingEnvironmentId.value = audioId(audio)
 
   environmentSelectionTimeout = window.setTimeout(() => {
@@ -1419,6 +1464,7 @@ onBeforeUnmount(() => {
           aria-modal="true"
           aria-labelledby="core-environment-title"
           :style="environmentExplorerStyle"
+          @keydown.esc="closeEnvironmentExplorer"
         >
           <div class="core-environment-modal-glow" aria-hidden="true" />
           <header class="core-environment-header">
@@ -1429,6 +1475,7 @@ onBeforeUnmount(() => {
             </div>
             <button
               type="button"
+              class="core-environment-close"
               aria-label="Close environment explorer"
               @click="closeEnvironmentExplorer"
             >
@@ -1436,45 +1483,103 @@ onBeforeUnmount(() => {
             </button>
           </header>
 
-          <section class="core-active-environment">
-            <span>Currently Active</span>
-            <div>
-              <i :class="environmentPrimeIcon(activeEnvironmentIcon)" aria-hidden="true" />
-              <strong>{{ activeEnvironmentLabel }}</strong>
-              <small>Selected</small>
-            </div>
-          </section>
+          <section class="core-environment-stage" aria-label="Cognitive environments">
+            <aside class="core-environment-catalog">
+              <div class="core-environment-search">
+                <i class="pi pi-search" aria-hidden="true" />
+                <label class="sr-only" for="environment-search">Search audio environments</label>
+                <input
+                  id="environment-search"
+                  v-model="environmentSearchQuery"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Search audio or mode"
+                />
+              </div>
 
-          <section class="core-environment-discovery" aria-label="Cognitive environments">
-            <button
-              v-for="(audio, index) in sortedAudios"
-              :key="audioId(audio)"
-              type="button"
-              class="core-environment-card"
-              :class="[
-                isSelectedAudio(audio) && 'core-environment-card--active',
-                hoveredEnvironmentId === audioId(audio) && 'core-environment-card--hovered',
-                selectingEnvironmentId === audioId(audio) && 'core-environment-card--selecting',
-              ]"
-              :style="environmentCardStyle(audio, index)"
-              @focus="previewEnvironment(audio)"
-              @mouseenter="previewEnvironment(audio)"
-              @mouseleave="clearEnvironmentPreview"
-              @blur="clearEnvironmentPreview"
-              @click="selectEnvironment(audio)"
+              <div class="core-environment-list" role="listbox" aria-label="Audio catalog">
+                <button
+                  v-for="(audio, index) in filteredEnvironmentAudios"
+                  :key="audioId(audio)"
+                  type="button"
+                  class="core-environment-row"
+                  :class="[
+                    isSelectedAudio(audio) && 'core-environment-row--active',
+                    isPreviewEnvironment(audio) && 'core-environment-row--preview',
+                    selectingEnvironmentId === audioId(audio) && 'core-environment-row--selecting',
+                  ]"
+                  :style="environmentCardStyle(audio, index)"
+                  role="option"
+                  :aria-selected="isPreviewEnvironment(audio)"
+                  @focus="previewEnvironment(audio)"
+                  @mouseenter="previewEnvironment(audio)"
+                  @mouseleave="clearEnvironmentPreview"
+                  @blur="clearEnvironmentPreview"
+                  @click="previewEnvironment(audio)"
+                >
+                  <span
+                    class="core-environment-cover core-environment-cover--mini"
+                    :class="`core-environment-cover--${audioModeSemanticKey(audio)}`"
+                    aria-hidden="true"
+                  >
+                    <span class="core-environment-cover-flow" />
+                    <span class="core-environment-cover-particles">
+                      <span v-for="particle in 10" :key="particle" />
+                    </span>
+                  </span>
+                  <span class="core-environment-row-copy">
+                    <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
+                    <small>{{ audioModeLabel(audio) }}</small>
+                  </span>
+                  <span v-if="isSelectedAudio(audio)" class="core-environment-row-badge">
+                    Current
+                  </span>
+                </button>
+
+                <div v-if="filteredEnvironmentAudios.length === 0" class="core-environment-empty">
+                  <i class="pi pi-search" aria-hidden="true" />
+                  <span>No matching audio</span>
+                </div>
+              </div>
+            </aside>
+
+            <section
+              v-if="previewEnvironmentAudio"
+              class="core-environment-preview"
+              :style="environmentCoverStyle(previewEnvironmentAudio)"
+              aria-live="polite"
             >
-              <span class="core-environment-card-aura" aria-hidden="true" />
-              <span class="core-environment-card-particles" aria-hidden="true">
-                <span v-for="particle in 9" :key="particle" />
-              </span>
-              <span class="core-environment-card-copy">
-                <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
-                <small>{{ selectedModeName }} Environment</small>
-              </span>
-              <span class="core-environment-card-status">
-                {{ isSelectedAudio(audio) ? 'Selected' : 'Enter' }}
-              </span>
-            </button>
+              <div
+                class="core-environment-cover core-environment-cover--large"
+                :class="`core-environment-cover--${audioModeSemanticKey(previewEnvironmentAudio)}`"
+                aria-hidden="true"
+              >
+                <span class="core-environment-cover-flow" />
+                <span class="core-environment-cover-particles">
+                  <span v-for="particle in 18" :key="particle" />
+                </span>
+              </div>
+
+              <div class="core-environment-preview-copy">
+                <span class="core-environment-preview-badge">
+                  {{
+                    isSelectedAudio(previewEnvironmentAudio) ? 'Currently Selected' : 'Previewing'
+                  }}
+                </span>
+                <h3>{{ formatEnvironmentTitle(previewEnvironmentAudio.name) }}</h3>
+                <p>{{ audioModeLabel(previewEnvironmentAudio) }}</p>
+              </div>
+
+              <button
+                type="button"
+                class="core-environment-use"
+                :disabled="selectingEnvironmentId !== null"
+                @click="selectPreviewEnvironment"
+              >
+                <i class="pi pi-check" aria-hidden="true" />
+                <span>Use This Audio</span>
+              </button>
+            </section>
           </section>
         </section>
       </div>
@@ -2976,54 +3081,72 @@ onBeforeUnmount(() => {
   z-index: 80;
   display: grid;
   place-items: center;
-  background: rgba(2, 5, 8, 0.42);
+  overflow: hidden;
+  background: rgba(2, 5, 8, 0.54);
   padding: clamp(0.7rem, 2vw, 1.5rem);
-  backdrop-filter: blur(30px) saturate(1.15);
+  backdrop-filter: blur(32px) saturate(1.16);
 }
 
 .core-environment-modal {
   position: relative;
   display: grid;
-  width: min(95vw, 78rem);
-  height: min(94svh, 50rem);
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 1rem;
+  width: min(96vw, 76rem);
+  height: min(94svh, 48rem);
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(0.9rem, 1.8vw, 1.25rem);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 22px;
   background:
-    radial-gradient(circle at 18% 10%, rgba(var(--environment-rgb), 0.3), transparent 28%),
-    radial-gradient(circle at 82% 0%, rgba(255, 255, 255, 0.14), transparent 22%),
-    linear-gradient(145deg, rgba(8, 14, 18, 0.96), rgba(5, 8, 11, 0.92));
+    radial-gradient(circle at 16% 0%, rgba(var(--environment-rgb), 0.28), transparent 32%),
+    radial-gradient(circle at 86% 18%, rgba(255, 255, 255, 0.12), transparent 24%),
+    linear-gradient(145deg, rgba(8, 13, 17, 0.97), rgba(3, 6, 10, 0.94));
   color: #ffffff;
-  padding: clamp(1rem, 2.2vw, 1.7rem);
+  padding: clamp(1rem, 2.2vw, 1.55rem);
   box-shadow:
-    0 2.4rem 7rem rgba(0, 0, 0, 0.62),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 2.6rem 7rem rgba(0, 0, 0, 0.64),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.core-environment-modal::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 4.5rem 4.5rem;
+  content: '';
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 82%);
+  opacity: 0.36;
+  pointer-events: none;
 }
 
 .core-environment-modal-glow {
   position: absolute;
-  inset: -26% -18% auto;
-  height: 22rem;
-  background: radial-gradient(circle, rgba(var(--environment-rgb), 0.26), transparent 64%);
-  filter: blur(28px);
-  opacity: 0.9;
+  inset: -28% -18% auto;
+  height: 23rem;
+  background: radial-gradient(circle, rgba(var(--environment-rgb), 0.24), transparent 66%);
+  filter: blur(30px);
+  opacity: 0.88;
   pointer-events: none;
   transition: background 260ms ease;
 }
 
-.core-environment-header {
+.core-environment-header,
+.core-environment-stage {
   position: relative;
   z-index: 1;
+}
+
+.core-environment-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.core-environment-header p,
-.core-active-environment > span {
+.core-environment-header p {
   margin: 0;
   color: var(--environment-aura);
   font-size: 0.72rem;
@@ -3035,8 +3158,8 @@ onBeforeUnmount(() => {
 .core-environment-header h2 {
   margin: 0.35rem 0 0;
   color: #ffffff;
-  font-size: clamp(1.6rem, 4vw, 3.4rem);
-  font-weight: 780;
+  font-size: clamp(1.75rem, 4.6vw, 3.55rem);
+  font-weight: 790;
   letter-spacing: 0;
   line-height: 0.96;
 }
@@ -3044,12 +3167,12 @@ onBeforeUnmount(() => {
 .core-environment-header span {
   display: block;
   margin-top: 0.65rem;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.95rem;
   line-height: 1.45;
 }
 
-.core-environment-header button {
+.core-environment-close {
   display: grid;
   width: 2.75rem;
   height: 2.75rem;
@@ -3058,231 +3181,469 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255, 255, 255, 0.78);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
 }
 
-.core-active-environment {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 0.55rem;
-  width: min(100%, 32rem);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.075);
-  padding: 0.75rem;
+.core-environment-close:hover,
+.core-environment-close:focus-visible {
+  border-color: rgba(var(--environment-rgb), 0.42);
+  background: rgba(255, 255, 255, 0.13);
+  transform: scale(1.04);
 }
 
-.core-active-environment div {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.core-active-environment i {
-  display: grid;
-  width: 2.2rem;
-  height: 2.2rem;
-  place-items: center;
-  border-radius: 999px;
-  background: rgba(var(--environment-rgb), 0.18);
-  color: var(--environment-aura);
-}
-
-.core-active-environment strong {
-  min-width: 0;
-  color: #ffffff;
-  font-size: 0.98rem;
-  font-weight: 780;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.core-active-environment small {
-  border-radius: 999px;
-  background: rgba(var(--environment-rgb), 0.18);
-  color: var(--environment-aura);
-  font-size: 0.7rem;
-  font-weight: 820;
-  line-height: 1;
-  padding: 0.45rem 0.58rem;
-}
-
-.core-environment-discovery {
-  position: relative;
-  z-index: 1;
+.core-environment-stage {
   display: grid;
   min-height: 0;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.85rem;
-  overflow: auto;
-  padding: 0.1rem 0.15rem 0.25rem;
+  grid-template-columns: minmax(18rem, 0.82fr) minmax(24rem, 1.18fr);
+  gap: clamp(0.9rem, 1.8vw, 1.25rem);
 }
 
-.core-environment-card {
+.core-environment-catalog,
+.core-environment-preview {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.065);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.core-environment-catalog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  overflow: hidden;
+  padding: 0.8rem;
+}
+
+.core-environment-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.52);
+  padding: 0.74rem 0.82rem;
+}
+
+.core-environment-search:focus-within {
+  border-color: rgba(var(--environment-rgb), 0.48);
+  box-shadow: 0 0 0 0.2rem rgba(var(--environment-rgb), 0.12);
+}
+
+.core-environment-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 680;
+}
+
+.core-environment-search input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.core-environment-list {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 0.58rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.05rem 0.15rem 0.15rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--environment-rgb), 0.42) transparent;
+}
+
+.core-environment-row {
   position: relative;
   display: grid;
-  min-height: 12rem;
-  align-content: end;
-  gap: 0.7rem;
+  min-height: 4.85rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.78rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 24% 18%, rgba(var(--environment-card-rgb), 0.3), transparent 32%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.052);
   color: #ffffff;
-  padding: 1rem;
+  padding: 0.62rem;
   text-align: left;
   transition:
     border-color 180ms ease,
+    background 180ms ease,
     box-shadow 180ms ease,
-    transform 220ms ease;
+    transform 180ms ease;
 }
 
-.core-environment-card:hover,
-.core-environment-card--hovered {
-  border-color: rgba(var(--environment-card-rgb), 0.48);
-  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.24);
-  transform: translateY(-0.22rem) scale(1.018);
-}
-
-.core-environment-card--selecting {
-  animation: core-environment-confirm 440ms cubic-bezier(0.2, 0.9, 0.24, 1) forwards;
-  border-color: var(--environment-card-aura);
-}
-
-.core-environment-card-aura {
+.core-environment-row::before {
   position: absolute;
-  inset: -30% -25% 18% 8%;
-  background: radial-gradient(circle, rgba(var(--environment-card-rgb), 0.32), transparent 62%);
-  filter: blur(16px);
-  opacity: 0.82;
-  pointer-events: none;
-  transform: scale(0.88);
-  transition:
-    transform 220ms ease,
-    opacity 220ms ease;
-}
-
-.core-environment-card:hover .core-environment-card-aura,
-.core-environment-card--hovered .core-environment-card-aura {
-  opacity: 1;
-  transform: scale(1.08);
-}
-
-.core-environment-card-particles {
-  position: absolute;
-  inset: 0;
+  inset: -40% 44% -50% -24%;
+  background: radial-gradient(circle, rgba(var(--environment-card-rgb), 0.18), transparent 64%);
+  content: '';
   opacity: 0;
   pointer-events: none;
   transition: opacity 180ms ease;
 }
 
-.core-environment-card:hover .core-environment-card-particles,
-.core-environment-card--hovered .core-environment-card-particles {
+.core-environment-row:hover,
+.core-environment-row:focus-visible,
+.core-environment-row--preview {
+  border-color: rgba(var(--environment-card-rgb), 0.44);
+  background: rgba(255, 255, 255, 0.084);
+  box-shadow: 0 1.15rem 2.4rem rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.core-environment-row:hover::before,
+.core-environment-row:focus-visible::before,
+.core-environment-row--preview::before {
   opacity: 1;
 }
 
-.core-environment-card-particles span {
-  position: absolute;
-  width: 0.22rem;
-  height: 0.22rem;
-  border-radius: 999px;
-  background: var(--environment-card-aura);
-  box-shadow: 0 0 0.8rem rgba(var(--environment-card-rgb), 0.8);
+.core-environment-row--active {
+  border-color: rgba(var(--environment-card-rgb), 0.6);
+  background: rgba(var(--environment-card-rgb), 0.12);
 }
 
-.core-environment-card-particles span:nth-child(1) {
-  left: 18%;
-  top: 24%;
+.core-environment-row--selecting {
+  animation: core-environment-confirm 440ms cubic-bezier(0.2, 0.9, 0.24, 1) forwards;
 }
-.core-environment-card-particles span:nth-child(2) {
+
+.core-environment-cover {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      circle at calc(18% + var(--environment-cover-shift)) 18%,
+      rgba(var(--environment-card-rgb), 0.72),
+      transparent 34%
+    ),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.035)),
+    linear-gradient(
+      135deg,
+      var(--environment-card-aura),
+      var(--environment-cover-secondary) 48%,
+      var(--environment-cover-tertiary)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 1rem 2.4rem rgba(0, 0, 0, 0.24);
+  transform: translateZ(0);
+}
+
+.core-environment-cover--mini {
+  width: 3.45rem;
+  height: 3.45rem;
+  border-radius: 10px;
+}
+
+.core-environment-cover--large {
+  width: min(100%, 22rem);
+  aspect-ratio: 1;
+  justify-self: center;
+  border-radius: 18px;
+}
+
+.core-environment-cover::before,
+.core-environment-cover::after,
+.core-environment-cover-flow,
+.core-environment-cover-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.core-environment-cover::before {
+  background:
+    linear-gradient(120deg, transparent 15%, rgba(255, 255, 255, 0.22), transparent 44%),
+    repeating-linear-gradient(
+      var(--environment-cover-tilt),
+      rgba(255, 255, 255, 0.16) 0 1px,
+      transparent 1px 1.05rem
+    );
+  content: '';
+  opacity: 0.44;
+  transform: translateX(-18%);
+}
+
+.core-environment-cover::after {
+  background: radial-gradient(circle at 50% 105%, rgba(0, 0, 0, 0.58), transparent 52%);
+  content: '';
+}
+
+.core-environment-cover-flow {
+  border-radius: inherit;
+  mix-blend-mode: screen;
+  opacity: 0.78;
+}
+
+.core-environment-cover--focus .core-environment-cover-flow {
+  background:
+    linear-gradient(36deg, transparent 29%, rgba(255, 255, 255, 0.34) 30%, transparent 31%),
+    linear-gradient(148deg, transparent 39%, rgba(255, 255, 255, 0.28) 40%, transparent 41%),
+    radial-gradient(circle at 28% 32%, rgba(255, 255, 255, 0.62) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 68% 52%, rgba(255, 255, 255, 0.5) 0 1.5px, transparent 2px);
+}
+
+.core-environment-cover--relax .core-environment-cover-flow {
+  background:
+    radial-gradient(ellipse at 24% 34%, rgba(255, 255, 255, 0.34), transparent 26%),
+    radial-gradient(ellipse at 70% 30%, rgba(255, 255, 255, 0.22), transparent 30%),
+    radial-gradient(ellipse at 52% 72%, rgba(255, 255, 255, 0.28), transparent 34%);
+  filter: blur(1px);
+}
+
+.core-environment-cover--sleep .core-environment-cover-flow {
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.72) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 38%, rgba(255, 255, 255, 0.56) 0 1px, transparent 2px),
+    radial-gradient(circle at 52% 62%, rgba(255, 255, 255, 0.46) 0 1px, transparent 2px),
+    radial-gradient(ellipse at 50% 56%, rgba(255, 255, 255, 0.2), transparent 40%);
+}
+
+.core-environment-cover-particles span {
+  position: absolute;
+  width: 0.2rem;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 1rem rgba(var(--environment-card-rgb), 0.92);
+  opacity: 0.72;
+}
+
+.core-environment-cover-particles span:nth-child(1) {
+  left: 16%;
+  top: 22%;
+}
+.core-environment-cover-particles span:nth-child(2) {
   left: 34%;
-  top: 16%;
+  top: 14%;
 }
-.core-environment-card-particles span:nth-child(3) {
-  left: 72%;
-  top: 24%;
+.core-environment-cover-particles span:nth-child(3) {
+  left: 66%;
+  top: 20%;
 }
-.core-environment-card-particles span:nth-child(4) {
-  left: 84%;
-  top: 48%;
+.core-environment-cover-particles span:nth-child(4) {
+  left: 82%;
+  top: 42%;
 }
-.core-environment-card-particles span:nth-child(5) {
+.core-environment-cover-particles span:nth-child(5) {
   left: 62%;
   top: 62%;
 }
-.core-environment-card-particles span:nth-child(6) {
-  left: 24%;
-  top: 70%;
+.core-environment-cover-particles span:nth-child(6) {
+  left: 26%;
+  top: 72%;
 }
-.core-environment-card-particles span:nth-child(7) {
-  left: 48%;
-  top: 36%;
+.core-environment-cover-particles span:nth-child(7) {
+  left: 46%;
+  top: 38%;
 }
-.core-environment-card-particles span:nth-child(8) {
+.core-environment-cover-particles span:nth-child(8) {
   left: 12%;
-  top: 50%;
+  top: 52%;
 }
-.core-environment-card-particles span:nth-child(9) {
+.core-environment-cover-particles span:nth-child(9) {
   left: 78%;
   top: 76%;
 }
+.core-environment-cover-particles span:nth-child(10) {
+  left: 48%;
+  top: 84%;
+}
+.core-environment-cover-particles span:nth-child(11) {
+  left: 22%;
+  top: 42%;
+}
+.core-environment-cover-particles span:nth-child(12) {
+  left: 58%;
+  top: 12%;
+}
+.core-environment-cover-particles span:nth-child(13) {
+  left: 72%;
+  top: 58%;
+}
+.core-environment-cover-particles span:nth-child(14) {
+  left: 38%;
+  top: 60%;
+}
+.core-environment-cover-particles span:nth-child(15) {
+  left: 88%;
+  top: 18%;
+}
+.core-environment-cover-particles span:nth-child(16) {
+  left: 8%;
+  top: 80%;
+}
+.core-environment-cover-particles span:nth-child(17) {
+  left: 52%;
+  top: 48%;
+}
+.core-environment-cover-particles span:nth-child(18) {
+  left: 30%;
+  top: 88%;
+}
 
-.core-environment-card-icon {
+.core-environment-row-copy {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
-  border: 1px solid rgba(var(--environment-card-rgb), 0.34);
-  border-radius: 999px;
-  background: rgba(var(--environment-card-rgb), 0.14);
-  color: var(--environment-card-aura);
-}
-
-.core-environment-card-copy,
-.core-environment-card-status {
-  position: relative;
-  z-index: 1;
-}
-
-.core-environment-card-copy {
-  display: grid;
-  gap: 0.32rem;
   min-width: 0;
+  gap: 0.28rem;
 }
 
-.core-environment-card-copy strong {
+.core-environment-row-copy strong {
+  overflow: hidden;
   color: #ffffff;
-  font-size: 1.02rem;
+  font-size: 0.98rem;
   font-weight: 780;
   line-height: 1.12;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.core-environment-card-copy small {
-  color: rgba(255, 255, 255, 0.56);
+.core-environment-row-copy small {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.54);
   font-size: 0.76rem;
   font-weight: 680;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.core-environment-card-status {
-  justify-self: start;
+.core-environment-row-badge,
+.core-environment-preview-badge {
   border-radius: 999px;
-  background: rgba(var(--environment-card-rgb), 0.16);
+  background: rgba(var(--environment-card-rgb), 0.18);
   color: var(--environment-card-aura);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 850;
   line-height: 1;
-  padding: 0.45rem 0.58rem;
+  padding: 0.44rem 0.56rem;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.core-environment-empty {
+  display: grid;
+  place-items: center;
+  gap: 0.55rem;
+  min-height: 10rem;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.88rem;
+  font-weight: 720;
+}
+
+.core-environment-preview {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: clamp(1rem, 2.2vw, 1.45rem);
+  overflow: hidden;
+  padding: clamp(1rem, 2.2vw, 1.5rem);
+  background:
+    radial-gradient(circle at 48% 8%, rgba(var(--environment-card-rgb), 0.28), transparent 34%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
+}
+
+.core-environment-preview::before {
+  position: absolute;
+  inset: -18% -12% auto;
+  height: 24rem;
+  background: radial-gradient(circle, rgba(var(--environment-card-rgb), 0.24), transparent 62%);
+  content: '';
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.core-environment-preview-copy,
+.core-environment-use {
+  position: relative;
+  z-index: 1;
+}
+
+.core-environment-preview-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.48rem;
+  text-align: center;
+}
+
+.core-environment-preview-badge {
+  margin-bottom: 0.25rem;
+  background: rgba(var(--environment-card-rgb), 0.2);
+}
+
+.core-environment-preview-copy h3 {
+  max-width: 100%;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.7rem, 4vw, 3.15rem);
+  font-weight: 820;
+  letter-spacing: 0;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.core-environment-preview-copy p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.98rem;
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.core-environment-use {
+  display: inline-flex;
+  width: min(100%, 18rem);
+  min-height: 3.15rem;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--environment-card-aura);
+  color: var(--environment-card-ink);
+  font-size: 0.94rem;
+  font-weight: 850;
+  line-height: 1;
+  padding: 0.9rem 1.2rem;
+  box-shadow:
+    0 1.2rem 2.2rem rgba(var(--environment-card-rgb), 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.core-environment-use:hover:not(:disabled),
+.core-environment-use:focus-visible:not(:disabled) {
+  box-shadow:
+    0 1.45rem 2.8rem rgba(var(--environment-card-rgb), 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.core-environment-use:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .core-track-list {
@@ -3606,7 +3967,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .core-environment-backdrop {
     padding: 0;
   }
@@ -3627,29 +3988,44 @@ onBeforeUnmount(() => {
     font-size: clamp(1.65rem, 10vw, 2.45rem);
   }
 
-  .core-active-environment {
-    width: 100%;
-  }
-
-  .core-environment-discovery {
+  .core-environment-stage {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(15rem, 0.9fr) minmax(20rem, 1.1fr);
   }
 
-  .core-environment-card {
-    min-height: 10.5rem;
+  .core-environment-catalog {
+    padding: 0.72rem;
+  }
+
+  .core-environment-preview {
+    align-content: start;
+  }
+
+  .core-environment-cover--large {
+    width: min(72vw, 16rem);
+  }
+
+  .core-environment-preview-copy h3 {
+    font-size: clamp(1.55rem, 8vw, 2.35rem);
+  }
+
+  .core-environment-row {
+    min-height: 4.45rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .core-track--active .core-track-wave span,
   .core-current-environment--landing,
-  .core-environment-card--selecting {
+  .core-environment-row--selecting {
     animation: none;
   }
 
-  .core-environment-card,
-  .core-environment-card-aura,
-  .core-environment-card-particles,
+  .core-current-environment,
+  .core-environment-close,
+  .core-environment-row,
+  .core-environment-row::before,
+  .core-environment-use,
   .core-environment-portal-enter-active,
   .core-environment-portal-leave-active,
   .core-environment-portal-enter-active .core-environment-modal,
