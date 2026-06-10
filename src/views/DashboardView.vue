@@ -6,6 +6,7 @@ import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import CognitiveSignature from '@/components/audios/CognitiveSignature.vue'
 import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
@@ -26,7 +27,13 @@ import {
 import { flowApi } from '@/services/flowApi'
 import { flowNodeApi } from '@/services/flowNodeApi'
 import { modeApi } from '@/services/modeApi'
-import { modeRhythmStyle, modeSemanticKey } from '@/services/modeVisuals'
+import {
+  modeInkColor,
+  modeRgbString,
+  modeRhythmStyle,
+  modeSemanticKey,
+  normalizeModeColor,
+} from '@/services/modeVisuals'
 import { useAuthStore } from '@/stores/auth'
 import { useVisualThemeStore } from '@/stores/visualTheme'
 import type { Audio } from '@/types/audio'
@@ -153,18 +160,6 @@ let environmentLandingTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentPreviewFrame: number | undefined
 let activeCompletionBellGain: GainNode | undefined
 let completionAudioContext: AudioContext | undefined
-
-const environmentPalettes = [
-  { aura: '#8fd3ff', rgb: '143, 211, 255', ink: '#07111a' },
-  { aura: '#b8f4ce', rgb: '184, 244, 206', ink: '#06140b' },
-  { aura: '#ffd166', rgb: '255, 209, 102', ink: '#1b1204' },
-  { aura: '#f7a8b8', rgb: '247, 168, 184', ink: '#19070c' },
-  { aura: '#a7f3d0', rgb: '167, 243, 208', ink: '#06140e' },
-  { aura: '#f0abfc', rgb: '240, 171, 252', ink: '#17051a' },
-  { aura: '#67e8f9', rgb: '103, 232, 249', ink: '#031316' },
-  { aura: '#fde68a', rgb: '253, 230, 138', ink: '#181203' },
-]
-const defaultEnvironmentPalette = environmentPalettes[0]!
 
 const phaseOptions = computed(() =>
   (['work', 'shortBreak', 'longBreak'] as TimerPhase[]).map((phase) => ({
@@ -302,7 +297,7 @@ const previewEnvironmentAudio = computed(
     null,
 )
 const environmentExplorerStyle = computed(() => {
-  const palette = environmentPaletteForAudio(previewEnvironmentAudio.value, 0)
+  const palette = environmentPaletteForAudio(previewEnvironmentAudio.value)
 
   return {
     '--environment-aura': palette.aura,
@@ -454,6 +449,10 @@ function audioModeLabel(audio: Audio | null | undefined) {
   return audio?.mode ? translatedModeName(audio.mode) : selectedModeName.value
 }
 
+function audioModeColor(audio: Audio | null | undefined) {
+  return normalizeModeColor(audio?.mode?.color ?? selectedMode.value?.color)
+}
+
 function audioModeSemanticKey(audio: Audio | null | undefined) {
   const label = audioModeLabel(audio).toLowerCase()
 
@@ -465,7 +464,7 @@ function audioModeSemanticKey(audio: Audio | null | undefined) {
 
 function formatEnvironmentTitle(name: string) {
   return name
-    .replace(/[\-_]+/g, ' ')
+    .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
@@ -479,40 +478,36 @@ function environmentHash(input: string) {
   )
 }
 
-function environmentPaletteForAudio(audio: Audio | null | undefined, index: number) {
-  const hash = audio
-    ? environmentHash(formatEnvironmentTitle(audio.name) + audioModeLabel(audio))
-    : index
+function environmentPaletteForAudio(audio: Audio | null | undefined) {
+  const modeColor = audioModeColor(audio)
 
-  return (
-    environmentPalettes[Math.abs(hash + index) % environmentPalettes.length] ??
-    defaultEnvironmentPalette
-  )
+  return {
+    aura: modeColor,
+    rgb: modeRgbString(modeColor),
+    ink: modeInkColor(modeColor),
+  }
 }
 
 function environmentCoverStyle(audio: Audio | null | undefined, index = 0) {
-  const palette = environmentPaletteForAudio(audio, index)
+  const palette = environmentPaletteForAudio(audio)
   const hash = audio
     ? environmentHash(formatEnvironmentTitle(audio.name) + audioModeLabel(audio))
     : index
-  const secondary =
-    environmentPalettes[(hash >>> 3) % environmentPalettes.length] ?? defaultEnvironmentPalette
-  const tertiary =
-    environmentPalettes[(hash >>> 6) % environmentPalettes.length] ?? defaultEnvironmentPalette
 
   return {
     '--environment-card-aura': palette.aura,
     '--environment-card-rgb': palette.rgb,
     '--environment-card-ink': palette.ink,
-    '--environment-cover-secondary': secondary.aura,
-    '--environment-cover-tertiary': tertiary.aura,
-    '--environment-cover-shift': `${hash % 42}%`,
-    '--environment-cover-tilt': `${(hash % 28) - 14}deg`,
+    '--environment-card-shift': String(hash % 42) + '%',
   }
 }
 
 function environmentCardStyle(audio: Audio, index: number) {
   return environmentCoverStyle(audio, index)
+}
+
+function environmentSignatureSeed(audio: Audio) {
+  return audioId(audio) + ':' + formatEnvironmentTitle(audio.name) + ':' + audioModeLabel(audio)
 }
 
 function formatClock(totalSeconds: number) {
@@ -1099,9 +1094,6 @@ function selectPhase(phase: TimerPhase) {
   remainingSeconds.value = phaseDurations.value[phase]
 }
 
-function selectTrack(audio: Audio) {
-  selectedAudioId.value = audio.id
-}
 
 function openEnvironmentExplorer() {
   if (sortedAudios.value.length === 0) return
@@ -1517,16 +1509,12 @@ onBeforeUnmount(() => {
                   @blur="clearEnvironmentPreview"
                   @click="previewEnvironment(audio)"
                 >
-                  <span
-                    class="core-environment-cover core-environment-cover--mini"
-                    :class="`core-environment-cover--${audioModeSemanticKey(audio)}`"
-                    aria-hidden="true"
-                  >
-                    <span class="core-environment-cover-flow" />
-                    <span class="core-environment-cover-particles">
-                      <span v-for="particle in 10" :key="particle" />
-                    </span>
-                  </span>
+                  <CognitiveSignature
+                    :mode-key="audioModeSemanticKey(audio)"
+                    :color="audioModeColor(audio)"
+                    :seed="environmentSignatureSeed(audio)"
+                    variant="mini"
+                  />
                   <span class="core-environment-row-copy">
                     <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
                     <small>{{ audioModeLabel(audio) }}</small>
@@ -1549,16 +1537,12 @@ onBeforeUnmount(() => {
               :style="environmentCoverStyle(previewEnvironmentAudio)"
               aria-live="polite"
             >
-              <div
-                class="core-environment-cover core-environment-cover--large"
-                :class="`core-environment-cover--${audioModeSemanticKey(previewEnvironmentAudio)}`"
-                aria-hidden="true"
-              >
-                <span class="core-environment-cover-flow" />
-                <span class="core-environment-cover-particles">
-                  <span v-for="particle in 18" :key="particle" />
-                </span>
-              </div>
+              <CognitiveSignature
+                :mode-key="audioModeSemanticKey(previewEnvironmentAudio)"
+                :color="audioModeColor(previewEnvironmentAudio)"
+                :seed="environmentSignatureSeed(previewEnvironmentAudio)"
+                variant="large"
+              />
 
               <div class="core-environment-preview-copy">
                 <span class="core-environment-preview-badge">
@@ -1945,6 +1929,8 @@ onBeforeUnmount(() => {
 .core-page {
   position: relative;
   isolation: isolate;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #05090d;
 }
 
@@ -2035,7 +2021,7 @@ onBeforeUnmount(() => {
   flex: 1;
   grid-template-columns: minmax(0, 1fr);
   min-height: calc(100svh - 6.5rem);
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   border-radius: 0;
   background: transparent !important;
@@ -2654,7 +2640,16 @@ onBeforeUnmount(() => {
 
 .core-flow-sections {
   display: grid;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: clamp(8rem, 45svh, 31rem);
+  align-content: start;
   gap: 0.52rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 0.12rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--resource-mode-rgb), 0.42) transparent;
 }
 
 .core-flow-progress {
@@ -2895,6 +2890,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 4;
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: 0.85rem;
   margin: 1rem;
@@ -2949,6 +2945,7 @@ onBeforeUnmount(() => {
 .core-current-environment {
   position: relative;
   display: grid;
+  min-height: 0;
   gap: 0.85rem;
   overflow: hidden;
   border: 1px solid rgba(var(--resource-mode-rgb), 0.18);
@@ -3289,7 +3286,11 @@ onBeforeUnmount(() => {
 .core-environment-row::before {
   position: absolute;
   inset: -40% 44% -50% -24%;
-  background: radial-gradient(circle, rgba(var(--environment-card-rgb), 0.18), transparent 64%);
+  background: radial-gradient(
+    circle at calc(18% + var(--environment-card-shift, 0%)) 42%,
+    rgba(var(--environment-card-rgb), 0.18),
+    transparent 64%
+  );
   content: '';
   opacity: 0;
   pointer-events: none;
@@ -3318,185 +3319,6 @@ onBeforeUnmount(() => {
 
 .core-environment-row--selecting {
   animation: core-environment-confirm 440ms cubic-bezier(0.2, 0.9, 0.24, 1) forwards;
-}
-
-.core-environment-cover {
-  position: relative;
-  display: block;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  background:
-    radial-gradient(
-      circle at calc(18% + var(--environment-cover-shift)) 18%,
-      rgba(var(--environment-card-rgb), 0.72),
-      transparent 34%
-    ),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.035)),
-    linear-gradient(
-      135deg,
-      var(--environment-card-aura),
-      var(--environment-cover-secondary) 48%,
-      var(--environment-cover-tertiary)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 1rem 2.4rem rgba(0, 0, 0, 0.24);
-  transform: translateZ(0);
-}
-
-.core-environment-cover--mini {
-  width: 3.45rem;
-  height: 3.45rem;
-  border-radius: 10px;
-}
-
-.core-environment-cover--large {
-  width: min(100%, 22rem);
-  aspect-ratio: 1;
-  justify-self: center;
-  border-radius: 18px;
-}
-
-.core-environment-cover::before,
-.core-environment-cover::after,
-.core-environment-cover-flow,
-.core-environment-cover-particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.core-environment-cover::before {
-  background:
-    linear-gradient(120deg, transparent 15%, rgba(255, 255, 255, 0.22), transparent 44%),
-    repeating-linear-gradient(
-      var(--environment-cover-tilt),
-      rgba(255, 255, 255, 0.16) 0 1px,
-      transparent 1px 1.05rem
-    );
-  content: '';
-  opacity: 0.44;
-  transform: translateX(-18%);
-}
-
-.core-environment-cover::after {
-  background: radial-gradient(circle at 50% 105%, rgba(0, 0, 0, 0.58), transparent 52%);
-  content: '';
-}
-
-.core-environment-cover-flow {
-  border-radius: inherit;
-  mix-blend-mode: screen;
-  opacity: 0.78;
-}
-
-.core-environment-cover--focus .core-environment-cover-flow {
-  background:
-    linear-gradient(36deg, transparent 29%, rgba(255, 255, 255, 0.34) 30%, transparent 31%),
-    linear-gradient(148deg, transparent 39%, rgba(255, 255, 255, 0.28) 40%, transparent 41%),
-    radial-gradient(circle at 28% 32%, rgba(255, 255, 255, 0.62) 0 1.5px, transparent 2px),
-    radial-gradient(circle at 68% 52%, rgba(255, 255, 255, 0.5) 0 1.5px, transparent 2px);
-}
-
-.core-environment-cover--relax .core-environment-cover-flow {
-  background:
-    radial-gradient(ellipse at 24% 34%, rgba(255, 255, 255, 0.34), transparent 26%),
-    radial-gradient(ellipse at 70% 30%, rgba(255, 255, 255, 0.22), transparent 30%),
-    radial-gradient(ellipse at 52% 72%, rgba(255, 255, 255, 0.28), transparent 34%);
-  filter: blur(1px);
-}
-
-.core-environment-cover--sleep .core-environment-cover-flow {
-  background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.72) 0 1px, transparent 2px),
-    radial-gradient(circle at 70% 38%, rgba(255, 255, 255, 0.56) 0 1px, transparent 2px),
-    radial-gradient(circle at 52% 62%, rgba(255, 255, 255, 0.46) 0 1px, transparent 2px),
-    radial-gradient(ellipse at 50% 56%, rgba(255, 255, 255, 0.2), transparent 40%);
-}
-
-.core-environment-cover-particles span {
-  position: absolute;
-  width: 0.2rem;
-  height: 0.2rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 0 1rem rgba(var(--environment-card-rgb), 0.92);
-  opacity: 0.72;
-}
-
-.core-environment-cover-particles span:nth-child(1) {
-  left: 16%;
-  top: 22%;
-}
-.core-environment-cover-particles span:nth-child(2) {
-  left: 34%;
-  top: 14%;
-}
-.core-environment-cover-particles span:nth-child(3) {
-  left: 66%;
-  top: 20%;
-}
-.core-environment-cover-particles span:nth-child(4) {
-  left: 82%;
-  top: 42%;
-}
-.core-environment-cover-particles span:nth-child(5) {
-  left: 62%;
-  top: 62%;
-}
-.core-environment-cover-particles span:nth-child(6) {
-  left: 26%;
-  top: 72%;
-}
-.core-environment-cover-particles span:nth-child(7) {
-  left: 46%;
-  top: 38%;
-}
-.core-environment-cover-particles span:nth-child(8) {
-  left: 12%;
-  top: 52%;
-}
-.core-environment-cover-particles span:nth-child(9) {
-  left: 78%;
-  top: 76%;
-}
-.core-environment-cover-particles span:nth-child(10) {
-  left: 48%;
-  top: 84%;
-}
-.core-environment-cover-particles span:nth-child(11) {
-  left: 22%;
-  top: 42%;
-}
-.core-environment-cover-particles span:nth-child(12) {
-  left: 58%;
-  top: 12%;
-}
-.core-environment-cover-particles span:nth-child(13) {
-  left: 72%;
-  top: 58%;
-}
-.core-environment-cover-particles span:nth-child(14) {
-  left: 38%;
-  top: 60%;
-}
-.core-environment-cover-particles span:nth-child(15) {
-  left: 88%;
-  top: 18%;
-}
-.core-environment-cover-particles span:nth-child(16) {
-  left: 8%;
-  top: 80%;
-}
-.core-environment-cover-particles span:nth-child(17) {
-  left: 52%;
-  top: 48%;
-}
-.core-environment-cover-particles span:nth-child(18) {
-  left: 30%;
-  top: 88%;
 }
 
 .core-environment-row-copy {
@@ -3789,6 +3611,8 @@ onBeforeUnmount(() => {
 }
 
 .core-audio-console {
+  flex: 0 0 auto;
+  min-height: 0;
   margin-top: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -3849,7 +3673,14 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
+.core-range--volume {
+  display: grid;
+  min-height: 2.35rem;
+  align-items: center;
+}
+
 .core-range input {
+  display: block;
   width: 100%;
   height: 0.35rem;
   appearance: none;
@@ -4001,7 +3832,7 @@ onBeforeUnmount(() => {
     align-content: start;
   }
 
-  .core-environment-cover--large {
+  .cognitive-signature--large {
     width: min(72vw, 16rem);
   }
 
@@ -4132,6 +3963,7 @@ onBeforeUnmount(() => {
   .core-workspace {
     grid-template-columns: minmax(0, 1fr);
     min-height: calc(100svh - 6.35rem);
+    overflow: hidden;
   }
 
   .core-stage {
