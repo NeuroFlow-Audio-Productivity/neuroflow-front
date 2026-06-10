@@ -160,6 +160,9 @@ let environmentLandingTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentPreviewFrame: number | undefined
 let activeCompletionBellGain: GainNode | undefined
 let completionAudioContext: AudioContext | undefined
+let environmentExplorerScrollY = 0
+let bodyStyleBeforeEnvironmentExplorer: string | undefined
+let htmlOverflowBeforeEnvironmentExplorer = ''
 
 const phaseOptions = computed(() =>
   (['work', 'shortBreak', 'longBreak'] as TimerPhase[]).map((phase) => ({
@@ -1094,7 +1097,6 @@ function selectPhase(phase: TimerPhase) {
   remainingSeconds.value = phaseDurations.value[phase]
 }
 
-
 function openEnvironmentExplorer() {
   if (sortedAudios.value.length === 0) return
 
@@ -1110,6 +1112,42 @@ function closeEnvironmentExplorer() {
   previewEnvironmentId.value = null
   environmentSearchQuery.value = ''
   clearEnvironmentPreview()
+}
+
+function lockEnvironmentExplorerScroll() {
+  if (bodyStyleBeforeEnvironmentExplorer !== undefined) return
+
+  const { body, documentElement } = document
+  environmentExplorerScrollY = window.scrollY
+  bodyStyleBeforeEnvironmentExplorer = body.getAttribute('style') ?? ''
+  htmlOverflowBeforeEnvironmentExplorer = documentElement.style.overflow
+
+  documentElement.style.overflow = 'hidden'
+  body.style.position = 'fixed'
+  body.style.top = '-' + environmentExplorerScrollY + 'px'
+  body.style.left = '0'
+  body.style.right = '0'
+  body.style.width = '100%'
+  body.style.overflow = 'hidden'
+}
+
+function unlockEnvironmentExplorerScroll() {
+  if (bodyStyleBeforeEnvironmentExplorer === undefined) return
+
+  const { body, documentElement } = document
+  const scrollY = environmentExplorerScrollY
+
+  if (bodyStyleBeforeEnvironmentExplorer) {
+    body.setAttribute('style', bodyStyleBeforeEnvironmentExplorer)
+  } else {
+    body.removeAttribute('style')
+  }
+
+  documentElement.style.overflow = htmlOverflowBeforeEnvironmentExplorer
+  bodyStyleBeforeEnvironmentExplorer = undefined
+  htmlOverflowBeforeEnvironmentExplorer = ''
+  environmentExplorerScrollY = 0
+  window.scrollTo(0, scrollY)
 }
 
 function finishEnvironmentLanding() {
@@ -1304,6 +1342,15 @@ watch(selectedAlarmAudioSource, () => {
   alarmAudio.load()
 })
 
+watch(isEnvironmentExplorerVisible, (isVisible) => {
+  if (isVisible) {
+    lockEnvironmentExplorerScroll()
+    return
+  }
+
+  unlockEnvironmentExplorerScroll()
+})
+
 onMounted(() => {
   void (async () => {
     await loadModes()
@@ -1328,6 +1375,7 @@ onBeforeUnmount(() => {
 
   clearEnvironmentSelectionTimeout()
   clearEnvironmentLandingTimeout()
+  unlockEnvironmentExplorerScroll()
 
   if (environmentPreviewFrame !== undefined) {
     window.cancelAnimationFrame(environmentPreviewFrame)
@@ -1444,130 +1492,133 @@ onBeforeUnmount(() => {
       @clear="clearLoadedFlow"
     />
 
-    <Transition name="core-environment-portal">
-      <div
-        v-if="isEnvironmentExplorerVisible"
-        class="core-environment-backdrop"
-        @click.self="closeEnvironmentExplorer"
-      >
-        <section
-          class="core-environment-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="core-environment-title"
-          :style="environmentExplorerStyle"
-          @keydown.esc="closeEnvironmentExplorer"
+    <Teleport to="body">
+      <Transition name="core-environment-portal">
+        <div
+          v-if="isEnvironmentExplorerVisible"
+          class="core-environment-backdrop"
+          @click.self="closeEnvironmentExplorer"
         >
-          <div class="core-environment-modal-glow" aria-hidden="true" />
-          <header class="core-environment-header">
-            <div>
-              <p>Audio Worlds</p>
-              <h2 id="core-environment-title">Choose Your Cognitive Environment</h2>
-              <span>Each environment shapes how your journey feels.</span>
-            </div>
-            <button
-              type="button"
-              class="core-environment-close"
-              aria-label="Close environment explorer"
-              @click="closeEnvironmentExplorer"
-            >
-              <i class="pi pi-times" aria-hidden="true" />
-            </button>
-          </header>
-
-          <section class="core-environment-stage" aria-label="Cognitive environments">
-            <aside class="core-environment-catalog">
-              <div class="core-environment-search">
-                <i class="pi pi-search" aria-hidden="true" />
-                <label class="sr-only" for="environment-search">Search audio environments</label>
-                <input
-                  id="environment-search"
-                  v-model="environmentSearchQuery"
-                  type="search"
-                  autocomplete="off"
-                  placeholder="Search audio or mode"
-                />
+          <section
+            class="core-environment-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="core-environment-title"
+            :style="environmentExplorerStyle"
+            @keydown.esc="closeEnvironmentExplorer"
+          >
+            <div class="core-environment-modal-glow" aria-hidden="true" />
+            <header class="core-environment-header">
+              <div>
+                <p>Audio Worlds</p>
+                <h2 id="core-environment-title">Choose Your Cognitive Environment</h2>
+                <span>Each environment shapes how your journey feels.</span>
               </div>
-
-              <div class="core-environment-list" role="listbox" aria-label="Audio catalog">
-                <button
-                  v-for="(audio, index) in filteredEnvironmentAudios"
-                  :key="audioId(audio)"
-                  type="button"
-                  class="core-environment-row"
-                  :class="[
-                    isSelectedAudio(audio) && 'core-environment-row--active',
-                    isPreviewEnvironment(audio) && 'core-environment-row--preview',
-                    selectingEnvironmentId === audioId(audio) && 'core-environment-row--selecting',
-                  ]"
-                  :style="environmentCardStyle(audio, index)"
-                  role="option"
-                  :aria-selected="isPreviewEnvironment(audio)"
-                  @focus="previewEnvironment(audio)"
-                  @mouseenter="previewEnvironment(audio)"
-                  @mouseleave="clearEnvironmentPreview"
-                  @blur="clearEnvironmentPreview"
-                  @click="previewEnvironment(audio)"
-                >
-                  <CognitiveSignature
-                    :mode-key="audioModeSemanticKey(audio)"
-                    :color="audioModeColor(audio)"
-                    :seed="environmentSignatureSeed(audio)"
-                    variant="mini"
-                  />
-                  <span class="core-environment-row-copy">
-                    <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
-                    <small>{{ audioModeLabel(audio) }}</small>
-                  </span>
-                  <span v-if="isSelectedAudio(audio)" class="core-environment-row-badge">
-                    Current
-                  </span>
-                </button>
-
-                <div v-if="filteredEnvironmentAudios.length === 0" class="core-environment-empty">
-                  <i class="pi pi-search" aria-hidden="true" />
-                  <span>No matching audio</span>
-                </div>
-              </div>
-            </aside>
-
-            <section
-              v-if="previewEnvironmentAudio"
-              class="core-environment-preview"
-              :style="environmentCoverStyle(previewEnvironmentAudio)"
-              aria-live="polite"
-            >
-              <CognitiveSignature
-                :mode-key="audioModeSemanticKey(previewEnvironmentAudio)"
-                :color="audioModeColor(previewEnvironmentAudio)"
-                :seed="environmentSignatureSeed(previewEnvironmentAudio)"
-                variant="large"
-              />
-
-              <div class="core-environment-preview-copy">
-                <span class="core-environment-preview-badge">
-                  {{
-                    isSelectedAudio(previewEnvironmentAudio) ? 'Currently Selected' : 'Previewing'
-                  }}
-                </span>
-                <h3>{{ formatEnvironmentTitle(previewEnvironmentAudio.name) }}</h3>
-                <p>{{ audioModeLabel(previewEnvironmentAudio) }}</p>
-              </div>
-
               <button
                 type="button"
-                class="core-environment-use"
-                :disabled="selectingEnvironmentId !== null"
-                @click="selectPreviewEnvironment"
+                class="core-environment-close"
+                aria-label="Close environment explorer"
+                @click="closeEnvironmentExplorer"
               >
-                <i class="pi pi-check" aria-hidden="true" />
-                <span>Use This Audio</span>
+                <i class="pi pi-times" aria-hidden="true" />
               </button>
+            </header>
+
+            <section class="core-environment-stage" aria-label="Cognitive environments">
+              <aside class="core-environment-catalog">
+                <div class="core-environment-search">
+                  <i class="pi pi-search" aria-hidden="true" />
+                  <label class="sr-only" for="environment-search">Search audio environments</label>
+                  <input
+                    id="environment-search"
+                    v-model="environmentSearchQuery"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Search audio or mode"
+                  />
+                </div>
+
+                <div class="core-environment-list" role="listbox" aria-label="Audio catalog">
+                  <button
+                    v-for="(audio, index) in filteredEnvironmentAudios"
+                    :key="audioId(audio)"
+                    type="button"
+                    class="core-environment-row"
+                    :class="[
+                      isSelectedAudio(audio) && 'core-environment-row--active',
+                      isPreviewEnvironment(audio) && 'core-environment-row--preview',
+                      selectingEnvironmentId === audioId(audio) &&
+                        'core-environment-row--selecting',
+                    ]"
+                    :style="environmentCardStyle(audio, index)"
+                    role="option"
+                    :aria-selected="isPreviewEnvironment(audio)"
+                    @focus="previewEnvironment(audio)"
+                    @mouseenter="previewEnvironment(audio)"
+                    @mouseleave="clearEnvironmentPreview"
+                    @blur="clearEnvironmentPreview"
+                    @click="previewEnvironment(audio)"
+                  >
+                    <CognitiveSignature
+                      :mode-key="audioModeSemanticKey(audio)"
+                      :color="audioModeColor(audio)"
+                      :seed="environmentSignatureSeed(audio)"
+                      variant="mini"
+                    />
+                    <span class="core-environment-row-copy">
+                      <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
+                      <small>{{ audioModeLabel(audio) }}</small>
+                    </span>
+                    <span v-if="isSelectedAudio(audio)" class="core-environment-row-badge">
+                      Current
+                    </span>
+                  </button>
+
+                  <div v-if="filteredEnvironmentAudios.length === 0" class="core-environment-empty">
+                    <i class="pi pi-search" aria-hidden="true" />
+                    <span>No matching audio</span>
+                  </div>
+                </div>
+              </aside>
+
+              <section
+                v-if="previewEnvironmentAudio"
+                class="core-environment-preview"
+                :style="environmentCoverStyle(previewEnvironmentAudio)"
+                aria-live="polite"
+              >
+                <CognitiveSignature
+                  :mode-key="audioModeSemanticKey(previewEnvironmentAudio)"
+                  :color="audioModeColor(previewEnvironmentAudio)"
+                  :seed="environmentSignatureSeed(previewEnvironmentAudio)"
+                  variant="large"
+                />
+
+                <div class="core-environment-preview-copy">
+                  <span class="core-environment-preview-badge">
+                    {{
+                      isSelectedAudio(previewEnvironmentAudio) ? 'Currently Selected' : 'Previewing'
+                    }}
+                  </span>
+                  <h3>{{ formatEnvironmentTitle(previewEnvironmentAudio.name) }}</h3>
+                  <p>{{ audioModeLabel(previewEnvironmentAudio) }}</p>
+                </div>
+
+                <button
+                  type="button"
+                  class="core-environment-use"
+                  :disabled="selectingEnvironmentId !== null"
+                  @click="selectPreviewEnvironment"
+                >
+                  <i class="pi pi-check" aria-hidden="true" />
+                  <span>Use This Audio</span>
+                </button>
+              </section>
             </section>
           </section>
-        </section>
-      </div>
-    </Transition>
+        </div>
+      </Transition>
+    </Teleport>
 
     <section class="core-shell flex min-h-[calc(100svh-5.5rem)] flex-col pt-4 sm:pt-5">
       <div
@@ -3075,10 +3126,13 @@ onBeforeUnmount(() => {
 .core-environment-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 1000;
   display: grid;
+  min-height: 100dvh;
   place-items: center;
   overflow: hidden;
+  overscroll-behavior: contain;
+  isolation: isolate;
   background: rgba(2, 5, 8, 0.54);
   padding: clamp(0.7rem, 2vw, 1.5rem);
   backdrop-filter: blur(32px) saturate(1.16);
@@ -3088,11 +3142,13 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   width: min(96vw, 76rem);
-  height: min(94svh, 48rem);
+  height: min(94dvh, 48rem);
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.9rem, 1.8vw, 1.25rem);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 22px;
   background:
@@ -3805,7 +3861,7 @@ onBeforeUnmount(() => {
 
   .core-environment-modal {
     width: 100vw;
-    height: 100svh;
+    height: 100dvh;
     border-width: 0;
     border-radius: 0;
     padding: 1rem;
