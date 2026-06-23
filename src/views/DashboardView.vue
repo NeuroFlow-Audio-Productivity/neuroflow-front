@@ -10,7 +10,7 @@ import CognitiveSignature from '@/components/audios/CognitiveSignature.vue'
 import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
-import { audioApi, audioSourceUrl } from '@/services/audioApi'
+import { audioApi, audioSourceNeedsRefresh, audioSourceUrl } from '@/services/audioApi'
 import {
   completeCurrentFlowNode,
   createFlowExecutionState,
@@ -163,6 +163,7 @@ let completionAudioContext: AudioContext | undefined
 let environmentExplorerScrollY = 0
 let bodyStyleBeforeEnvironmentExplorer: string | undefined
 let htmlOverflowBeforeEnvironmentExplorer = ''
+const audioRefreshRequests = new Map<string, Promise<Audio>>()
 
 const phaseOptions = computed(() =>
   (['work', 'shortBreak', 'longBreak'] as TimerPhase[]).map((phase) => ({
@@ -786,6 +787,41 @@ async function loadAlarmAudiosForMode(modeId: number) {
   }
 }
 
+function replaceAudioRecord(collection: Audio[], refreshedAudio: Audio) {
+  const refreshedId = audioId(refreshedAudio)
+
+  return collection.map((audio) =>
+    audioId(audio) === refreshedId ? refreshedAudio : audio,
+  )
+}
+
+function storeRefreshedAudio(refreshedAudio: Audio) {
+  audios.value = replaceAudioRecord(audios.value, refreshedAudio)
+  alarmAudios.value = replaceAudioRecord(alarmAudios.value, refreshedAudio)
+  flowCompletionAudios.value = replaceAudioRecord(flowCompletionAudios.value, refreshedAudio)
+
+  return refreshedAudio
+}
+
+async function ensureFreshAudioSource(audio: Audio) {
+  if (!audioSourceNeedsRefresh(audio)) return audio
+  if (!auth.token) throw new Error('Missing authentication token')
+
+  const id = audioId(audio)
+  const pendingRefresh = audioRefreshRequests.get(id)
+
+  if (pendingRefresh) return pendingRefresh
+
+  const refreshRequest = audioApi
+    .getAudio(auth.token, audio.id)
+    .then(storeRefreshedAudio)
+    .finally(() => audioRefreshRequests.delete(id))
+
+  audioRefreshRequests.set(id, refreshRequest)
+
+  return refreshRequest
+}
+
 function clearTimerInterval() {
   if (timerInterval === undefined) return
 
@@ -896,16 +932,21 @@ async function ringCompletionBell() {
 }
 
 async function playCompletionAlarm(
-  source = selectedAlarmAudioSource.value,
+  audio = isFlowLoaded.value ? currentFlowCompletionAudio.value : selectedAlarmAudio.value,
   isFlowAlarm = isFlowLoaded.value,
 ) {
-  if (source) {
+  if (audio) {
     const alarmAudio = alarmAudioElement.value
 
     try {
       stopCompletionAlarm()
 
       if (!alarmAudio) throw new Error('Missing alarm audio element')
+
+      const playableAudio = await ensureFreshAudioSource(audio)
+      const source = audioSourceUrl(playableAudio)
+
+      if (!source) throw new Error('Missing alarm audio source')
       if (alarmAudio.src !== source) {
         alarmAudio.src = source
         alarmAudio.load()
@@ -951,11 +992,13 @@ function completePhase() {
 }
 
 function completeExpiredPhase() {
-  const completionAlarmSource = selectedAlarmAudioSource.value
+  const completionAlarm = isFlowLoaded.value
+    ? currentFlowCompletionAudio.value
+    : selectedAlarmAudio.value
   const isFlowAlarm = isFlowLoaded.value
 
   pauseSession()
-  void playCompletionAlarm(completionAlarmSource, isFlowAlarm)
+  void playCompletionAlarm(completionAlarm, isFlowAlarm)
   completePhase()
 }
 
@@ -986,11 +1029,24 @@ function syncAudioVolume() {
 }
 
 async function playAudio() {
-  const audio = audioElement.value
+  const currentAudio = selectedAudio.value
 
-  if (!audio || !hasAudioSource.value) return
+  if (!currentAudio) return
 
   try {
+    const playableAudio = await ensureFreshAudioSource(currentAudio)
+
+    if (audioSourceUrl(playableAudio) !== audioSourceUrl(currentAudio)) {
+      return
+    }
+
+    await nextTick()
+
+    const audio = audioElement.value
+
+    if (!audio || !hasAudioSource.value) return
+
+    syncAudioVolume()
     await audio.play()
   } catch {
     hasAudioError.value = true
@@ -1213,29 +1269,37 @@ function clearEnvironmentPreview() {
   })
 }
 
-function previewEnvironment(audio: Audio) {
+async function previewEnvironment(audio: Audio) {
   if (!isEnvironmentExplorerVisible.value || selectingEnvironmentId.value) return
 
-  previewEnvironmentId.value = audioId(audio)
-  const previewAudio = environmentPreviewAudioElement.value
-  const source = audioSourceUrl(audio)
+  const previewId = audioId(audio)
+  previewEnvironmentId.value = previewId
 
-  if (!previewAudio || !source) return
+  try {
+    const playableAudio = await ensureFreshAudioSource(audio)
 
-  if (previewAudio.dataset.previewSource !== source) {
-    previewAudio.dataset.previewSource = source
-    previewAudio.src = source
-    previewAudio.currentTime = 0
-    previewAudio.load()
+    if (previewEnvironmentId.value !== previewId || !isEnvironmentExplorerVisible.value) return
+
+    const previewAudio = environmentPreviewAudioElement.value
+    const source = audioSourceUrl(playableAudio)
+
+    if (!previewAudio || !source) return
+
+    if (previewAudio.dataset.previewSource !== source) {
+      previewAudio.dataset.previewSource = source
+      previewAudio.src = source
+      previewAudio.currentTime = 0
+      previewAudio.load()
+    }
+
+    previewAudio.loop = true
+    previewAudio.volume = Math.min(previewAudio.volume, 0.08)
+
+    await previewAudio.play()
+    fadeEnvironmentPreviewVolume(0.22)
+  } catch {
+    // Environment previews are best-effort and should not interrupt the session.
   }
-
-  previewAudio.loop = true
-  previewAudio.volume = Math.min(previewAudio.volume, 0.08)
-
-  void previewAudio
-    .play()
-    .then(() => fadeEnvironmentPreviewVolume(0.22))
-    .catch(() => undefined)
 }
 
 function selectPreviewEnvironment() {
