@@ -6,6 +6,7 @@ import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
+import CognitiveEnvironmentVisual from '@/components/audios/CognitiveEnvironmentVisual.vue'
 import CognitiveSignature from '@/components/audios/CognitiveSignature.vue'
 import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
@@ -1651,11 +1652,10 @@ onBeforeUnmount(() => {
                 :style="environmentCoverStyle(previewEnvironmentAudio)"
                 aria-live="polite"
               >
-                <CognitiveSignature
-                  :mode-key="audioModeSemanticKey(previewEnvironmentAudio)"
+                <CognitiveEnvironmentVisual
                   :color="audioModeColor(previewEnvironmentAudio)"
                   :seed="environmentSignatureSeed(previewEnvironmentAudio)"
-                  variant="large"
+                  :selected="isSelectedAudio(previewEnvironmentAudio)"
                 />
 
                 <div class="core-environment-preview-copy">
@@ -3496,12 +3496,15 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   align-content: center;
-  gap: clamp(1rem, 2.2vw, 1.45rem);
+  gap: clamp(0.85rem, 1.8vw, 1.2rem);
   overflow: hidden;
   padding: clamp(1rem, 2.2vw, 1.5rem);
   background:
-    radial-gradient(circle at 48% 8%, rgba(var(--environment-card-rgb), 0.28), transparent 34%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
+    radial-gradient(circle at 50% 10%, rgba(var(--environment-card-rgb), 0.24), transparent 38%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 4rem rgba(var(--environment-card-rgb), 0.035);
 }
 
 .core-environment-preview::before {
@@ -3950,10 +3953,6 @@ onBeforeUnmount(() => {
 
   .core-environment-preview {
     align-content: start;
-  }
-
-  .cognitive-signature--large {
-    width: min(72vw, 16rem);
   }
 
   .core-environment-preview-copy h3 {
