@@ -11,6 +11,7 @@ const mountVisual = (
     seed?: string | number
     selected?: boolean
     className?: string
+    variant?: 'preview' | 'thumbnail'
   } = {},
 ) =>
   mount(CognitiveEnvironmentVisual, {
@@ -23,6 +24,15 @@ const mountVisual = (
   })
 
 describe('CognitiveEnvironmentVisual', () => {
+  it('uses the preview variant by default and supports the compact thumbnail variant', () => {
+    const preview = mountVisual()
+    const thumbnail = mountVisual({ variant: 'thumbnail' })
+
+    expect(preview.classes()).toContain('cognitive-environment-visual--preview')
+    expect(thumbnail.classes()).toContain('cognitive-environment-visual--thumbnail')
+    expect(thumbnail.classes()).not.toContain('cognitive-environment-visual--preview')
+  })
+
   it('normalizes the mode color and exposes the selected state', () => {
     const wrapper = mountVisual({ color: '#A7F3D0', selected: true, className: 'preview-core' })
 

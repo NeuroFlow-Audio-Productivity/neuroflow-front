@@ -7,7 +7,6 @@ import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
 import CognitiveEnvironmentVisual from '@/components/audios/CognitiveEnvironmentVisual.vue'
-import CognitiveSignature from '@/components/audios/CognitiveSignature.vue'
 import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
@@ -456,15 +455,6 @@ function audioModeLabel(audio: Audio | null | undefined) {
 
 function audioModeColor(audio: Audio | null | undefined) {
   return normalizeModeColor(audio?.mode?.color ?? selectedMode.value?.color)
-}
-
-function audioModeSemanticKey(audio: Audio | null | undefined) {
-  const label = audioModeLabel(audio).toLowerCase()
-
-  if (/sleep|sleeping|sono|sueno|dormir|delta/.test(label)) return 'sleep'
-  if (/relax|relaxed|relaxing|relajar|relaxamento|relajacion|theta/.test(label)) return 'relax'
-
-  return 'focus'
 }
 
 function formatEnvironmentTitle(name: string) {
@@ -1624,11 +1614,11 @@ onBeforeUnmount(() => {
                     @blur="clearEnvironmentPreview"
                     @click="previewEnvironment(audio)"
                   >
-                    <CognitiveSignature
-                      :mode-key="audioModeSemanticKey(audio)"
+                    <CognitiveEnvironmentVisual
                       :color="audioModeColor(audio)"
                       :seed="environmentSignatureSeed(audio)"
-                      variant="mini"
+                      :selected="isSelectedAudio(audio)"
+                      variant="thumbnail"
                     />
                     <span class="core-environment-row-copy">
                       <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>

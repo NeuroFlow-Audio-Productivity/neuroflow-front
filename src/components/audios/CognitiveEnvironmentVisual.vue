@@ -14,12 +14,18 @@ type FlowNode = {
   delay: number
 }
 
-const props = defineProps<{
-  color: string
-  seed: string | number
-  selected: boolean
-  className?: string
-}>()
+type CognitiveEnvironmentVisualVariant = 'preview' | 'thumbnail'
+
+const props = withDefaults(
+  defineProps<{
+    color: string
+    seed: string | number
+    selected: boolean
+    className?: string
+    variant?: CognitiveEnvironmentVisualVariant
+  }>(),
+  { variant: 'preview' },
+)
 
 const instanceId = useId().replace(/[^a-z0-9_-]/gi, '')
 
@@ -116,7 +122,14 @@ const flowNodes = computed<FlowNode[]>(() =>
 <template>
   <figure
     class="cognitive-environment-visual"
-    :class="[className, { 'cognitive-environment-visual--selected': selected }]"
+    :class="[
+      className,
+      {
+        'cognitive-environment-visual--preview': variant === 'preview',
+        'cognitive-environment-visual--thumbnail': variant === 'thumbnail',
+        'cognitive-environment-visual--selected': selected,
+      },
+    ]"
     :style="visualStyle"
     :data-visual-seed="visualHash"
     :data-environment-color="normalizedColor"
@@ -294,6 +307,71 @@ const flowNodes = computed<FlowNode[]>(() =>
     0 0 4rem rgba(var(--flow-rgb), 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.17),
     inset 0 0 3.5rem rgba(var(--flow-rgb), 0.08);
+}
+
+.cognitive-environment-visual--thumbnail {
+  width: 3.45rem;
+  border-radius: 10px;
+  contain: layout paint;
+  box-shadow:
+    0 0.65rem 1.3rem rgba(0, 0, 0, 0.32),
+    0 0 1.2rem rgba(var(--flow-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.cognitive-environment-visual--thumbnail.cognitive-environment-visual--selected {
+  box-shadow:
+    0 0.65rem 1.3rem rgba(0, 0, 0, 0.32),
+    0 0 1.45rem rgba(var(--flow-rgb), 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.17);
+}
+
+.cognitive-environment-visual--thumbnail::before {
+  opacity: 0.34;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__aura {
+  width: 74%;
+  filter: blur(13px);
+  opacity: 0.28;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__veil {
+  opacity: 0.82;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__outer-orbit {
+  opacity: 0.22;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__inner-orbit {
+  opacity: 0.44;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__connection {
+  stroke-width: 1.15;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__impulse {
+  stroke-width: 2.8;
+  filter: none;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__nodes {
+  opacity: 0.78;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__core-ring--inner {
+  display: none;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__waveform {
+  stroke-width: 2;
+  filter: none;
+}
+
+.cognitive-environment-visual--thumbnail .cognitive-environment-visual__core-point {
+  filter: none;
 }
 
 .cognitive-environment-visual__aura {
@@ -646,7 +724,7 @@ const flowNodes = computed<FlowNode[]>(() =>
 }
 
 @media (max-width: 760px) {
-  .cognitive-environment-visual {
+  .cognitive-environment-visual--preview {
     width: min(76vw, 16.5rem);
     border-radius: 17px;
   }
