@@ -7,6 +7,7 @@ import Select from 'primevue/select'
 
 import AppNavbar from '@/components/AppNavbar.vue'
 import CognitiveEnvironmentVisual from '@/components/audios/CognitiveEnvironmentVisual.vue'
+import YouTubePlayer from '@/components/audios/YouTubePlayer.vue'
 import FlowJourneyPicker from '@/components/flows/FlowJourneyPicker.vue'
 import { ApiError } from '@/services/authApi'
 import { translateApiKey, translateApiMessage } from '@/services/apiMessageTranslator'
@@ -34,13 +35,27 @@ import {
   modeSemanticKey,
   normalizeModeColor,
 } from '@/services/modeVisuals'
+import {
+  createYouTubeTrack,
+  emptyYouTubeLibrary,
+  loadYouTubeLibrary,
+  parseYouTubeUrl,
+  removeYouTubeTrack as removeStoredYouTubeTrack,
+  saveYouTubeLibrary,
+  selectYouTubeTrack,
+  upsertYouTubeTrack,
+  youtubeLibraryStorageKey,
+} from '@/services/youtubeTracks'
 import { useAuthStore } from '@/stores/auth'
 import { useVisualThemeStore } from '@/stores/visualTheme'
 import type { Audio } from '@/types/audio'
 import type { Flow, FlowNode } from '@/types/flow'
 import type { Mode } from '@/types/mode'
+import type { YouTubeLibrary, YouTubeTrack } from '@/types/youtube'
+import type { YouTubePlayerState } from '@/services/youtubeIframeApi'
 
 type TimerPhase = 'work' | 'shortBreak' | 'longBreak'
+type AudioProvider = 'uploaded' | 'youtube'
 type BrowserWindowWithLegacyAudioContext = Window & {
   webkitAudioContext?: typeof AudioContext
 }
@@ -123,10 +138,21 @@ const isLoadingSelectedFlow = ref(false)
 const selectedModeId = ref<number | null>(null)
 const selectedAudioId = ref<string | number | null>(null)
 const selectedAlarmAudioId = ref<string | number | null>(null)
+const activeAudioProvider = ref<AudioProvider>('uploaded')
+const youtubeLibrary = ref<YouTubeLibrary>(emptyYouTubeLibrary())
 const isEnvironmentExplorerVisible = ref(false)
 const environmentSearchQuery = ref('')
 const previewEnvironmentId = ref<string | null>(null)
+const previewYouTubeVideoId = ref<string | null>(null)
 const selectingEnvironmentId = ref<string | null>(null)
+const selectingYouTubeVideoId = ref<string | null>(null)
+const isYouTubeComposerVisible = ref(false)
+const youtubeDraftUrl = ref('')
+const youtubeDraftTrack = ref<YouTubeTrack | null>(null)
+const youtubeDraftError = ref<string | null>(null)
+const youtubePreviewPlayableVideoId = ref<string | null>(null)
+const youtubePreviewError = ref<string | null>(null)
+const youtubePlayerError = ref<string | null>(null)
 const isEnvironmentLanding = ref(false)
 const timerPhase = ref<TimerPhase>('work')
 const remainingSeconds = ref(defaultPhaseDurations.work)
@@ -268,18 +294,41 @@ const selectedAlarmAudio = computed(
 const currentFlowCompletionAudio = computed(() =>
   resolveFlowNodeEndAudio(activeFlowNode.value, flowCompletionAudios.value),
 )
-const selectedAudioSource = computed(() => audioSourceUrl(selectedAudio.value))
+const youtubeTracks = computed(() => youtubeLibrary.value.tracks)
+const selectedYouTubeTrack = computed(
+  () =>
+    youtubeTracks.value.find((track) => track.videoId === youtubeLibrary.value.selectedVideoId) ??
+    null,
+)
+const isYouTubeAudioSelected = computed(
+  () => activeAudioProvider.value === 'youtube' && Boolean(selectedYouTubeTrack.value),
+)
+const selectedAudioSource = computed(() =>
+  isYouTubeAudioSelected.value ? '' : audioSourceUrl(selectedAudio.value),
+)
 const selectedAlarmAudioSource = computed(() =>
   audioSourceUrl(isFlowLoaded.value ? currentFlowCompletionAudio.value : selectedAlarmAudio.value),
 )
-const selectedTrackLabel = computed(() => selectedAudio.value?.name ?? t('coreTimer.audio.noTrack'))
-const activeEnvironmentLabel = computed(() =>
-  selectedAudio.value
-    ? formatEnvironmentTitle(selectedAudio.value.name)
-    : t('coreTimer.audio.noTrack'),
+const selectedTrackLabel = computed(() =>
+  isYouTubeAudioSelected.value && selectedYouTubeTrack.value
+    ? selectedYouTubeTrack.value.title
+    : (selectedAudio.value?.name ?? t('coreTimer.audio.noTrack')),
 )
+const activeEnvironmentLabel = computed(() => {
+  if (isYouTubeAudioSelected.value && selectedYouTubeTrack.value) {
+    return selectedYouTubeTrack.value.title
+  }
+
+  return selectedAudio.value
+    ? formatEnvironmentTitle(selectedAudio.value.name)
+    : t('coreTimer.audio.noTrack')
+})
 const activeEnvironmentSubtitle = computed(() =>
-  selectedAudio.value ? audioModeLabel(selectedAudio.value) : selectedModeName.value,
+  isYouTubeAudioSelected.value
+    ? t('coreTimer.environment.youtubeSource')
+    : selectedAudio.value
+      ? audioModeLabel(selectedAudio.value)
+      : selectedModeName.value,
 )
 const filteredEnvironmentAudios = computed(() => {
   const query = environmentSearchQuery.value.trim().toLowerCase()
@@ -293,13 +342,38 @@ const filteredEnvironmentAudios = computed(() => {
     return name.includes(query) || mode.includes(query)
   })
 })
-const previewEnvironmentAudio = computed(
+const filteredYouTubeTracks = computed(() => {
+  const query = environmentSearchQuery.value.trim().toLowerCase()
+
+  if (!query) return youtubeTracks.value
+
+  return youtubeTracks.value.filter((track) => {
+    return (
+      track.title.toLowerCase().includes(query) ||
+      track.videoId.toLowerCase().includes(query) ||
+      t('coreTimer.environment.youtubeSource').toLowerCase().includes(query)
+    )
+  })
+})
+const previewYouTubeTrack = computed(
   () =>
-    sortedAudios.value.find((audio) => audioId(audio) === previewEnvironmentId.value) ??
-    selectedAudio.value ??
-    sortedAudios.value[0] ??
+    youtubeDraftTrack.value ??
+    youtubeTracks.value.find((track) => track.videoId === previewYouTubeVideoId.value) ??
     null,
 )
+const isPreviewingYouTube = computed(() =>
+  Boolean(isYouTubeComposerVisible.value || previewYouTubeTrack.value),
+)
+const previewEnvironmentAudio = computed(() => {
+  if (isPreviewingYouTube.value) return null
+
+  return (
+    sortedAudios.value.find((audio) => audioId(audio) === previewEnvironmentId.value) ??
+    (!isYouTubeAudioSelected.value ? selectedAudio.value : null) ??
+    sortedAudios.value[0] ??
+    null
+  )
+})
 const environmentExplorerStyle = computed(() => {
   const palette = environmentPaletteForAudio(previewEnvironmentAudio.value)
 
@@ -321,7 +395,9 @@ const alarmOptions = computed(() => [
     value: audio.id,
   })),
 ])
-const hasAudioSource = computed(() => Boolean(selectedAudioSource.value))
+const hasAudioSource = computed(
+  () => isYouTubeAudioSelected.value || Boolean(selectedAudioSource.value),
+)
 const audioVolumeStyle = computed(() => ({
   '--audio-volume': `${isAudioMuted.value ? 0 : audioVolume.value * 100}%`,
 }))
@@ -330,6 +406,15 @@ const audioVolumeIcon = computed(() => {
   if (audioVolume.value < 0.5) return 'pi pi-volume-down'
 
   return 'pi pi-volume-up'
+})
+const audioStatusLabel = computed(() => {
+  if (isYouTubeAudioSelected.value) {
+    if (isAudioWaiting.value) return t('coreTimer.environment.youtubeBuffering')
+
+    return isRunning.value ? t('coreTimer.audio.playing') : t('coreTimer.audio.ready')
+  }
+
+  return isAudioPlaying.value ? t('coreTimer.audio.playing') : t('coreTimer.audio.ready')
 })
 
 const currentPhaseTotalSeconds = computed(() =>
@@ -366,8 +451,11 @@ const minimalModeIcon = computed(() =>
   isMinimalMode.value ? 'pi pi-window-maximize' : 'pi pi-window-minimize',
 )
 const activeCycleStep = computed(() => cycleIndex.value + 1)
+const environmentOptionCount = computed(
+  () => sortedAudios.value.length + youtubeTracks.value.length,
+)
 const trackCountLabel = computed(() =>
-  t('coreTimer.audio.trackCount', { count: sortedAudios.value.length }),
+  t('coreTimer.audio.trackCount', { count: environmentOptionCount.value }),
 )
 const flowSectionList = computed(() =>
   flowSession.value
@@ -505,6 +593,34 @@ function environmentSignatureSeed(audio: Audio) {
   return audioId(audio) + ':' + formatEnvironmentTitle(audio.name) + ':' + audioModeLabel(audio)
 }
 
+function youtubeTrackId(track: YouTubeTrack) {
+  return 'youtube:' + track.videoId
+}
+
+function isSelectedYouTubeTrack(track: YouTubeTrack) {
+  return isYouTubeAudioSelected.value && selectedYouTubeTrack.value?.videoId === track.videoId
+}
+
+function isPreviewYouTubeTrack(track: YouTubeTrack) {
+  return previewYouTubeTrack.value?.videoId === track.videoId
+}
+
+function youtubeEnvironmentSeed(track: YouTubeTrack) {
+  return 'youtube:' + track.videoId + ':' + track.title
+}
+
+function youtubeEnvironmentCoverStyle(track: YouTubeTrack | null | undefined, index = 0) {
+  const palette = environmentPaletteForAudio(null)
+  const hash = track ? environmentHash(youtubeEnvironmentSeed(track)) : index
+
+  return {
+    '--environment-card-aura': palette.aura,
+    '--environment-card-rgb': palette.rgb,
+    '--environment-card-ink': palette.ink,
+    '--environment-card-shift': String(hash % 42) + '%',
+  }
+}
+
 function formatClock(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds))
   const minutes = Math.floor(safeSeconds / 60)
@@ -527,6 +643,45 @@ function setError(caughtError: unknown, fallbackKey: string) {
 
 function browserStorage() {
   return typeof localStorage === 'undefined' ? null : localStorage
+}
+
+function currentYouTubeStorageKey() {
+  return youtubeLibraryStorageKey(auth.user?.id ?? null)
+}
+
+function persistYouTubeLibrary(nextLibrary = youtubeLibrary.value) {
+  const parsedLibrary = { ...nextLibrary }
+
+  youtubeLibrary.value = parsedLibrary
+  saveYouTubeLibrary(browserStorage(), currentYouTubeStorageKey(), parsedLibrary)
+}
+
+function loadStoredYouTubeLibrary() {
+  youtubeLibrary.value = loadYouTubeLibrary(browserStorage(), currentYouTubeStorageKey())
+
+  activeAudioProvider.value = youtubeLibrary.value.selectedVideoId ? 'youtube' : 'uploaded'
+}
+
+function updateStoredYouTubeTrackTitle(videoId: string, title: string) {
+  const cleanedTitle = title.trim()
+
+  if (!cleanedTitle) return
+
+  let didUpdate = false
+  const tracks = youtubeLibrary.value.tracks.map((track) => {
+    if (track.videoId !== videoId || track.title === cleanedTitle) return track
+
+    didUpdate = true
+    return { ...track, title: cleanedTitle }
+  })
+
+  if (didUpdate) {
+    persistYouTubeLibrary({ ...youtubeLibrary.value, tracks })
+  }
+
+  if (youtubeDraftTrack.value?.videoId === videoId) {
+    youtubeDraftTrack.value = { ...youtubeDraftTrack.value, title: cleanedTitle }
+  }
 }
 
 function readPersistedFlowExecutionState() {
@@ -781,9 +936,7 @@ async function loadAlarmAudiosForMode(modeId: number) {
 function replaceAudioRecord(collection: Audio[], refreshedAudio: Audio) {
   const refreshedId = audioId(refreshedAudio)
 
-  return collection.map((audio) =>
-    audioId(audio) === refreshedId ? refreshedAudio : audio,
-  )
+  return collection.map((audio) => (audioId(audio) === refreshedId ? refreshedAudio : audio))
 }
 
 function storeRefreshedAudio(refreshedAudio: Audio) {
@@ -1020,6 +1173,8 @@ function syncAudioVolume() {
 }
 
 async function playAudio() {
+  if (isYouTubeAudioSelected.value) return
+
   const currentAudio = selectedAudio.value
 
   if (!currentAudio) return
@@ -1144,12 +1299,32 @@ function selectPhase(phase: TimerPhase) {
   remainingSeconds.value = phaseDurations.value[phase]
 }
 
-function openEnvironmentExplorer() {
-  if (sortedAudios.value.length === 0) return
+function resetYouTubePreviewState() {
+  previewYouTubeVideoId.value = null
+  selectingYouTubeVideoId.value = null
+  isYouTubeComposerVisible.value = false
+  youtubeDraftUrl.value = ''
+  youtubeDraftTrack.value = null
+  youtubeDraftError.value = null
+  youtubePreviewPlayableVideoId.value = null
+  youtubePreviewError.value = null
+}
 
+function openEnvironmentExplorer() {
   environmentSearchQuery.value = ''
-  previewEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
+  previewEnvironmentId.value =
+    !isYouTubeAudioSelected.value && selectedAudio.value ? audioId(selectedAudio.value) : null
+  previewYouTubeVideoId.value = isYouTubeAudioSelected.value
+    ? (selectedYouTubeTrack.value?.videoId ?? null)
+    : null
   selectingEnvironmentId.value = null
+  selectingYouTubeVideoId.value = null
+  isYouTubeComposerVisible.value = false
+  youtubeDraftUrl.value = ''
+  youtubeDraftTrack.value = null
+  youtubeDraftError.value = null
+  youtubePreviewPlayableVideoId.value = previewYouTubeVideoId.value
+  youtubePreviewError.value = null
   isEnvironmentExplorerVisible.value = true
 }
 
@@ -1158,6 +1333,7 @@ function closeEnvironmentExplorer() {
   selectingEnvironmentId.value = null
   previewEnvironmentId.value = null
   environmentSearchQuery.value = ''
+  resetYouTubePreviewState()
   clearEnvironmentPreview()
 }
 
@@ -1260,9 +1436,81 @@ function clearEnvironmentPreview() {
   })
 }
 
+function clearYouTubeComposerMessages() {
+  youtubeDraftError.value = null
+  youtubePreviewError.value = null
+  youtubePreviewPlayableVideoId.value = null
+}
+
+function startYouTubeComposer() {
+  clearEnvironmentPreview()
+  previewEnvironmentId.value = null
+  previewYouTubeVideoId.value = null
+  selectingEnvironmentId.value = null
+  isYouTubeComposerVisible.value = true
+  youtubeDraftUrl.value = ''
+  youtubeDraftTrack.value = null
+  clearYouTubeComposerMessages()
+}
+
+function previewYouTubeTrackRow(track: YouTubeTrack) {
+  clearEnvironmentPreview()
+  previewEnvironmentId.value = null
+  youtubeDraftTrack.value = null
+  youtubeDraftUrl.value = ''
+  isYouTubeComposerVisible.value = false
+  youtubeDraftError.value = null
+  youtubePreviewError.value = null
+  youtubePreviewPlayableVideoId.value = track.videoId
+  previewYouTubeVideoId.value = track.videoId
+}
+
+function validateYouTubeDraft() {
+  clearYouTubeComposerMessages()
+  const parsedUrl = parseYouTubeUrl(youtubeDraftUrl.value)
+
+  if (!parsedUrl) {
+    youtubeDraftTrack.value = null
+    youtubeDraftError.value = youtubeDraftUrl.value.trim()
+      ? t('coreTimer.environment.youtubeInvalid')
+      : null
+    return
+  }
+
+  youtubeDraftTrack.value = createYouTubeTrack(parsedUrl)
+}
+
+function handleYouTubePreviewState(state: YouTubePlayerState) {
+  if (!previewYouTubeTrack.value) return
+
+  if ([1, 2, 5].includes(state)) {
+    youtubePreviewPlayableVideoId.value = previewYouTubeTrack.value.videoId
+    youtubePreviewError.value = null
+  }
+}
+
+function handleYouTubePreviewError() {
+  youtubePreviewPlayableVideoId.value = null
+  youtubePreviewError.value = t('coreTimer.environment.youtubePreviewUnavailable')
+}
+
+function handleYouTubePlayerError() {
+  hasAudioError.value = true
+  youtubePlayerError.value = t('coreTimer.environment.youtubePlayerError')
+}
+
+function handleYouTubeAutoplayBlocked() {
+  youtubePlayerError.value = t('coreTimer.environment.youtubeAutoplayBlocked')
+}
+
+function handleYouTubeTitle(videoId: string, title: string) {
+  updateStoredYouTubeTrackTitle(videoId, title)
+}
+
 async function previewEnvironment(audio: Audio) {
   if (!isEnvironmentExplorerVisible.value || selectingEnvironmentId.value) return
 
+  resetYouTubePreviewState()
   const previewId = audioId(audio)
   previewEnvironmentId.value = previewId
 
@@ -1294,6 +1542,11 @@ async function previewEnvironment(audio: Audio) {
 }
 
 function selectPreviewEnvironment() {
+  if (previewYouTubeTrack.value) {
+    selectYouTubeEnvironment(previewYouTubeTrack.value)
+    return
+  }
+
   if (!previewEnvironmentAudio.value) return
 
   selectEnvironment(previewEnvironmentAudio.value)
@@ -1303,15 +1556,69 @@ function selectEnvironment(audio: Audio) {
   clearEnvironmentSelectionTimeout()
   clearEnvironmentPreview()
   selectedAudioId.value = audio.id
+  activeAudioProvider.value = 'uploaded'
+  youtubePlayerError.value = null
+  persistYouTubeLibrary(selectYouTubeTrack(youtubeLibrary.value, null))
   selectingEnvironmentId.value = audioId(audio)
 
   environmentSelectionTimeout = window.setTimeout(() => {
     isEnvironmentExplorerVisible.value = false
     selectingEnvironmentId.value = null
+    resetYouTubePreviewState()
+    isEnvironmentLanding.value = true
+    clearEnvironmentLandingTimeout()
+    environmentLandingTimeout = window.setTimeout(finishEnvironmentLanding, 720)
+
+    if (isRunning.value) {
+      void playAudio()
+    }
+  }, 440)
+}
+
+function selectYouTubeEnvironment(track: YouTubeTrack) {
+  if (youtubePreviewPlayableVideoId.value !== track.videoId) {
+    youtubePreviewError.value = t('coreTimer.environment.youtubePreviewUnavailable')
+    return
+  }
+
+  clearEnvironmentSelectionTimeout()
+  clearEnvironmentPreview()
+  pauseAudio()
+  activeAudioProvider.value = 'youtube'
+  hasAudioError.value = false
+  youtubePlayerError.value = null
+  selectingYouTubeVideoId.value = track.videoId
+  persistYouTubeLibrary(upsertYouTubeTrack(youtubeLibrary.value, track, true))
+
+  environmentSelectionTimeout = window.setTimeout(() => {
+    isEnvironmentExplorerVisible.value = false
+    selectingYouTubeVideoId.value = null
+    resetYouTubePreviewState()
     isEnvironmentLanding.value = true
     clearEnvironmentLandingTimeout()
     environmentLandingTimeout = window.setTimeout(finishEnvironmentLanding, 720)
   }, 440)
+}
+
+function removeYouTubeEnvironment(track: YouTubeTrack) {
+  const wasSelected = selectedYouTubeTrack.value?.videoId === track.videoId
+
+  persistYouTubeLibrary(removeStoredYouTubeTrack(youtubeLibrary.value, track.videoId))
+
+  if (previewYouTubeVideoId.value === track.videoId) {
+    resetYouTubePreviewState()
+    previewEnvironmentId.value = selectedAudio.value ? audioId(selectedAudio.value) : null
+  }
+
+  if (wasSelected) {
+    activeAudioProvider.value = 'uploaded'
+    youtubePlayerError.value = null
+    pauseAudio()
+
+    if (isRunning.value) {
+      void playAudio()
+    }
+  }
 }
 
 function changeVolume(event: Event) {
@@ -1326,6 +1633,33 @@ function toggleMute() {
   isAudioMuted.value = !isAudioMuted.value
   syncAudioVolume()
 }
+
+watch(youtubeDraftUrl, validateYouTubeDraft)
+
+watch(
+  () => auth.user?.id,
+  () => {
+    loadStoredYouTubeLibrary()
+  },
+)
+
+watch(isYouTubeAudioSelected, (selected) => {
+  if (selected) {
+    audioElement.value?.pause()
+    isAudioPlaying.value = false
+    isAudioWaiting.value = false
+    hasAudioError.value = false
+    return
+  }
+
+  youtubePlayerError.value = null
+})
+
+watch(selectedYouTubeTrack, (track) => {
+  if (!track && activeAudioProvider.value === 'youtube') {
+    activeAudioProvider.value = 'uploaded'
+  }
+})
 
 watch(isRunning, (running) => {
   clearTimerInterval()
@@ -1407,6 +1741,8 @@ watch(isEnvironmentExplorerVisible, (isVisible) => {
 })
 
 onMounted(() => {
+  loadStoredYouTubeLibrary()
+
   void (async () => {
     await loadModes()
 
@@ -1565,35 +1901,59 @@ onBeforeUnmount(() => {
             <div class="core-environment-modal-glow" aria-hidden="true" />
             <header class="core-environment-header">
               <div>
-                <p>Audio Worlds</p>
-                <h2 id="core-environment-title">Choose Your Cognitive Environment</h2>
-                <span>Each environment shapes how your journey feels.</span>
+                <p>{{ t('coreTimer.environment.eyebrow') }}</p>
+                <h2 id="core-environment-title">{{ t('coreTimer.environment.title') }}</h2>
+                <span>{{ t('coreTimer.environment.subtitle') }}</span>
               </div>
               <button
                 type="button"
                 class="core-environment-close"
-                aria-label="Close environment explorer"
+                :aria-label="t('coreTimer.environment.close')"
                 @click="closeEnvironmentExplorer"
               >
                 <i class="pi pi-times" aria-hidden="true" />
               </button>
             </header>
 
-            <section class="core-environment-stage" aria-label="Cognitive environments">
+            <section
+              class="core-environment-stage"
+              :aria-label="t('coreTimer.environment.catalogLabel')"
+            >
               <aside class="core-environment-catalog">
                 <div class="core-environment-search">
                   <i class="pi pi-search" aria-hidden="true" />
-                  <label class="sr-only" for="environment-search">Search audio environments</label>
+                  <label class="sr-only" for="environment-search">{{
+                    t('coreTimer.environment.searchLabel')
+                  }}</label>
                   <input
                     id="environment-search"
                     v-model="environmentSearchQuery"
                     type="search"
                     autocomplete="off"
-                    placeholder="Search audio or mode"
+                    :placeholder="t('coreTimer.environment.searchPlaceholder')"
                   />
                 </div>
 
-                <div class="core-environment-list" role="listbox" aria-label="Audio catalog">
+                <div
+                  class="core-environment-list"
+                  role="listbox"
+                  :aria-label="t('coreTimer.environment.catalogLabel')"
+                >
+                  <button
+                    type="button"
+                    class="core-environment-row core-environment-row--youtube-action"
+                    role="option"
+                    :aria-selected="isYouTubeComposerVisible"
+                    @click="startYouTubeComposer"
+                  >
+                    <span class="core-environment-youtube-icon" aria-hidden="true">
+                      <i class="pi pi-youtube" />
+                    </span>
+                    <span class="core-environment-row-copy">
+                      <strong>{{ t('coreTimer.environment.addYoutube') }}</strong>
+                      <small>{{ t('coreTimer.environment.addYoutubeCopy') }}</small>
+                    </span>
+                  </button>
                   <button
                     v-for="(audio, index) in filteredEnvironmentAudios"
                     :key="audioId(audio)"
@@ -1624,20 +1984,140 @@ onBeforeUnmount(() => {
                       <strong>{{ formatEnvironmentTitle(audio.name) }}</strong>
                       <small>{{ audioModeLabel(audio) }}</small>
                     </span>
-                    <span v-if="isSelectedAudio(audio)" class="core-environment-row-badge">
-                      Current
+                    <span
+                      v-if="isSelectedAudio(audio) && !isYouTubeAudioSelected"
+                      class="core-environment-row-badge"
+                    >
+                      {{ t('coreTimer.environment.current') }}
                     </span>
                   </button>
 
-                  <div v-if="filteredEnvironmentAudios.length === 0" class="core-environment-empty">
+                  <div
+                    v-for="(track, index) in filteredYouTubeTracks"
+                    :key="youtubeTrackId(track)"
+                    class="core-environment-row core-environment-row--youtube"
+                    :class="[
+                      isSelectedYouTubeTrack(track) && 'core-environment-row--active',
+                      isPreviewYouTubeTrack(track) && 'core-environment-row--preview',
+                      selectingYouTubeVideoId === track.videoId &&
+                        'core-environment-row--selecting',
+                    ]"
+                    :style="youtubeEnvironmentCoverStyle(track, index)"
+                    role="option"
+                    tabindex="0"
+                    :aria-selected="isPreviewYouTubeTrack(track)"
+                    @focus="previewYouTubeTrackRow(track)"
+                    @mouseenter="previewYouTubeTrackRow(track)"
+                    @click="previewYouTubeTrackRow(track)"
+                    @keydown.enter.prevent="previewYouTubeTrackRow(track)"
+                    @keydown.space.prevent="previewYouTubeTrackRow(track)"
+                  >
+                    <span class="core-environment-youtube-icon" aria-hidden="true">
+                      <i class="pi pi-youtube" />
+                    </span>
+                    <span class="core-environment-row-copy">
+                      <strong>{{ track.title }}</strong>
+                      <small>{{ t('coreTimer.environment.youtubeSource') }}</small>
+                    </span>
+                    <span v-if="isSelectedYouTubeTrack(track)" class="core-environment-row-badge">
+                      {{ t('coreTimer.environment.current') }}
+                    </span>
+                    <button
+                      type="button"
+                      class="core-environment-row-remove"
+                      :aria-label="t('coreTimer.environment.removeYoutube', { title: track.title })"
+                      @click.stop="removeYouTubeEnvironment(track)"
+                    >
+                      <i class="pi pi-times" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="
+                      filteredEnvironmentAudios.length === 0 && filteredYouTubeTracks.length === 0
+                    "
+                    class="core-environment-empty"
+                  >
                     <i class="pi pi-search" aria-hidden="true" />
-                    <span>No matching audio</span>
+                    <span>{{ t('coreTimer.environment.noMatching') }}</span>
                   </div>
                 </div>
               </aside>
 
               <section
-                v-if="previewEnvironmentAudio"
+                v-if="isYouTubeComposerVisible || previewYouTubeTrack"
+                class="core-environment-preview core-environment-preview--youtube"
+                :style="youtubeEnvironmentCoverStyle(previewYouTubeTrack)"
+                aria-live="polite"
+              >
+                <div class="core-environment-youtube-form">
+                  <label for="youtube-environment-url">{{
+                    t('coreTimer.environment.youtubeInputLabel')
+                  }}</label>
+                  <input
+                    id="youtube-environment-url"
+                    v-model="youtubeDraftUrl"
+                    type="url"
+                    inputmode="url"
+                    autocomplete="off"
+                    :placeholder="t('coreTimer.environment.youtubePlaceholder')"
+                  />
+                  <small>{{ t('coreTimer.environment.youtubeHint') }}</small>
+                </div>
+
+                <div v-if="previewYouTubeTrack" class="core-youtube-preview-player">
+                  <YouTubePlayer
+                    :key="'preview-' + previewYouTubeTrack.videoId"
+                    :video-id="previewYouTubeTrack.videoId"
+                    :playing="false"
+                    :volume="audioVolume"
+                    :muted="isAudioMuted"
+                    :label="t('coreTimer.environment.youtubePreviewLabel')"
+                    @state-change="handleYouTubePreviewState"
+                    @error="handleYouTubePreviewError"
+                    @title="
+                      (title) => handleYouTubeTitle(previewYouTubeTrack?.videoId ?? '', title)
+                    "
+                  />
+                </div>
+
+                <div class="core-environment-preview-copy">
+                  <span class="core-environment-preview-badge">
+                    {{
+                      previewYouTubeTrack && isSelectedYouTubeTrack(previewYouTubeTrack)
+                        ? t('coreTimer.environment.currentlySelected')
+                        : t('coreTimer.environment.youtubeBadge')
+                    }}
+                  </span>
+                  <h3>{{ previewYouTubeTrack?.title ?? t('coreTimer.environment.addYoutube') }}</h3>
+                  <p>{{ t('coreTimer.environment.youtubeSource') }}</p>
+                </div>
+
+                <p
+                  v-if="youtubeDraftError || youtubePreviewError"
+                  class="core-youtube-error"
+                  role="alert"
+                >
+                  {{ youtubeDraftError || youtubePreviewError }}
+                </p>
+
+                <button
+                  type="button"
+                  class="core-environment-use"
+                  :disabled="
+                    !previewYouTubeTrack ||
+                    youtubePreviewPlayableVideoId !== previewYouTubeTrack.videoId ||
+                    selectingYouTubeVideoId !== null
+                  "
+                  @click="selectPreviewEnvironment"
+                >
+                  <i class="pi pi-check" aria-hidden="true" />
+                  <span>{{ t('coreTimer.environment.useYoutube') }}</span>
+                </button>
+              </section>
+
+              <section
+                v-else-if="previewEnvironmentAudio"
                 class="core-environment-preview"
                 :style="environmentCoverStyle(previewEnvironmentAudio)"
                 aria-live="polite"
@@ -1651,7 +2131,9 @@ onBeforeUnmount(() => {
                 <div class="core-environment-preview-copy">
                   <span class="core-environment-preview-badge">
                     {{
-                      isSelectedAudio(previewEnvironmentAudio) ? 'Currently Selected' : 'Previewing'
+                      isSelectedAudio(previewEnvironmentAudio)
+                        ? t('coreTimer.environment.currentlySelected')
+                        : t('coreTimer.environment.previewing')
                     }}
                   </span>
                   <h3>{{ formatEnvironmentTitle(previewEnvironmentAudio.name) }}</h3>
@@ -1665,7 +2147,7 @@ onBeforeUnmount(() => {
                   @click="selectPreviewEnvironment"
                 >
                   <i class="pi pi-check" aria-hidden="true" />
-                  <span>Use This Audio</span>
+                  <span>{{ t('coreTimer.environment.useAudio') }}</span>
                 </button>
               </section>
             </section>
@@ -1714,6 +2196,17 @@ onBeforeUnmount(() => {
                 class="!w-full"
               />
             </div>
+
+            <button
+              v-if="isMinimalMode"
+              type="button"
+              class="core-minimal-audio-toggle"
+              :aria-label="t('coreTimer.environment.browseAction')"
+              :title="t('coreTimer.environment.browseAction')"
+              @click.stop="openEnvironmentExplorer"
+            >
+              <i class="pi pi-compass" aria-hidden="true" />
+            </button>
 
             <Button
               type="button"
@@ -1958,11 +2451,6 @@ onBeforeUnmount(() => {
             <span>{{ t('coreTimer.audio.loading') }}</span>
           </div>
 
-          <div v-else-if="sortedAudios.length === 0" class="core-list-state">
-            <i class="pi pi-volume-off" aria-hidden="true" />
-            <span>{{ t('coreTimer.audio.empty') }}</span>
-          </div>
-
           <button
             v-else
             type="button"
@@ -1972,7 +2460,7 @@ onBeforeUnmount(() => {
             @click="openEnvironmentExplorer"
           >
             <span class="core-current-environment-copy">
-              <span>Current Environment</span>
+              <span>{{ t('coreTimer.environment.currentEnvironment') }}</span>
               <strong>
                 {{ activeEnvironmentLabel }}
               </strong>
@@ -1980,14 +2468,32 @@ onBeforeUnmount(() => {
             </span>
             <span class="core-current-environment-action">
               <i class="pi pi-compass" aria-hidden="true" />
-              <span>Change Music</span>
+              <span>{{ t('coreTimer.environment.browseAction') }}</span>
             </span>
           </button>
+
+          <div
+            v-if="isYouTubeAudioSelected && selectedYouTubeTrack && !isMinimalMode"
+            class="core-youtube-panel"
+          >
+            <YouTubePlayer
+              :key="'active-' + selectedYouTubeTrack.videoId"
+              :video-id="selectedYouTubeTrack.videoId"
+              :playing="isRunning"
+              :volume="audioVolume"
+              :muted="isAudioMuted"
+              :label="t('coreTimer.environment.youtubeActiveLabel')"
+              @waiting="(waiting) => (isAudioWaiting = waiting)"
+              @error="handleYouTubePlayerError"
+              @autoplay-blocked="handleYouTubeAutoplayBlocked"
+              @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
+            />
+          </div>
 
           <div class="core-audio-console">
             <div class="core-now-playing">
               <span>
-                {{ isAudioPlaying ? t('coreTimer.audio.playing') : t('coreTimer.audio.ready') }}
+                {{ audioStatusLabel }}
               </span>
               <strong>{{ selectedTrackLabel }}</strong>
             </div>
@@ -2023,12 +2529,30 @@ onBeforeUnmount(() => {
 
             <div v-if="hasAudioError" class="core-audio-error" aria-live="polite">
               <i class="pi pi-exclamation-triangle" aria-hidden="true" />
-              <span>{{ t('coreTimer.errors.playAudio') }}</span>
+              <span>{{ youtubePlayerError ?? t('coreTimer.errors.playAudio') }}</span>
             </div>
           </div>
         </aside>
       </section>
     </section>
+
+    <div
+      v-if="isYouTubeAudioSelected && selectedYouTubeTrack && isMinimalMode"
+      class="core-youtube-floating"
+    >
+      <YouTubePlayer
+        :key="'minimal-' + selectedYouTubeTrack.videoId"
+        :video-id="selectedYouTubeTrack.videoId"
+        :playing="isRunning"
+        :volume="audioVolume"
+        :muted="isAudioMuted"
+        :label="t('coreTimer.environment.youtubeActiveLabel')"
+        @waiting="(waiting) => (isAudioWaiting = waiting)"
+        @error="handleYouTubePlayerError"
+        @autoplay-blocked="handleYouTubeAutoplayBlocked"
+        @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
+      />
+    </div>
   </main>
 </template>
 
@@ -2248,16 +2772,23 @@ onBeforeUnmount(() => {
   font-size: 0.72rem;
 }
 
-.core-minimal-toggle {
+.core-minimal-toggle,
+.core-minimal-audio-toggle {
+  cursor: pointer;
+  display: grid;
   width: 3.1rem !important;
   height: 3.1rem !important;
   flex: 0 0 auto;
+  place-items: center;
   border: 1px solid rgba(var(--resource-mode-rgb), 0.28) !important;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.08) !important;
   color: rgba(255, 255, 255, 0.8) !important;
+  pointer-events: auto;
 }
 
-.core-minimal-toggle:hover {
+.core-minimal-toggle:hover,
+.core-minimal-audio-toggle:hover {
   background: rgba(var(--resource-mode-rgb), 0.14) !important;
   color: #ffffff !important;
 }
@@ -2297,6 +2828,10 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  z-index: 40;
+  flex-direction: row;
+  align-items: center;
+  pointer-events: auto;
 }
 
 .core-workspace--minimal .core-mode-field,
@@ -3309,6 +3844,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   grid-template-columns: minmax(18rem, 0.82fr) minmax(24rem, 1.18fr);
   gap: clamp(0.9rem, 1.8vw, 1.25rem);
+  overflow: hidden;
 }
 
 .core-environment-catalog,
@@ -3484,13 +4020,127 @@ onBeforeUnmount(() => {
   font-weight: 720;
 }
 
+.core-environment-row--youtube-action {
+  border-color: rgba(255, 0, 0, 0.24);
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.12), rgba(255, 255, 255, 0.05));
+}
+
+.core-environment-youtube-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 3.15rem;
+  height: 3.15rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 0, 0, 0.18);
+  color: #ff5c5c;
+  font-size: 1.25rem;
+}
+
+.core-environment-row-remove {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.62);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.core-environment-row-remove:hover,
+.core-environment-row-remove:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.core-environment-preview--youtube {
+  align-content: start;
+  gap: clamp(0.65rem, 1.35vw, 0.95rem);
+  padding-block: clamp(0.85rem, 1.7vw, 1.15rem) clamp(1.15rem, 2vw, 1.55rem);
+}
+
+.core-environment-youtube-form {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.core-environment-youtube-form label {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 780;
+  text-transform: uppercase;
+}
+
+.core-environment-youtube-form input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 680;
+  outline: 0;
+  padding: 0.78rem 0.9rem;
+}
+
+.core-environment-youtube-form input:focus {
+  border-color: rgba(var(--environment-card-rgb), 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(var(--environment-card-rgb), 0.12);
+}
+
+.core-environment-youtube-form small,
+.core-youtube-error {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.core-youtube-preview-player {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  width: min(100%, 29rem);
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  justify-self: center;
+  border: 1px solid rgba(var(--environment-card-rgb), 0.42);
+  border-radius: 16px;
+  background: #05090d;
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.28);
+}
+
+.core-youtube-error {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #fecaca;
+  text-align: center;
+}
+
 .core-environment-preview {
   position: relative;
   display: grid;
   align-content: center;
   gap: clamp(0.85rem, 1.8vw, 1.2rem);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: clamp(1rem, 2.2vw, 1.5rem);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--environment-card-rgb), 0.42) transparent;
   background:
     radial-gradient(circle at 50% 10%, rgba(var(--environment-card-rgb), 0.24), transparent 38%),
     linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
@@ -3536,6 +4186,20 @@ onBeforeUnmount(() => {
   letter-spacing: 0;
   line-height: 1;
   overflow-wrap: anywhere;
+}
+
+.core-environment-preview--youtube .core-environment-preview-copy {
+  gap: 0.36rem;
+  margin-top: clamp(0.7rem, 1.5vw, 1.15rem);
+}
+
+.core-environment-preview--youtube .core-environment-preview-copy h3 {
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
+  line-height: 1.06;
+}
+
+.core-environment-preview--youtube .core-environment-preview-badge {
+  margin-bottom: 0.05rem;
 }
 
 .core-environment-preview-copy p {
@@ -3723,6 +4387,33 @@ onBeforeUnmount(() => {
 
 .core-track-wave span:nth-child(6) {
   height: 56%;
+}
+
+.core-youtube-panel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  margin-top: 0.9rem;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
+  border-radius: 14px;
+  background: #05090d;
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.24);
+}
+
+.core-youtube-floating {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 30;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.34);
+  border-radius: 16px;
+  background: #05090d;
+  box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.42);
 }
 
 .core-audio-console {
