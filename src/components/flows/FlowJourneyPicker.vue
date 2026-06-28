@@ -190,6 +190,14 @@ function experienceKeyFromMode(mode: Mode | null | undefined): FlowExperienceKey
   return experienceKeyFromText(`${mode?.name ?? ''} ${mode?.description ?? ''}`)
 }
 
+function translatedModeName(mode: Mode | null | undefined, fallback: string) {
+  if (!mode) return fallback
+
+  const key = modeSemanticKey(mode)
+
+  return key ? t('modes.' + key + '.label') : mode.name
+}
+
 function flowVisualIdentity(flow: Flow, mode: Mode | null): FlowVisualIdentity {
   const modeKey =
     experienceKeyFromText(flow.name) ??
@@ -324,7 +332,7 @@ function createJourneyNodeView(node: FlowNode, index: number): JourneyNodeView {
     id: node.id,
     title: node.title,
     minutes,
-    modeName: mode?.name ?? visual.roleLabel,
+    modeName: translatedModeName(mode, visual.roleLabel),
     kind,
     roleLabel: visual.roleLabel,
     icon: visual.icon,

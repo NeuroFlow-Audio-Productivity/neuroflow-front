@@ -23,6 +23,7 @@ export type FlowSectionView = {
   id: number
   title: string
   order: number
+  mode: Mode | null
   modeName: string
   minutes: number
   isActive: boolean
@@ -118,7 +119,7 @@ export const flowProgressPercent = (state: FlowExecutionState | null, totalNodes
 }
 
 export const resolveFlowNodeMode = (node: FlowNode | null | undefined, modes: Mode[]) =>
-  node?.mode ?? modes.find((mode) => mode.id === Number(node?.mode_id)) ?? null
+  modes.find((mode) => mode.id === Number(node?.mode_id)) ?? node?.mode ?? null
 
 export const resolveFlowNodeEndAudio = (node: FlowNode | null | undefined, audios: Audio[]) => {
   if (!node) return null
@@ -140,6 +141,7 @@ export const flowSectionViews = (
       id: node.id,
       title: node.title,
       order: node.order,
+      mode,
       modeName: mode?.name ?? '',
       minutes: Math.max(1, Math.round(Number(node.time) || 1)),
       isActive: Boolean(state && !state.isComplete && state.currentNodeIndex === index),

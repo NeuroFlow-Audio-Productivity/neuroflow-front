@@ -1943,7 +1943,9 @@ onBeforeUnmount(() => {
               }}</span>
               <span class="core-flow-section-copy">
                 <strong>{{ section.title }}</strong>
-                <small>{{ section.modeName || selectedModeName }}</small>
+                <small>
+                  {{ section.mode ? translatedModeName(section.mode) : selectedModeName }}
+                </small>
               </span>
               <span class="core-flow-section-time">{{
                 t('coreTimer.minutes', { count: section.minutes })
