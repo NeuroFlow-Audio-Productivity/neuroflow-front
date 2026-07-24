@@ -73,6 +73,7 @@ describe('YouTubePlayer', () => {
     await vi.waitFor(() => expect(wrapper.emitted('ready')).toBeTruthy())
 
     expect(latestOptions?.videoId).toBe('dQw4w9WgXcQ')
+    expect(wrapper.classes()).not.toContain('youtube-player--passive')
     expect(latestOptions?.playerVars).toMatchObject({
       controls: 1,
       enablejsapi: 1,
@@ -96,6 +97,7 @@ describe('YouTubePlayer', () => {
 
     await vi.waitFor(() => expect(wrapper.emitted('ready')).toBeTruthy())
     expect(latestOptions?.playerVars?.controls).toBe(0)
+    expect(wrapper.classes()).toContain('youtube-player--passive')
     await vi.waitFor(() => expect(wrapper.emitted('timeUpdate')).toBeTruthy())
     expect(wrapper.emitted('timeUpdate')).toContainEqual([42, 180])
 

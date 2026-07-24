@@ -217,7 +217,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="youtube-player" :aria-label="label" role="group">
+  <div
+    class="youtube-player"
+    :class="{ 'youtube-player--passive': !controls }"
+    :aria-label="label"
+    role="group"
+  >
     <div ref="hostElement" class="youtube-player__host" />
     <div v-if="statusMessage" class="youtube-player__status" role="status">
       {{ statusMessage }}
@@ -244,6 +249,10 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+.youtube-player--passive .youtube-player__host :deep(iframe) {
+  pointer-events: none;
 }
 
 .youtube-player__status {

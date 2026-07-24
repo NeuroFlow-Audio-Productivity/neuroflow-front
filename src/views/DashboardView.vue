@@ -176,6 +176,8 @@ const environmentPreviewAudioElement = ref<HTMLAudioElement | null>(null)
 const activeYouTubePlayer = ref<InstanceType<typeof YouTubePlayer> | null>(null)
 const youtubeCurrentSeconds = ref(0)
 const youtubeDurationSeconds = ref(0)
+const isYouTubeVideoHovered = ref(false)
+const isYouTubeCoverVisible = ref(true)
 const audioVolume = ref(0.74)
 const isAudioMuted = ref(false)
 const isAudioPlaying = ref(false)
@@ -186,6 +188,7 @@ let timerInterval: ReturnType<typeof window.setInterval> | undefined
 let completionAlarmTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentSelectionTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentLandingTimeout: ReturnType<typeof window.setTimeout> | undefined
+let youtubeCoverTimeout: number | undefined
 let environmentPreviewFrame: number | undefined
 let activeCompletionBellGain: GainNode | undefined
 let completionAudioContext: AudioContext | undefined
@@ -305,6 +308,13 @@ const selectedYouTubeTrack = computed(
 )
 const isYouTubeAudioSelected = computed(
   () => activeAudioProvider.value === 'youtube' && Boolean(selectedYouTubeTrack.value),
+)
+const youtubeCoverUrl = computed(() =>
+  selectedYouTubeTrack.value
+    ? 'https://i.ytimg.com/vi/' +
+        encodeURIComponent(selectedYouTubeTrack.value.videoId) +
+        '/maxresdefault.jpg'
+    : '',
 )
 const selectedAudioSource = computed(() =>
   isYouTubeAudioSelected.value ? '' : audioSourceUrl(selectedAudio.value),
@@ -649,6 +659,39 @@ function seekYouTubeVideo(event: Event) {
 
   youtubeCurrentSeconds.value = nextSeconds
   activeYouTubePlayer.value?.seekTo(nextSeconds)
+}
+
+function clearYouTubeCoverTimeout() {
+  if (youtubeCoverTimeout === undefined) return
+
+  window.clearTimeout(youtubeCoverTimeout)
+  youtubeCoverTimeout = undefined
+}
+
+function revealYouTubeVideo() {
+  clearYouTubeCoverTimeout()
+  isYouTubeVideoHovered.value = true
+  isYouTubeCoverVisible.value = false
+}
+
+function scheduleYouTubeCover() {
+  clearYouTubeCoverTimeout()
+  isYouTubeVideoHovered.value = false
+  youtubeCoverTimeout = window.setTimeout(() => {
+    isYouTubeCoverVisible.value = true
+    youtubeCoverTimeout = undefined
+  }, 1000)
+}
+
+function useFallbackYouTubeCover(event: Event) {
+  const image = event.target as HTMLImageElement
+  const videoId = selectedYouTubeTrack.value?.videoId
+
+  if (!videoId || image.dataset.fallback === 'true') return
+
+  image.dataset.fallback = 'true'
+  image.src =
+    'https://i.ytimg.com/vi/' + encodeURIComponent(videoId) + '/mqdefault.jpg'
 }
 
 function setError(caughtError: unknown, fallbackKey: string) {
@@ -1656,6 +1699,14 @@ function toggleMute() {
   syncAudioVolume()
 }
 
+watch(
+  () => selectedYouTubeTrack.value?.videoId,
+  () => {
+    clearYouTubeCoverTimeout()
+    isYouTubeCoverVisible.value = !isYouTubeVideoHovered.value
+  },
+)
+
 watch(youtubeDraftUrl, validateYouTubeDraft)
 
 watch(
@@ -1788,6 +1839,7 @@ onBeforeUnmount(() => {
 
   clearEnvironmentSelectionTimeout()
   clearEnvironmentLandingTimeout()
+  clearYouTubeCoverTimeout()
   unlockEnvironmentExplorerScroll()
 
   if (environmentPreviewFrame !== undefined) {
@@ -2499,7 +2551,11 @@ onBeforeUnmount(() => {
             class="core-youtube-panel"
             :class="{ 'core-youtube-floating': isMinimalMode }"
           >
-            <div class="core-youtube-viewport">
+            <div
+              class="core-youtube-viewport"
+              @pointerenter="revealYouTubeVideo"
+              @pointerleave="scheduleYouTubeCover"
+            >
             <YouTubePlayer
               ref="activeYouTubePlayer"
               :key="'active-' + selectedYouTubeTrack.videoId"
@@ -2515,6 +2571,15 @@ onBeforeUnmount(() => {
               @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
               @time-update="handleYouTubeTimeUpdate"
             />
+              <img
+                :key="selectedYouTubeTrack.videoId"
+                :src="youtubeCoverUrl"
+                alt=""
+                aria-hidden="true"
+                class="core-youtube-clean-cover"
+                :class="{ 'core-youtube-clean-cover--visible': isYouTubeCoverVisible }"
+                @error="useFallbackYouTubeCover"
+              />
             </div>
 
             <div class="core-youtube-timeline">
@@ -4469,9 +4534,26 @@ onBeforeUnmount(() => {
 }
 
 .core-youtube-viewport {
+  position: relative;
   width: 100%;
   overflow: hidden;
   aspect-ratio: 16 / 9;
+}
+
+.core-youtube-clean-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.core-youtube-clean-cover--visible {
+  opacity: 1;
 }
 
 .core-youtube-floating {
@@ -4514,6 +4596,8 @@ onBeforeUnmount(() => {
 }
 
 .core-youtube-timeline .core-range--timeline {
+  display: grid;
+  align-items: center;
   grid-column: 1 / -1;
   grid-row: 2;
 }
