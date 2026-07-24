@@ -2473,8 +2473,9 @@ onBeforeUnmount(() => {
           </button>
 
           <div
-            v-if="isYouTubeAudioSelected && selectedYouTubeTrack && !isMinimalMode"
+            v-if="isYouTubeAudioSelected && selectedYouTubeTrack"
             class="core-youtube-panel"
+            :class="{ 'core-youtube-floating': isMinimalMode }"
           >
             <YouTubePlayer
               :key="'active-' + selectedYouTubeTrack.videoId"
@@ -2536,23 +2537,6 @@ onBeforeUnmount(() => {
       </section>
     </section>
 
-    <div
-      v-if="isYouTubeAudioSelected && selectedYouTubeTrack && isMinimalMode"
-      class="core-youtube-floating"
-    >
-      <YouTubePlayer
-        :key="'minimal-' + selectedYouTubeTrack.videoId"
-        :video-id="selectedYouTubeTrack.videoId"
-        :playing="isRunning"
-        :volume="audioVolume"
-        :muted="isAudioMuted"
-        :label="t('coreTimer.environment.youtubeActiveLabel')"
-        @waiting="(waiting) => (isAudioWaiting = waiting)"
-        @error="handleYouTubePlayerError"
-        @autoplay-blocked="handleYouTubeAutoplayBlocked"
-        @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
-      />
-    </div>
   </main>
 </template>
 
@@ -2793,6 +2777,10 @@ onBeforeUnmount(() => {
   color: #ffffff !important;
 }
 
+.core-minimal-toggle :deep(.p-button-icon) {
+  transform: translateY(0.5rem);
+}
+
 .core-mode-summary,
 .core-player-footer,
 .core-session-stats,
@@ -2842,7 +2830,6 @@ onBeforeUnmount(() => {
 .core-workspace--minimal .core-mode-summary,
 .core-workspace--minimal .core-player-footer,
 .core-workspace--minimal .core-session-stats,
-.core-workspace--minimal .core-music-panel,
 .core-workspace--minimal .core-eyebrow,
 .core-workspace--minimal .core-track-label {
   opacity: 0;
@@ -2853,6 +2840,14 @@ onBeforeUnmount(() => {
     opacity 180ms ease,
     transform 240ms ease,
     visibility 0s linear 240ms;
+}
+
+.core-workspace--minimal .core-music-panel {
+  display: contents;
+}
+
+.core-workspace--minimal .core-music-panel > :not(.core-youtube-panel) {
+  display: none;
 }
 
 .core-workspace--minimal .core-focus-layout {
@@ -4394,7 +4389,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 200px;
   margin-top: 0.9rem;
   border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
   border-radius: 14px;
@@ -4406,14 +4400,19 @@ onBeforeUnmount(() => {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right));
   bottom: max(1rem, env(safe-area-inset-bottom));
-  z-index: 30;
-  width: 200px;
-  height: 200px;
-  overflow: hidden;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.34);
-  border-radius: 16px;
-  background: #05090d;
-  box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.42);
+  z-index: 50;
+  width: min(20rem, calc(100vw - 2rem));
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  border-radius: 8px;
+}
+
+.core-youtube-panel :deep(.youtube-player) {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .core-audio-console {
@@ -4605,6 +4604,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 760px) {
+  .core-youtube-floating {
+    width: min(13rem, calc(100vw - 2rem));
+  }
+
   .core-environment-backdrop {
     padding: 0;
   }

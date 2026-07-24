@@ -868,7 +868,8 @@ function isFlowSummaryLoading(flowId: number) {
 .core-flow-picker {
   position: relative;
   max-height: min(50rem, calc(100vh - 2rem));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 1rem;
   scrollbar-color: rgba(110, 231, 216, 0.42) transparent;
 }
