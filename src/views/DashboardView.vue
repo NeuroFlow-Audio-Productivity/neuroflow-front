@@ -2121,6 +2121,7 @@ onBeforeUnmount(() => {
               <section
                 v-if="isYouTubeComposerVisible || previewYouTubeTrack"
                 class="core-environment-preview core-environment-preview--youtube"
+                :class="{ 'core-environment-preview--youtube-empty': !previewYouTubeTrack }"
                 :style="youtubeEnvironmentCoverStyle(previewYouTubeTrack)"
                 aria-live="polite"
               >
@@ -3680,6 +3681,14 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(24px);
 }
 
+.core-panel-heading,
+.core-phase-tabs,
+.core-flow-sections,
+.core-list-state,
+.core-current-environment {
+  flex: 0 0 auto;
+}
+
 .core-panel-heading {
   display: flex;
   align-items: flex-start;
@@ -4195,10 +4204,28 @@ onBeforeUnmount(() => {
   color: #ffffff;
 }
 
-.core-environment-preview--youtube {
-  align-content: start;
+.core-environment-preview.core-environment-preview--youtube {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: clamp(0.65rem, 1.35vw, 0.95rem);
   padding-block: clamp(0.85rem, 1.7vw, 1.15rem) clamp(1.15rem, 2vw, 1.55rem);
+}
+
+.core-environment-preview--youtube .core-environment-youtube-form,
+.core-environment-preview--youtube .core-environment-use,
+.core-environment-preview--youtube .core-youtube-error {
+  flex: 0 0 auto;
+}
+
+.core-environment-preview--youtube .core-environment-use {
+  align-self: center;
+}
+
+@media (min-width: 761px) {
+  .core-environment-preview--youtube-empty {
+    align-self: start;
+  }
 }
 
 .core-environment-youtube-form {
@@ -4244,15 +4271,21 @@ onBeforeUnmount(() => {
 .core-youtube-preview-player {
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
   overflow: hidden;
   width: min(100%, 29rem);
   aspect-ratio: 16 / 9;
-  min-height: 200px;
-  justify-self: center;
+  align-self: center;
   border: 1px solid rgba(var(--environment-card-rgb), 0.42);
   border-radius: 16px;
   background: #05090d;
   box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.28);
+}
+
+.core-youtube-preview-player :deep(.youtube-player) {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .core-youtube-error {
@@ -4321,6 +4354,7 @@ onBeforeUnmount(() => {
 }
 
 .core-environment-preview--youtube .core-environment-preview-copy {
+  flex: 0 0 auto;
   gap: 0.36rem;
   margin-top: clamp(0.7rem, 1.5vw, 1.15rem);
 }
@@ -5043,6 +5077,9 @@ onBeforeUnmount(() => {
     max-height: none;
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-color: rgba(var(--resource-mode-rgb), 0.42) transparent;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
     margin: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 14px;
