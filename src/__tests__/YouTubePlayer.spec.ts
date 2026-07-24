@@ -16,6 +16,8 @@ const player = {
   unMute: vi.fn<() => void>(),
   isMuted: vi.fn<() => boolean>(() => false),
   setVolume: vi.fn<(volume: number) => void>(),
+  getCurrentTime: vi.fn<() => number>(() => 42),
+  getDuration: vi.fn<() => number>(() => 180),
   getVideoData: vi.fn<() => { title: string }>(() => ({ title: 'Mocked title' })),
   seekTo: vi.fn<(seconds: number, allowSeekAhead: boolean) => void>(),
 }
@@ -88,10 +90,17 @@ describe('YouTubePlayer', () => {
         videoId: 'dQw4w9WgXcQ',
         playing: true,
         muted: false,
+        controls: false,
       },
     })
 
     await vi.waitFor(() => expect(wrapper.emitted('ready')).toBeTruthy())
+    expect(latestOptions?.playerVars?.controls).toBe(0)
+    await vi.waitFor(() => expect(wrapper.emitted('timeUpdate')).toBeTruthy())
+    expect(wrapper.emitted('timeUpdate')).toContainEqual([42, 180])
+
+    ;(wrapper.vm as unknown as { seekTo: (seconds: number) => void }).seekTo(90)
+    expect(player.seekTo).toHaveBeenCalledWith(90, true)
     expect(player.playVideo).toHaveBeenCalled()
 
     await wrapper.setProps({ playing: false })

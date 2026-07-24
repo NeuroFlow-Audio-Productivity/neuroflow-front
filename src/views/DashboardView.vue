@@ -173,6 +173,9 @@ const error = ref<string | null>(null)
 const audioElement = ref<HTMLAudioElement | null>(null)
 const alarmAudioElement = ref<HTMLAudioElement | null>(null)
 const environmentPreviewAudioElement = ref<HTMLAudioElement | null>(null)
+const activeYouTubePlayer = ref<InstanceType<typeof YouTubePlayer> | null>(null)
+const youtubeCurrentSeconds = ref(0)
+const youtubeDurationSeconds = ref(0)
 const audioVolume = ref(0.74)
 const isAudioMuted = ref(false)
 const isAudioPlaying = ref(false)
@@ -401,6 +404,13 @@ const hasAudioSource = computed(
 const audioVolumeStyle = computed(() => ({
   '--audio-volume': `${isAudioMuted.value ? 0 : audioVolume.value * 100}%`,
 }))
+const youtubeProgressStyle = computed(() => ({
+  '--youtube-progress': youtubeDurationSeconds.value
+    ? String(
+        Math.min(100, (youtubeCurrentSeconds.value / youtubeDurationSeconds.value) * 100),
+      ) + '%'
+    : '0%',
+}))
 const audioVolumeIcon = computed(() => {
   if (isAudioMuted.value || audioVolume.value === 0) return 'pi pi-volume-off'
   if (audioVolume.value < 0.5) return 'pi pi-volume-down'
@@ -627,6 +637,18 @@ function formatClock(totalSeconds: number) {
   const seconds = safeSeconds % 60
 
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function handleYouTubeTimeUpdate(currentSeconds: number, durationSeconds: number) {
+  youtubeCurrentSeconds.value = Math.min(durationSeconds, Math.max(0, currentSeconds))
+  youtubeDurationSeconds.value = Math.max(0, durationSeconds)
+}
+
+function seekYouTubeVideo(event: Event) {
+  const nextSeconds = Number((event.target as HTMLInputElement).value)
+
+  youtubeCurrentSeconds.value = nextSeconds
+  activeYouTubePlayer.value?.seekTo(nextSeconds)
 }
 
 function setError(caughtError: unknown, fallbackKey: string) {
@@ -2477,18 +2499,68 @@ onBeforeUnmount(() => {
             class="core-youtube-panel"
             :class="{ 'core-youtube-floating': isMinimalMode }"
           >
+            <div class="core-youtube-viewport">
             <YouTubePlayer
+              ref="activeYouTubePlayer"
               :key="'active-' + selectedYouTubeTrack.videoId"
               :video-id="selectedYouTubeTrack.videoId"
               :playing="isRunning"
               :volume="audioVolume"
               :muted="isAudioMuted"
+              :controls="false"
               :label="t('coreTimer.environment.youtubeActiveLabel')"
               @waiting="(waiting) => (isAudioWaiting = waiting)"
               @error="handleYouTubePlayerError"
               @autoplay-blocked="handleYouTubeAutoplayBlocked"
               @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
+              @time-update="handleYouTubeTimeUpdate"
             />
+            </div>
+
+            <div class="core-youtube-timeline">
+              <span>{{ formatClock(youtubeCurrentSeconds) }}</span>
+              <label class="core-range core-range--timeline">
+                <span class="sr-only">{{ t('coreTimer.audio.progress') }}</span>
+                <input
+                  type="range"
+                  min="0"
+                  :max="youtubeDurationSeconds"
+                  step="1"
+                  :value="youtubeCurrentSeconds"
+                  :style="youtubeProgressStyle"
+                  :disabled="youtubeDurationSeconds <= 0"
+                  @input="seekYouTubeVideo"
+                />
+              </label>
+              <span>{{ formatClock(youtubeDurationSeconds) }}</span>
+            </div>
+
+            <div v-if="isMinimalMode" class="core-volume-row core-youtube-mini-volume">
+              <button
+                type="button"
+                :aria-label="
+                  isAudioMuted ? t('coreTimer.actions.unmute') : t('coreTimer.actions.mute')
+                "
+                @click="toggleMute"
+              >
+                <i
+                  :class="isAudioWaiting ? 'pi pi-spin pi-spinner' : audioVolumeIcon"
+                  aria-hidden="true"
+                />
+              </button>
+              <label class="core-range core-range--volume">
+                <span class="sr-only">{{ t('coreTimer.audio.volume') }}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  :value="isAudioMuted ? 0 : audioVolume * 100"
+                  :style="audioVolumeStyle"
+                  @input="changeVolume"
+                />
+              </label>
+            </div>
           </div>
 
           <div class="core-audio-console">
@@ -4388,12 +4460,18 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  flex: 0 0 auto;
   margin-top: 0.9rem;
   border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
   border-radius: 14px;
   background: #05090d;
   box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.24);
+}
+
+.core-youtube-viewport {
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
 }
 
 .core-youtube-floating {
@@ -4404,7 +4482,6 @@ onBeforeUnmount(() => {
   width: min(20rem, calc(100vw - 2rem));
   height: auto;
   min-height: 0;
-  aspect-ratio: 16 / 9;
   margin: 0;
   border-radius: 8px;
 }
@@ -4413,6 +4490,53 @@ onBeforeUnmount(() => {
   height: 100%;
   min-width: 0;
   min-height: 0;
+}
+
+.core-youtube-timeline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.65rem;
+  row-gap: 0.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 9, 13, 0.96);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 0.45rem 0.65rem;
+}
+
+.core-range--timeline {
+  display: grid;
+  min-height: 2.35rem;
+  align-items: center;
+}
+
+.core-youtube-timeline .core-range--timeline {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.core-youtube-timeline > span:last-child {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.core-volume-row.core-youtube-mini-volume {
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 9, 13, 0.96);
+  padding: 0.55rem 0.65rem;
+}
+
+.core-volume-row.core-youtube-mini-volume button {
+  width: 2rem;
+  height: 2rem;
+}
+
+.core-youtube-mini-volume .core-range--volume {
+  min-height: 2rem;
 }
 
 .core-audio-console {
@@ -4499,6 +4623,14 @@ onBeforeUnmount(() => {
     90deg,
     var(--resource-mode-color) 0 var(--audio-volume),
     rgba(255, 255, 255, 0.12) var(--audio-volume) 100%
+  );
+}
+
+.core-range--timeline input {
+  background: linear-gradient(
+    90deg,
+    var(--resource-mode-color) 0 var(--youtube-progress),
+    rgba(255, 255, 255, 0.12) var(--youtube-progress) 100%
   );
 }
 
@@ -4825,7 +4957,8 @@ onBeforeUnmount(() => {
     width: min(22rem, calc(100% - 2.3rem));
     min-width: 0;
     max-height: none;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     margin: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 14px;

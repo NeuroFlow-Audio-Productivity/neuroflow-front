@@ -14,6 +14,8 @@ export type YouTubePlayer = {
   unMute(): void
   isMuted(): boolean
   setVolume(volume: number): void
+  getCurrentTime(): number
+  getDuration(): number
   getVideoData(): { title?: string }
   seekTo(seconds: number, allowSeekAhead: boolean): void
 }

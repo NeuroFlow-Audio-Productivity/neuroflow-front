@@ -14,12 +14,14 @@ const props = withDefaults(
     playing?: boolean
     volume?: number
     muted?: boolean
+    controls?: boolean
     label?: string
   }>(),
   {
     playing: false,
     volume: 0.74,
     muted: false,
+    controls: true,
     label: 'YouTube player',
   },
 )
@@ -31,6 +33,7 @@ const emit = defineEmits<{
   error: [code: number]
   autoplayBlocked: []
   title: [title: string]
+  timeUpdate: [currentSeconds: number, durationSeconds: number]
 }>()
 
 const hostElement = ref<HTMLElement | null>(null)
@@ -38,6 +41,45 @@ const statusMessage = ref('')
 const player = ref<YouTubePlayer | null>(null)
 const isReady = ref(false)
 const lastState = ref<YouTubePlayerState>(-1)
+let timeUpdateInterval: number | undefined
+
+function stopTimeUpdates() {
+  if (timeUpdateInterval === undefined) return
+
+  window.clearInterval(timeUpdateInterval)
+  timeUpdateInterval = undefined
+}
+
+function emitTimeUpdate() {
+  const currentPlayer = player.value
+
+  if (!currentPlayer || !isReady.value) return
+
+  emit(
+    'timeUpdate',
+    Math.max(0, currentPlayer.getCurrentTime()),
+    Math.max(0, currentPlayer.getDuration()),
+  )
+}
+
+function startTimeUpdates() {
+  stopTimeUpdates()
+  emitTimeUpdate()
+  timeUpdateInterval = window.setInterval(emitTimeUpdate, 500)
+}
+
+function seekTo(seconds: number) {
+  const currentPlayer = player.value
+
+  if (!currentPlayer || !isReady.value) return
+
+  const duration = Math.max(0, currentPlayer.getDuration())
+  const nextSeconds = Math.min(duration, Math.max(0, seconds))
+  currentPlayer.seekTo(nextSeconds, true)
+  emit('timeUpdate', nextSeconds, duration)
+}
+
+defineExpose({ seekTo })
 
 function normalizedVolume() {
   return Math.round(Math.min(1, Math.max(0, props.volume)) * 100)
@@ -90,6 +132,7 @@ function handleReady(event: { target: YouTubePlayer }) {
   syncVolume()
   syncPlayback()
   emitTitle()
+  startTimeUpdates()
   emit('ready')
 }
 
@@ -97,6 +140,7 @@ function handleStateChange(event: YouTubePlayerEvent) {
   lastState.value = event.data
   emit('stateChange', event.data)
   emit('waiting', event.data === 3)
+  emitTimeUpdate()
 
   if (event.data === 1 || event.data === 2 || event.data === 5) {
     statusMessage.value = ''
@@ -121,6 +165,8 @@ async function createPlayer() {
 
   statusMessage.value = ''
   isReady.value = false
+  stopTimeUpdates()
+  emit('timeUpdate', 0, 0)
   player.value?.destroy()
   player.value = null
 
@@ -136,7 +182,7 @@ async function createPlayer() {
       height: '100%',
       playerVars: {
         autoplay: 0,
-        controls: 1,
+        controls: props.controls ? 1 : 0,
         enablejsapi: 1,
         loop: 1,
         playlist: props.videoId,
@@ -163,6 +209,7 @@ watch(() => [props.volume, props.muted] as const, syncVolume)
 onMounted(createPlayer)
 
 onBeforeUnmount(() => {
+  stopTimeUpdates()
   emit('waiting', false)
   player.value?.destroy()
   player.value = null
