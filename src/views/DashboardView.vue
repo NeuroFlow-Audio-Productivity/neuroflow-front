@@ -312,8 +312,8 @@ const isYouTubeAudioSelected = computed(
 const youtubeCoverUrl = computed(() =>
   selectedYouTubeTrack.value
     ? 'https://i.ytimg.com/vi/' +
-        encodeURIComponent(selectedYouTubeTrack.value.videoId) +
-        '/maxresdefault.jpg'
+      encodeURIComponent(selectedYouTubeTrack.value.videoId) +
+      '/maxresdefault.jpg'
     : '',
 )
 const selectedAudioSource = computed(() =>
@@ -416,9 +416,8 @@ const audioVolumeStyle = computed(() => ({
 }))
 const youtubeProgressStyle = computed(() => ({
   '--youtube-progress': youtubeDurationSeconds.value
-    ? String(
-        Math.min(100, (youtubeCurrentSeconds.value / youtubeDurationSeconds.value) * 100),
-      ) + '%'
+    ? String(Math.min(100, (youtubeCurrentSeconds.value / youtubeDurationSeconds.value) * 100)) +
+      '%'
     : '0%',
 }))
 const audioVolumeIcon = computed(() => {
@@ -464,6 +463,8 @@ const playPauseLabel = computed(() =>
 )
 const playPauseIcon = computed(() => (isRunning.value ? 'pi pi-pause' : 'pi pi-play'))
 const isMinimalMode = ref(false)
+const isMusicPanelExpanded = ref(true)
+const isMusicPanelCompact = computed(() => !isMusicPanelExpanded.value)
 const minimalModeLabel = computed(() =>
   isMinimalMode.value ? t('coreTimer.actions.exitMinimal') : t('coreTimer.actions.enterMinimal'),
 )
@@ -690,8 +691,7 @@ function useFallbackYouTubeCover(event: Event) {
   if (!videoId || image.dataset.fallback === 'true') return
 
   image.dataset.fallback = 'true'
-  image.src =
-    'https://i.ytimg.com/vi/' + encodeURIComponent(videoId) + '/mqdefault.jpg'
+  image.src = 'https://i.ytimg.com/vi/' + encodeURIComponent(videoId) + '/mqdefault.jpg'
 }
 
 function setError(caughtError: unknown, fallbackKey: string) {
@@ -1209,6 +1209,7 @@ function completeExpiredPhase() {
   pauseSession()
   void playCompletionAlarm(completionAlarm, isFlowAlarm)
   completePhase()
+  isMusicPanelExpanded.value = true
 }
 
 function tickTimer() {
@@ -1272,6 +1273,7 @@ function pauseAudio() {
 async function startSession() {
   if (!canRunTimer.value) return
 
+  isMusicPanelExpanded.value = false
   isRunning.value = true
   void prepareCompletionBell()
   await nextTick()
@@ -1296,6 +1298,7 @@ function toggleSession() {
 
 function resetSession() {
   pauseSession()
+  isMusicPanelExpanded.value = true
 
   if (flowExecutionState.value && activeFlowNode.value) {
     flowExecutionState.value = {
@@ -1314,6 +1317,7 @@ function resetSession() {
 function skipPhase() {
   pauseSession()
   completePhase()
+  isMusicPanelExpanded.value = true
 }
 
 function extendSession() {
@@ -1353,6 +1357,14 @@ function saveDurationSettings() {
 
 function toggleMinimalMode() {
   isMinimalMode.value = !isMinimalMode.value
+}
+
+function expandMusicPanel() {
+  isMusicPanelExpanded.value = true
+}
+
+function collapseMusicPanel() {
+  isMusicPanelExpanded.value = false
 }
 
 function selectPhase(phase: TimerPhase) {
@@ -1920,6 +1932,7 @@ onBeforeUnmount(() => {
             :options="alarmOptions"
             option-label="label"
             option-value="value"
+            :placeholder="selectedAlarmLabel"
             :loading="isLoadingAlarmAudios"
             class="core-alarm-select !w-full"
           />
@@ -2461,91 +2474,142 @@ onBeforeUnmount(() => {
           </template>
         </section>
 
-        <aside class="core-music-panel">
-          <div class="core-panel-heading">
-            <div>
-              <p>{{ t('coreTimer.audio.eyebrow') }}</p>
-              <h2>{{ t('coreTimer.audio.title', { mode: selectedModeName }) }}</h2>
+        <aside
+          id="core-music-panel"
+          class="core-music-panel"
+          :class="{ 'core-music-panel--compact': isMusicPanelCompact }"
+          :aria-label="t('coreTimer.audio.panelLabel')"
+        >
+          <Transition name="core-panel-compact">
+            <div v-if="isMusicPanelCompact" class="core-panel-compact">
+              <span class="core-panel-compact-artwork" aria-hidden="true">
+                <img v-if="isYouTubeAudioSelected" :src="youtubeCoverUrl" alt="" />
+                <i v-else class="pi pi-wave-pulse" />
+              </span>
+              <span class="core-panel-compact-copy">
+                <small>{{ audioStatusLabel }}</small>
+                <strong>{{ activeEnvironmentLabel }}</strong>
+                <span>{{ activeEnvironmentSubtitle }}</span>
+              </span>
+              <button
+                type="button"
+                class="core-panel-state-toggle"
+                :aria-label="t('coreTimer.actions.expandMusicPanel')"
+                :title="t('coreTimer.actions.expandMusicPanel')"
+                aria-expanded="false"
+                aria-controls="core-music-panel-expanded"
+                @click="expandMusicPanel"
+              >
+                <i class="pi pi-angle-left" aria-hidden="true" />
+              </button>
             </div>
-            <span>{{ trackCountLabel }}</span>
-          </div>
+          </Transition>
 
           <div
-            v-if="!isFlowLoaded"
-            class="core-phase-tabs"
-            role="tablist"
-            :aria-label="t('coreTimer.phaseLabel')"
+            id="core-music-panel-expanded"
+            class="core-panel-expanded"
+            :aria-hidden="isMusicPanelCompact"
+            :inert="isMusicPanelCompact"
           >
-            <button
-              v-for="phase in phaseOptions"
-              :key="phase.key"
-              type="button"
-              class="core-phase-tab"
-              :class="{ 'core-phase-tab--active': timerPhase === phase.key }"
-              :aria-selected="timerPhase === phase.key"
-              role="tab"
-              @click="selectPhase(phase.key)"
+            <div class="core-panel-heading">
+              <div>
+                <p>{{ t('coreTimer.audio.eyebrow') }}</p>
+                <h2>{{ t('coreTimer.audio.title', { mode: selectedModeName }) }}</h2>
+              </div>
+              <div class="core-panel-heading-actions">
+                <span class="core-panel-track-count">{{ trackCountLabel }}</span>
+                <button
+                  v-if="isRunning"
+                  type="button"
+                  class="core-panel-state-toggle"
+                  :aria-label="t('coreTimer.actions.collapseMusicPanel')"
+                  :title="t('coreTimer.actions.collapseMusicPanel')"
+                  aria-expanded="true"
+                  aria-controls="core-music-panel-expanded"
+                  @click="collapseMusicPanel"
+                >
+                  <i class="pi pi-angle-right" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-if="!isFlowLoaded"
+              class="core-phase-tabs"
+              role="tablist"
+              :aria-label="t('coreTimer.phaseLabel')"
             >
-              <i :class="phase.icon" aria-hidden="true" />
-              <span>{{ phase.label }}</span>
-              <small>{{ t('coreTimer.minutes', { count: phase.minutes }) }}</small>
+              <button
+                v-for="phase in phaseOptions"
+                :key="phase.key"
+                type="button"
+                class="core-phase-tab"
+                :class="{ 'core-phase-tab--active': timerPhase === phase.key }"
+                :aria-selected="timerPhase === phase.key"
+                role="tab"
+                @click="selectPhase(phase.key)"
+              >
+                <i :class="phase.icon" aria-hidden="true" />
+                <span>{{ phase.label }}</span>
+                <small>{{ t('coreTimer.minutes', { count: phase.minutes }) }}</small>
+              </button>
+            </div>
+
+            <div v-else class="core-flow-sections" :style="flowProgressStyle">
+              <div class="core-flow-progress" aria-hidden="true">
+                <span />
+              </div>
+              <div class="core-flow-progress-label">{{ flowProgressLabel }}</div>
+              <div
+                v-for="section in flowSectionList"
+                :key="section.id"
+                class="core-flow-section"
+                :class="{
+                  'core-flow-section--active': section.isActive,
+                  'core-flow-section--complete': section.isComplete,
+                }"
+              >
+                <span class="core-flow-section-index">{{
+                  String(section.order).padStart(2, '0')
+                }}</span>
+                <span class="core-flow-section-copy">
+                  <strong>{{ section.title }}</strong>
+                  <small>
+                    {{ section.mode ? translatedModeName(section.mode) : selectedModeName }}
+                  </small>
+                </span>
+                <span class="core-flow-section-time">{{
+                  t('coreTimer.minutes', { count: section.minutes })
+                }}</span>
+              </div>
+            </div>
+
+            <div v-if="isLoadingAudios" class="core-list-state">
+              <i class="pi pi-spin pi-spinner" aria-hidden="true" />
+              <span>{{ t('coreTimer.audio.loading') }}</span>
+            </div>
+
+            <button
+              v-else
+              type="button"
+              class="core-current-environment"
+              :class="[isEnvironmentLanding && 'core-current-environment--landing']"
+              @animationend="finishEnvironmentLanding"
+              @click="openEnvironmentExplorer"
+            >
+              <span class="core-current-environment-copy">
+                <span>{{ t('coreTimer.environment.currentEnvironment') }}</span>
+                <strong>
+                  {{ activeEnvironmentLabel }}
+                </strong>
+                <small>{{ activeEnvironmentSubtitle }}</small>
+              </span>
+              <span class="core-current-environment-action">
+                <i class="pi pi-compass" aria-hidden="true" />
+                <span>{{ t('coreTimer.environment.browseAction') }}</span>
+              </span>
             </button>
           </div>
-
-          <div v-else class="core-flow-sections" :style="flowProgressStyle">
-            <div class="core-flow-progress" aria-hidden="true">
-              <span />
-            </div>
-            <div class="core-flow-progress-label">{{ flowProgressLabel }}</div>
-            <div
-              v-for="section in flowSectionList"
-              :key="section.id"
-              class="core-flow-section"
-              :class="{
-                'core-flow-section--active': section.isActive,
-                'core-flow-section--complete': section.isComplete,
-              }"
-            >
-              <span class="core-flow-section-index">{{
-                String(section.order).padStart(2, '0')
-              }}</span>
-              <span class="core-flow-section-copy">
-                <strong>{{ section.title }}</strong>
-                <small>
-                  {{ section.mode ? translatedModeName(section.mode) : selectedModeName }}
-                </small>
-              </span>
-              <span class="core-flow-section-time">{{
-                t('coreTimer.minutes', { count: section.minutes })
-              }}</span>
-            </div>
-          </div>
-
-          <div v-if="isLoadingAudios" class="core-list-state">
-            <i class="pi pi-spin pi-spinner" aria-hidden="true" />
-            <span>{{ t('coreTimer.audio.loading') }}</span>
-          </div>
-
-          <button
-            v-else
-            type="button"
-            class="core-current-environment"
-            :class="[isEnvironmentLanding && 'core-current-environment--landing']"
-            @animationend="finishEnvironmentLanding"
-            @click="openEnvironmentExplorer"
-          >
-            <span class="core-current-environment-copy">
-              <span>{{ t('coreTimer.environment.currentEnvironment') }}</span>
-              <strong>
-                {{ activeEnvironmentLabel }}
-              </strong>
-              <small>{{ activeEnvironmentSubtitle }}</small>
-            </span>
-            <span class="core-current-environment-action">
-              <i class="pi pi-compass" aria-hidden="true" />
-              <span>{{ t('coreTimer.environment.browseAction') }}</span>
-            </span>
-          </button>
 
           <div
             v-if="isYouTubeAudioSelected && selectedYouTubeTrack"
@@ -2557,21 +2621,21 @@ onBeforeUnmount(() => {
               @pointerenter="revealYouTubeVideo"
               @pointerleave="scheduleYouTubeCover"
             >
-            <YouTubePlayer
-              ref="activeYouTubePlayer"
-              :key="'active-' + selectedYouTubeTrack.videoId"
-              :video-id="selectedYouTubeTrack.videoId"
-              :playing="isRunning"
-              :volume="audioVolume"
-              :muted="isAudioMuted"
-              :controls="false"
-              :label="t('coreTimer.environment.youtubeActiveLabel')"
-              @waiting="(waiting) => (isAudioWaiting = waiting)"
-              @error="handleYouTubePlayerError"
-              @autoplay-blocked="handleYouTubeAutoplayBlocked"
-              @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
-              @time-update="handleYouTubeTimeUpdate"
-            />
+              <YouTubePlayer
+                ref="activeYouTubePlayer"
+                :key="'active-' + selectedYouTubeTrack.videoId"
+                :video-id="selectedYouTubeTrack.videoId"
+                :playing="isRunning"
+                :volume="audioVolume"
+                :muted="isAudioMuted"
+                :controls="false"
+                :label="t('coreTimer.environment.youtubeActiveLabel')"
+                @waiting="(waiting) => (isAudioWaiting = waiting)"
+                @error="handleYouTubePlayerError"
+                @autoplay-blocked="handleYouTubeAutoplayBlocked"
+                @title="(title) => handleYouTubeTitle(selectedYouTubeTrack?.videoId ?? '', title)"
+                @time-update="handleYouTubeTimeUpdate"
+              />
               <img
                 :key="selectedYouTubeTrack.videoId"
                 :src="youtubeCoverUrl"
@@ -2674,7 +2738,6 @@ onBeforeUnmount(() => {
         </aside>
       </section>
     </section>
-
   </main>
 </template>
 
@@ -3681,6 +3744,170 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(24px);
 }
 
+.core-music-panel {
+  transition:
+    width 300ms cubic-bezier(0.2, 0.9, 0.24, 1),
+    max-height 300ms cubic-bezier(0.2, 0.9, 0.24, 1),
+    padding 260ms ease,
+    border-color 220ms ease,
+    background 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.core-music-panel--compact {
+  gap: 0.62rem;
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(145deg, rgba(var(--resource-mode-rgb), 0.08), transparent 52%),
+    rgba(5, 9, 10, 0.54);
+  padding: 0.72rem;
+  box-shadow:
+    0 0.8rem 2.8rem rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.core-panel-expanded {
+  display: grid;
+  max-height: 90rem;
+  gap: 0.85rem;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    max-height 320ms cubic-bezier(0.2, 0.9, 0.24, 1),
+    opacity 200ms ease,
+    transform 260ms ease,
+    visibility 0s linear 0s;
+}
+
+.core-music-panel--compact .core-panel-expanded {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.55rem);
+  visibility: hidden;
+  transition:
+    max-height 280ms cubic-bezier(0.2, 0.9, 0.24, 1),
+    opacity 160ms ease,
+    transform 220ms ease,
+    visibility 0s linear 280ms;
+}
+
+.core-panel-compact {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.core-panel-compact-artwork {
+  display: grid;
+  width: 3.1rem;
+  height: 3.1rem;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.2);
+  border-radius: 9px;
+  background: rgba(var(--resource-mode-rgb), 0.1);
+  color: var(--resource-mode-color);
+}
+
+.core-panel-compact-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.core-panel-compact-artwork i {
+  font-size: 1rem;
+}
+
+.core-panel-compact-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+.core-panel-compact-copy small,
+.core-panel-compact-copy strong,
+.core-panel-compact-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.core-panel-compact-copy small {
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.62rem;
+  font-weight: 780;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.core-panel-compact-copy strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.84rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.core-panel-compact-copy > span {
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 0.68rem;
+  font-weight: 620;
+}
+
+.core-panel-compact-enter-active,
+.core-panel-compact-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 240ms cubic-bezier(0.2, 0.9, 0.24, 1);
+}
+
+.core-panel-compact-enter-from,
+.core-panel-compact-leave-to {
+  opacity: 0;
+  transform: translateX(0.55rem) scale(0.98);
+}
+
+.core-panel-heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.core-panel-state-toggle {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.68);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.core-panel-state-toggle:hover {
+  border-color: rgba(var(--resource-mode-rgb), 0.32);
+  background: rgba(var(--resource-mode-rgb), 0.12);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.core-panel-state-toggle:focus-visible {
+  outline: 2px solid rgba(var(--resource-mode-rgb), 0.72);
+  outline-offset: 3px;
+}
+
 .core-panel-heading,
 .core-phase-tabs,
 .core-flow-sections,
@@ -3714,7 +3941,7 @@ onBeforeUnmount(() => {
   overflow-wrap: anywhere;
 }
 
-.core-panel-heading > span {
+.core-panel-track-count {
   flex: 0 0 auto;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
@@ -4657,6 +4884,48 @@ onBeforeUnmount(() => {
   min-height: 2rem;
 }
 
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-youtube-panel {
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-youtube-viewport {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-youtube-timeline {
+  border-top: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.32rem 0.45rem;
+}
+
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-audio-console {
+  margin-top: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.12rem 0.2rem 0.2rem;
+}
+
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-now-playing {
+  display: none;
+}
+
+.core-workspace:not(.core-workspace--minimal) .core-music-panel--compact .core-volume-row {
+  margin-top: 0;
+}
+
 .core-audio-console {
   flex: 0 0 auto;
   min-height: 0;
@@ -4907,6 +5176,11 @@ onBeforeUnmount(() => {
     animation: none;
   }
 
+  .core-music-panel,
+  .core-panel-expanded,
+  .core-panel-compact-enter-active,
+  .core-panel-compact-leave-active,
+  .core-panel-state-toggle,
   .core-current-environment,
   .core-environment-close,
   .core-environment-row,
@@ -5094,11 +5368,20 @@ onBeforeUnmount(() => {
     backdrop-filter: blur(26px);
   }
 
+  .core-music-panel.core-music-panel--compact {
+    bottom: auto;
+    width: clamp(15rem, 18vw, 18rem);
+    max-height: calc(100svh - 8rem);
+    overflow: hidden;
+    scrollbar-gutter: auto;
+    padding: 0.72rem;
+  }
+
   .core-panel-heading {
     display: flex;
   }
 
-  .core-panel-heading > span {
+  .core-panel-track-count {
     justify-self: auto;
     margin-top: 0;
     font-size: 0.78rem;
@@ -5139,6 +5422,14 @@ onBeforeUnmount(() => {
 
   .core-session-stats dd {
     font-size: 0.86rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .core-music-panel.core-music-panel--compact {
+    top: 0.9rem;
+    right: 0.8rem;
+    width: 15rem;
   }
 }
 
