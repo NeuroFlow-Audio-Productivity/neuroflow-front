@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
@@ -28,6 +36,7 @@ import {
 import { flowApi } from '@/services/flowApi'
 import { flowNodeApi } from '@/services/flowNodeApi'
 import { modeApi } from '@/services/modeApi'
+import { normalizeNeuralCoreProgress, resolveNeuralCoreSessionState } from '@/services/neuralCore'
 import {
   modeInkColor,
   modeRgbString,
@@ -59,6 +68,8 @@ type AudioProvider = 'uploaded' | 'youtube'
 type BrowserWindowWithLegacyAudioContext = Window & {
   webkitAudioContext?: typeof AudioContext
 }
+
+const NeuralCore = defineAsyncComponent(() => import('@/components/core/NeuralCore.vue'))
 
 const defaultPhaseDurations: Record<TimerPhase, number> = {
   work: 25 * 60,
@@ -159,6 +170,10 @@ const remainingSeconds = ref(defaultPhaseDurations.work)
 const cycleIndex = ref(0)
 const completedBlocks = ref(0)
 const isRunning = ref(false)
+const hasSessionStarted = ref(false)
+const neuralCoreResetSignal = ref(0)
+const neuralCoreWaveSignal = ref(0)
+const neuralCoreCompletionSignal = ref(0)
 const isLoadingModes = ref(false)
 const isLoadingAudios = ref(false)
 const isLoadingAlarmAudios = ref(false)
@@ -449,9 +464,16 @@ const timerProgress = computed(() => {
 
   return Math.min(100, Math.max(0, ((totalSeconds - remainingSeconds.value) / totalSeconds) * 100))
 })
-const timerProgressStyle = computed(() => ({
-  '--timer-progress': `${timerProgress.value}%`,
-}))
+const neuralCoreProgress = computed(() => normalizeNeuralCoreProgress(timerProgress.value))
+const neuralCoreSessionState = computed(() =>
+  resolveNeuralCoreSessionState(isRunning.value, neuralCoreProgress.value, hasSessionStarted.value),
+)
+const neuralCoreModeKey = computed(() => selectedModeKey.value ?? 'focus')
+const neuralCoreAccentColor = computed(
+  () =>
+    visualTheme.modes.find((mode) => mode.key === neuralCoreModeKey.value)?.accent ??
+    normalizeModeColor(selectedMode.value?.color ?? visualTheme.activePalette.accent),
+)
 const isTimerEndingSoon = computed(
   () =>
     isRunning.value &&
@@ -826,6 +848,8 @@ async function loadFlowSession(flowId: number, persistedState = readPersistedFlo
     flowSession.value = session
     flowExecutionState.value = createFlowExecutionState(session, persistedState)
     remainingSeconds.value = flowExecutionState.value.remainingSeconds
+    hasSessionStarted.value = neuralCoreProgress.value > 0
+    neuralCoreResetSignal.value += 1
     syncActiveFlowMode()
     persistFlowExecutionState()
   } catch (caughtError) {
@@ -847,6 +871,8 @@ function clearLoadedFlow() {
   flowCompletionAudios.value = []
   clearPersistedFlowExecutionState()
   remainingSeconds.value = phaseDurations.value[timerPhase.value]
+  hasSessionStarted.value = false
+  neuralCoreResetSignal.value += 1
 }
 
 function restartLoadedFlow() {
@@ -857,6 +883,8 @@ function restartLoadedFlow() {
   pauseSession()
   flowExecutionState.value = restartFlowExecutionState(session)
   remainingSeconds.value = flowExecutionState.value.remainingSeconds
+  hasSessionStarted.value = false
+  neuralCoreResetSignal.value += 1
   syncActiveFlowMode()
   persistFlowExecutionState()
 }
@@ -1206,9 +1234,11 @@ function completeExpiredPhase() {
     : selectedAlarmAudio.value
   const isFlowAlarm = isFlowLoaded.value
 
+  neuralCoreCompletionSignal.value += 1
   pauseSession()
   void playCompletionAlarm(completionAlarm, isFlowAlarm)
   completePhase()
+  hasSessionStarted.value = false
   isMusicPanelExpanded.value = true
 }
 
@@ -1274,6 +1304,7 @@ async function startSession() {
   if (!canRunTimer.value) return
 
   isMusicPanelExpanded.value = false
+  hasSessionStarted.value = true
   isRunning.value = true
   void prepareCompletionBell()
   await nextTick()
@@ -1298,7 +1329,9 @@ function toggleSession() {
 
 function resetSession() {
   pauseSession()
+  hasSessionStarted.value = false
   isMusicPanelExpanded.value = true
+  neuralCoreResetSignal.value += 1
 
   if (flowExecutionState.value && activeFlowNode.value) {
     flowExecutionState.value = {
@@ -1317,11 +1350,14 @@ function resetSession() {
 function skipPhase() {
   pauseSession()
   completePhase()
+  hasSessionStarted.value = false
   isMusicPanelExpanded.value = true
+  neuralCoreResetSignal.value += 1
 }
 
 function extendSession() {
   remainingSeconds.value += 5 * 60
+  neuralCoreWaveSignal.value += 1
 }
 
 function normalizeDurationMinutes(value: number) {
@@ -1374,6 +1410,8 @@ function selectPhase(phase: TimerPhase) {
   timerPhase.value = phase
   cycleIndex.value = phaseCycle.findIndex((cyclePhase) => cyclePhase === phase)
   remainingSeconds.value = phaseDurations.value[phase]
+  hasSessionStarted.value = false
+  neuralCoreResetSignal.value += 1
 }
 
 function resetYouTubePreviewState() {
@@ -2366,11 +2404,21 @@ onBeforeUnmount(() => {
               <div class="core-timer-zone">
                 <div
                   class="core-timer-orbit"
-                  :class="{ 'core-timer-orbit--ending': isTimerEndingSoon }"
-                  :style="timerProgressStyle"
+                  :class="{
+                    'core-timer-orbit--ending': isTimerEndingSoon,
+                    'core-timer-orbit--panel-expanded': isMusicPanelExpanded,
+                  }"
                 >
-                  <span class="core-timer-ring core-timer-ring--outer" aria-hidden="true" />
-                  <span class="core-timer-ring core-timer-ring--inner" aria-hidden="true" />
+                  <NeuralCore
+                    :progress="neuralCoreProgress"
+                    :session-state="neuralCoreSessionState"
+                    :mode-key="neuralCoreModeKey"
+                    :accent-color="neuralCoreAccentColor"
+                    :panel-expanded="isMusicPanelExpanded"
+                    :reset-signal="neuralCoreResetSignal"
+                    :wave-signal="neuralCoreWaveSignal"
+                    :completion-signal="neuralCoreCompletionSignal"
+                  />
 
                   <div class="core-timer-readout">
                     <span class="core-eyebrow">{{ timerEyebrow }}</span>
@@ -2995,12 +3043,11 @@ onBeforeUnmount(() => {
 }
 
 .core-timer-orbit,
-.core-timer-orbit::after,
-.core-timer-ring,
 .core-timer-readout strong {
   transition:
     opacity 260ms ease,
     transform 320ms ease,
+    translate 320ms ease,
     width 320ms ease,
     font-size 320ms ease;
 }
@@ -3067,29 +3114,8 @@ onBeforeUnmount(() => {
   width: min(86vw, 78svh, 42rem);
 }
 
-.core-workspace--minimal .core-timer-orbit::after,
-.core-workspace--minimal .core-timer-ring {
-  opacity: 0;
-}
-
 .core-timer-orbit--ending {
   animation: core-ending-pulse 1.6s ease-in-out infinite;
-}
-
-.core-timer-orbit--ending::before {
-  background: conic-gradient(#ff6b75 var(--timer-progress), rgba(255, 255, 255, 0.08) 0);
-  filter: drop-shadow(0 0 0.65rem rgba(255, 92, 104, 0.24));
-  opacity: 0.9;
-}
-
-.core-timer-orbit--ending::after {
-  border-color: rgba(255, 92, 104, 0.16);
-  box-shadow: inset 0 0 2rem rgba(255, 92, 104, 0.08);
-}
-
-.core-timer-orbit--ending .core-timer-ring {
-  border-color: rgba(255, 92, 104, 0.22);
-  box-shadow: none;
 }
 
 .core-timer-orbit--ending .core-timer-readout strong {
@@ -3349,53 +3375,14 @@ onBeforeUnmount(() => {
 
 .core-timer-orbit {
   position: relative;
+  isolation: isolate;
   display: grid;
   width: min(86vw, 66svh, 37rem);
   max-width: 100%;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 999px;
-}
-
-.core-timer-orbit::before {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: conic-gradient(
-    var(--resource-mode-color) var(--timer-progress),
-    rgba(255, 255, 255, 0.08) 0
-  );
-  content: '';
-  mask: radial-gradient(circle, transparent 0 63%, black 63.5% 64.4%, transparent 65%);
-  opacity: 0.8;
-}
-
-.core-timer-orbit::after {
-  position: absolute;
-  inset: 25%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: inherit;
-  content: '';
-  opacity: 0.8;
-}
-
-.core-timer-ring {
-  position: absolute;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.24);
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-.core-timer-ring--outer {
-  inset: 3%;
-  animation: core-ring-drift var(--resource-mode-band-duration, 6s) linear infinite;
-}
-
-.core-timer-ring--inner {
-  inset: 18%;
-  border-color: rgba(255, 255, 255, 0.12);
-  animation: core-ring-drift calc(var(--resource-mode-band-duration, 6s) * 1.35) linear infinite
-    reverse;
+  translate: 0 0;
 }
 
 .core-timer-readout {
@@ -5207,12 +5194,6 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes core-ring-drift {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 @media (min-width: 640px) {
   .core-stage,
   .core-music-panel {
@@ -5430,6 +5411,18 @@ onBeforeUnmount(() => {
     top: 0.9rem;
     right: 0.8rem;
     width: 15rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1360px) {
+  .core-timer-orbit--panel-expanded {
+    width: clamp(24rem, 34vw, 28rem);
+    translate: -4rem 0;
+  }
+
+  .core-timer-orbit:not(.core-timer-orbit--panel-expanded) {
+    width: clamp(27rem, 44vw, 34rem);
+    translate: -1.5rem 0;
   }
 }
 
