@@ -1,5 +1,8 @@
 import type {
   ForgotPasswordPayload,
+  GoogleCallbackPayload,
+  GoogleRedirectQuery,
+  GoogleRedirectResponse,
   LoginPayload,
   LoginResponse,
   MessageResponse,
@@ -135,6 +138,17 @@ export const authApi = {
 
   login: (payload: LoginPayload) =>
     request<LoginResponse>('/auth/login', {
+      method: 'POST',
+      body: payload,
+    }),
+
+  googleRedirect: (query: GoogleRedirectQuery = {}) =>
+    request<GoogleRedirectResponse>('/auth/google/redirect', {
+      query,
+    }),
+
+  googleCallback: (payload: GoogleCallbackPayload) =>
+    request<LoginResponse>('/auth/google/callback', {
       method: 'POST',
       body: payload,
     }),

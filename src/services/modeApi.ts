@@ -12,6 +12,7 @@ export type StoreModePayload = {
   name: string
   description: string
   color: string
+  is_system: boolean
 }
 
 export type UpdateModePayload = StoreModePayload
@@ -19,13 +20,13 @@ export type UpdateModePayload = StoreModePayload
 const modePath = (id: string | number) => `/modes/${encodeURIComponent(String(id))}`
 
 export const modeApi = {
-  listModes: (token: string, query: PaginationQuery = {}) =>
+  listModes: (token?: string | null, query: PaginationQuery = {}) =>
     apiRequest<ModesResponse>('/modes', {
       token,
       query,
     }),
 
-  listAllModes: (token: string) =>
+  listAllModes: (token?: string | null) =>
     apiRequest<ModesAllResponse>('/modes/all', {
       token,
     }),

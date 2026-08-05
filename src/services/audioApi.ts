@@ -40,19 +40,41 @@ const createAudioFormData = (
 
 export const audioSourceUrl = (audio: Pick<Audio, 'url'> | null | undefined) => audio?.url ?? ''
 
+const AUDIO_URL_REFRESH_BUFFER_SECONDS = 60
+
+export const audioSourceNeedsRefresh = (audio: Pick<Audio, 'url'> | null | undefined) => {
+  const source = audioSourceUrl(audio)
+
+  if (!source) return true
+
+  try {
+    const expires = Number(new URL(source, window.location.origin).searchParams.get('expires'))
+
+    if (!Number.isFinite(expires) || expires <= 0) return true
+
+    return expires * 1000 <= Date.now() + AUDIO_URL_REFRESH_BUFFER_SECONDS * 1000
+  } catch {
+    return true
+  }
+}
+
 export const audioApi = {
-  listAudios: (token: string, query: PaginationQuery = {}) =>
+  listAudios: (token?: string | null, query: PaginationQuery = {}) =>
     apiRequest<AudiosResponse>('/audios', {
       token,
       query,
     }),
 
-  listAllAudios: (token: string) =>
+  listAllAudios: (token?: string | null) =>
     apiRequest<AudiosAllResponse>('/audios/all', {
       token,
     }),
 
-  listAudiosForMode: (token: string, mode: string | number, query: PaginationQuery = {}) =>
+  listAudiosForMode: (
+    token: string | null | undefined,
+    mode: string | number,
+    query: PaginationQuery = {},
+  ) =>
     apiRequest<AudiosResponse>(`/modes/${encodeURIComponent(String(mode))}/audios`, {
       token,
       query,

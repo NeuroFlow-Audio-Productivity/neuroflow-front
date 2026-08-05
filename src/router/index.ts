@@ -5,8 +5,12 @@ import AudioFormView from '@/views/audios/AudioFormView.vue'
 import AudioIndexView from '@/views/audios/AudioIndexView.vue'
 import AudioShowView from '@/views/audios/AudioShowView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import FlowCreateView from '@/views/flows/FlowCreateView.vue'
+import FlowEditView from '@/views/flows/FlowEditView.vue'
+import FlowIndexView from '@/views/flows/FlowIndexView.vue'
 import HomeView from '@/views/HomeView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+import GoogleCallbackView from '@/views/auth/GoogleCallbackView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
@@ -28,10 +32,24 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/login',
+      redirect: (to) => ({ name: 'login', query: to.query }),
+    },
+    {
       path: '/auth/login',
       name: 'login',
       component: LoginView,
       meta: { guestOnly: true },
+    },
+    {
+      path: '/auth/google/callback',
+      name: 'google-callback',
+      component: GoogleCallbackView,
+    },
+    {
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: GoogleCallbackView,
     },
     {
       path: '/auth/register',
@@ -66,9 +84,26 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
+      path: '/core',
+      name: 'core',
       component: DashboardView,
+    },
+    {
+      path: '/flows',
+      name: 'flows-index',
+      component: FlowIndexView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/flows/create',
+      name: 'flows-create',
+      component: FlowCreateView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/flows/:id/edit',
+      name: 'flows-edit',
+      component: FlowEditView,
       meta: { requiresAuth: true },
     },
     {
@@ -182,11 +217,11 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    return { name: 'dashboard' }
+    return { name: 'core' }
   }
 
   if (to.meta.adminOnly && !auth.isAdmin) {
-    return { name: 'dashboard' }
+    return { name: 'core' }
   }
 })
 

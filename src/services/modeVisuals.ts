@@ -26,6 +26,22 @@ type ModeSemanticInput = {
   description?: string | null
 }
 
+type SystemModeInput = {
+  is_system?: boolean | number | string | null
+}
+
+export const isSystemMode = (mode: SystemModeInput | null | undefined) => {
+  const value = mode?.is_system
+
+  return value === true || value === 1 || value === '1' || value === 'true'
+}
+
+export const isAlarmModeName = (mode: ModeSemanticInput | null | undefined) =>
+  normalizeSemanticText(mode?.name) === 'session alarm'
+
+export const isUserMode = (mode: (SystemModeInput & ModeSemanticInput) | null | undefined) =>
+  !isSystemMode(mode) && !isAlarmModeName(mode)
+
 export const isHexColor = (value: string | null | undefined) =>
   HEX_COLOR_PATTERN.test(value?.trim() ?? '')
 

@@ -26,7 +26,8 @@ const { confirmDanger } = useThemedConfirm()
 const audios = ref<Audio[]>([])
 const modes = ref<Mode[]>([])
 const pagination = ref<PaginationMeta | null>(null)
-const selectedModeId = ref<number | null>(null)
+const allModesFilterValue = 'all'
+const selectedModeId = ref<number | typeof allModesFilterValue>(allModesFilterValue)
 const isLoading = ref(false)
 const isLoadingModes = ref(false)
 const deletingAudioId = ref<string | number | null>(null)
@@ -42,7 +43,7 @@ const assignedAudios = computed(() => audios.value.filter((audio) => audio.mode 
 const unassignedAudios = computed(() => audios.value.length - assignedAudios.value.length)
 
 const modeOptions = computed(() => [
-  { label: t('audioResource.index.allModes'), value: null },
+  { label: t('audioResource.index.allModes'), value: allModesFilterValue },
   ...modes.value.map((mode) => ({
     label: translatedModeName(mode),
     value: mode.id,
@@ -102,7 +103,7 @@ const loadAudios = async (page = pagination.value?.currentPage ?? 1) => {
 
   try {
     const response =
-      selectedModeId.value === null
+      selectedModeId.value === allModesFilterValue
         ? await audioApi.listAudios(auth.token, { page })
         : await audioApi.listAudiosForMode(auth.token, selectedModeId.value, { page })
 
@@ -432,7 +433,7 @@ watch(selectedModeId, () => {
   border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
   border-radius: 8px;
   background:
-    linear-gradient(120deg, rgba(var(--resource-mode-rgb), 0.22), transparent 44%),
+    linear-gradient(120deg, rgba(var(--resource-mode-rgb), 0.14), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 65%), #050706;
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.3);
 }
@@ -440,7 +441,7 @@ watch(selectedModeId, () => {
 .audio-card-main {
   position: relative;
   display: block;
-  min-height: 13rem;
+  min-height: 11.5rem;
   overflow: hidden;
   padding: 1.1rem;
   color: inherit;
@@ -449,25 +450,25 @@ watch(selectedModeId, () => {
 .audio-card-wave {
   position: absolute;
   right: 1rem;
-  bottom: 1.2rem;
+  bottom: 1.35rem;
   left: 1rem;
   display: flex;
-  height: 5.2rem;
+  height: 2.4rem;
   align-items: center;
-  gap: 0.32rem;
-  opacity: 0.76;
+  gap: 0.42rem;
+  opacity: 0.58;
 }
 
 .audio-card-wave span {
   flex: 1;
-  min-width: 0.2rem;
-  height: 52%;
+  min-width: 0.12rem;
+  max-width: 0.28rem;
+  height: 36%;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 16%);
-  box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb), 0.34);
-  transform: scaleY(0.44);
+  background: rgba(var(--resource-mode-rgb), 0.72);
+  transform: scaleY(0.72);
   transform-origin: center;
-  animation: audioWave var(--resource-mode-wave-duration) ease-in-out infinite;
+  animation: audioWave calc(var(--resource-mode-wave-duration) * 1.25) ease-in-out infinite;
 }
 
 .audio-card-wave span:nth-child(2n) {
@@ -541,15 +542,15 @@ watch(selectedModeId, () => {
 @keyframes audioWave {
   0%,
   100% {
-    transform: scaleY(0.38);
+    transform: scaleY(0.62);
   }
 
   48% {
-    transform: scaleY(var(--resource-mode-wave-scale));
+    transform: scaleY(1.12);
   }
 
   72% {
-    transform: scaleY(0.72);
+    transform: scaleY(0.82);
   }
 }
 

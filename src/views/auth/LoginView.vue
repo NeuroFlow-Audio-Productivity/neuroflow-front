@@ -21,17 +21,35 @@ const form = reactive({
 
 const isSubmitting = computed(() => auth.status === 'loading')
 const resetCompleted = computed(() => route.query.reset === 'complete')
+const oauthRedirectError = computed(() => {
+  const error = route.query.error
+
+  if (typeof error !== 'string') return null
+
+  return error === 'auth_provider_password'
+    ? t('auth.api.errors.oauthPasswordAccount')
+    : t('auth.api.errors.oauth')
+})
+const displayError = computed(() => auth.error ?? oauthRedirectError.value)
 
 const fieldError = (field: string) => auth.fieldErrors[field]?.[0]
 
 const safeRedirect = () => {
   const redirect = route.query.redirect
 
-  if (typeof redirect === 'string' && redirect.startsWith('/')) {
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
     return redirect
   }
 
-  return '/dashboard'
+  return '/core'
+}
+
+const signInWithGoogle = async () => {
+  try {
+    await auth.startGoogleOAuth(safeRedirect())
+  } catch {
+    // The store keeps API errors available for the form.
+  }
 }
 
 const submit = async () => {
@@ -66,10 +84,26 @@ const submit = async () => {
       </div>
 
       <div
-        v-if="auth.error"
+        v-if="displayError"
         class="rounded-[8px] border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-100"
       >
-        {{ auth.error }}
+        {{ displayError }}
+      </div>
+
+      <Button
+        type="button"
+        :label="t('auth.actions.signInWithGoogle')"
+        icon="pi pi-google"
+        :loading="isSubmitting"
+        outlined
+        class="theme-google-button !w-full"
+        @click="signInWithGoogle"
+      />
+
+      <div class="flex items-center gap-3 text-xs font-semibold uppercase text-white/42">
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
+        <span>{{ t('auth.login.oauthDivider') }}</span>
+        <span class="h-px flex-1 bg-white/12" aria-hidden="true" />
       </div>
 
       <div class="auth-field">
@@ -107,10 +141,7 @@ const submit = async () => {
       </div>
 
       <div class="flex items-center justify-end">
-        <RouterLink
-          to="/auth/forgot-password"
-          class="theme-accent-link text-sm font-semibold"
-        >
+        <RouterLink to="/auth/forgot-password" class="theme-accent-link text-sm font-semibold">
           {{ t('auth.actions.forgotPassword') }}
         </RouterLink>
       </div>

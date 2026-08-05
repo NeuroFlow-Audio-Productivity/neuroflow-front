@@ -1,5 +1,7 @@
 # neuroflow-front
 
+The first production deployment is documented in the API repository at `docs/deployment.md`.
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

@@ -7,6 +7,10 @@ type TranslateOptions = {
 
 const knownMessageKeys: Record<string, string> = {
   'login successful': 'auth.api.success.login',
+  'google authorization url generated successfully': 'auth.api.success.oauthRedirect',
+  'google oauth authorization code is missing': 'auth.api.errors.oauth',
+  'google oauth session expired': 'auth.api.errors.oauth',
+  'invalid google oauth state': 'auth.api.errors.oauth',
   'registration successful please verify your email address': 'auth.api.success.register',
   'verification email sent successfully': 'auth.api.success.verificationSent',
   'email verified successfully': 'auth.api.success.emailVerified',
@@ -71,6 +75,18 @@ export const translateApiMessage = (
   options: TranslateOptions = {},
 ) => {
   const normalized = normalizeMessage(message ?? '')
+
+  if (
+    normalized.includes('registered with password login') ||
+    normalized.includes('sign in with email and password')
+  ) {
+    return translateApiKey('auth.api.errors.oauthPasswordAccount')
+  }
+
+  if (normalized.includes('uses google sign-in') || normalized.includes('continue with google')) {
+    return translateApiKey('auth.api.errors.oauthGoogleAccount')
+  }
+
   const key = knownMessageKeys[normalized]
 
   if (key) return translateApiKey(key)
