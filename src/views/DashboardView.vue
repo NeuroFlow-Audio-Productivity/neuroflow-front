@@ -1071,7 +1071,7 @@ function clearTimerInterval() {
 function updateDocumentTitle() {
   document.title =
     (document.hidden || !document.hasFocus()) && isRunning.value
-      ? `${formattedRemaining.value} · ${defaultDocumentTitle}`
+      ? `${defaultDocumentTitle} · ${formattedRemaining.value}`
       : defaultDocumentTitle
 }
 
