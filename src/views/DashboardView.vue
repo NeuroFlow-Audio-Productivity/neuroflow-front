@@ -200,6 +200,8 @@ const isAudioWaiting = ref(false)
 const hasAudioError = ref(false)
 
 let timerInterval: ReturnType<typeof window.setInterval> | undefined
+let timerDeadline: number | undefined
+let defaultDocumentTitle = 'NeuroFlow'
 let completionAlarmTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentSelectionTimeout: ReturnType<typeof window.setTimeout> | undefined
 let environmentLandingTimeout: ReturnType<typeof window.setTimeout> | undefined
@@ -1066,6 +1068,41 @@ function clearTimerInterval() {
   timerInterval = undefined
 }
 
+function updateDocumentTitle() {
+  document.title =
+    (document.hidden || !document.hasFocus()) && isRunning.value
+      ? `${formattedRemaining.value} · ${defaultDocumentTitle}`
+      : defaultDocumentTitle
+}
+
+function syncTimerFromDeadline() {
+  if (!isRunning.value || timerDeadline === undefined) return
+
+  const nextRemainingSeconds = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000))
+
+  if (nextRemainingSeconds <= 0) {
+    completeExpiredPhase()
+    return
+  }
+
+  if (nextRemainingSeconds === remainingSeconds.value) return
+
+  remainingSeconds.value = nextRemainingSeconds
+
+  if (flowExecutionState.value) {
+    flowExecutionState.value = {
+      ...flowExecutionState.value,
+      remainingSeconds: nextRemainingSeconds,
+    }
+    persistFlowExecutionState()
+  }
+}
+
+function handleDocumentVisibilityChange() {
+  syncTimerFromDeadline()
+  updateDocumentTitle()
+}
+
 function clearCompletionAlarmTimeout() {
   if (completionAlarmTimeout === undefined) return
 
@@ -1235,7 +1272,7 @@ function completeExpiredPhase() {
   const isFlowAlarm = isFlowLoaded.value
 
   neuralCoreCompletionSignal.value += 1
-  pauseSession()
+  pauseSession(false)
   void playCompletionAlarm(completionAlarm, isFlowAlarm)
   completePhase()
   hasSessionStarted.value = false
@@ -1243,20 +1280,7 @@ function completeExpiredPhase() {
 }
 
 function tickTimer() {
-  if (remainingSeconds.value <= 1) {
-    completeExpiredPhase()
-    return
-  }
-
-  remainingSeconds.value -= 1
-
-  if (flowExecutionState.value) {
-    flowExecutionState.value = {
-      ...flowExecutionState.value,
-      remainingSeconds: remainingSeconds.value,
-    }
-    persistFlowExecutionState()
-  }
+  syncTimerFromDeadline()
 }
 
 function syncAudioVolume() {
@@ -1305,14 +1329,22 @@ async function startSession() {
 
   isMusicPanelExpanded.value = false
   hasSessionStarted.value = true
+  timerDeadline = Date.now() + remainingSeconds.value * 1000
   isRunning.value = true
   void prepareCompletionBell()
   await nextTick()
   await playAudio()
 }
 
-function pauseSession() {
+function pauseSession(reconcileTimer = true) {
+  if (reconcileTimer && isRunning.value) {
+    syncTimerFromDeadline()
+
+    if (!isRunning.value) return
+  }
+
   isRunning.value = false
+  timerDeadline = undefined
   clearTimerInterval()
   stopCompletionAlarm()
   pauseAudio()
@@ -1357,6 +1389,10 @@ function skipPhase() {
 
 function extendSession() {
   remainingSeconds.value += 5 * 60
+
+  if (isRunning.value && timerDeadline !== undefined) {
+    timerDeadline += 5 * 60 * 1000
+  }
   neuralCoreWaveSignal.value += 1
 }
 
@@ -1388,6 +1424,10 @@ function saveDurationSettings() {
   remainingSeconds.value = isRunning.value
     ? Math.max(1, Math.min(nextTotalSeconds, nextTotalSeconds - elapsedSeconds))
     : nextTotalSeconds
+
+  if (isRunning.value) {
+    timerDeadline = Date.now() + remainingSeconds.value * 1000
+  }
   isDurationDialogVisible.value = false
 }
 
@@ -1790,7 +1830,11 @@ watch(isRunning, (running) => {
   if (running) {
     timerInterval = window.setInterval(tickTimer, 1000)
   }
+
+  updateDocumentTitle()
 })
+
+watch(remainingSeconds, updateDocumentTitle)
 
 watch(selectedModeId, (modeId) => {
   audios.value = []
@@ -1864,6 +1908,10 @@ watch(isEnvironmentExplorerVisible, (isVisible) => {
 })
 
 onMounted(() => {
+  defaultDocumentTitle = document.title
+  document.addEventListener('visibilitychange', handleDocumentVisibilityChange)
+  window.addEventListener('blur', handleDocumentVisibilityChange)
+  window.addEventListener('focus', handleDocumentVisibilityChange)
   loadStoredYouTubeLibrary()
 
   void (async () => {
@@ -1884,6 +1932,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   persistFlowExecutionState()
   clearTimerInterval()
+  timerDeadline = undefined
+  document.removeEventListener('visibilitychange', handleDocumentVisibilityChange)
+  window.removeEventListener('blur', handleDocumentVisibilityChange)
+  window.removeEventListener('focus', handleDocumentVisibilityChange)
+  document.title = defaultDocumentTitle
   stopCompletionAlarm()
   pauseAudio()
 
