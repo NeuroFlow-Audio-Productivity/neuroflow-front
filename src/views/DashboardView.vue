@@ -42,6 +42,7 @@ import {
   modeRgbString,
   modeRhythmStyle,
   modeSemanticKey,
+  modeVisualStyle,
   normalizeModeColor,
 } from '@/services/modeVisuals'
 import {
@@ -2669,6 +2670,7 @@ onBeforeUnmount(() => {
                   'core-flow-section--active': section.isActive,
                   'core-flow-section--complete': section.isComplete,
                 }"
+                :style="modeVisualStyle(section.mode?.color)"
               >
                 <span class="core-flow-section-index">{{
                   String(section.order).padStart(2, '0')
