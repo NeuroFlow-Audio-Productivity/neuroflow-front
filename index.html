@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark" data-theme-tone="dark">
   <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="/neuroflow-logo.svg">
@@ -9,6 +9,14 @@
       content="NeuroFlow: música funcional open source para foco, relaxamento e sono, direto no browser."
     >
     <title>NeuroFlow</title>
+    <script>
+      try {
+        const palette = localStorage.getItem('neuroflow-color-palette')
+        const isDark = palette !== 'cleanLab'
+        document.documentElement.classList.toggle('dark', isDark)
+        document.documentElement.dataset.themeTone = isDark ? 'dark' : 'light'
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -35,12 +35,16 @@ const customizationPalettes = computed(() =>
 
 const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
   borderColor: `${palette.accent}4d`,
-  background: `linear-gradient(135deg, ${palette.accent}24, rgba(255, 255, 255, 0.045))`,
+  background:
+    'linear-gradient(135deg, ' + palette.accent + '24, rgba(' + palette.surfaceRgb + ', 0.92))',
+  color: 'rgb(' + palette.textRgb + ')',
 })
 </script>
 
 <template>
-  <main class="settings-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    class="settings-page min-h-screen px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section class="mx-auto max-w-6xl py-8 sm:py-10">
@@ -91,7 +95,7 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
                 >
                   <i :class="[palette.icon, 'text-sm']" aria-hidden="true" />
                 </span>
-                <span class="palette-label font-semibold text-white">{{ palette.label }}</span>
+                <span class="palette-label font-semibold">{{ palette.label }}</span>
               </span>
               <span class="flex shrink-0 gap-1" aria-hidden="true">
                 <span class="palette-dot" :style="{ backgroundColor: palette.accent }" />
@@ -184,7 +188,7 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
   display: block;
   width: 0.85rem;
   height: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.22);
   border-radius: 999px;
 }
 
@@ -201,7 +205,7 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--theme-text-rgb), 0.1);
   padding-top: 1.25rem;
 }
 
@@ -213,7 +217,7 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
 }
 
 .fast-mode-control > span {
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.8rem;
   font-weight: 700;
 }

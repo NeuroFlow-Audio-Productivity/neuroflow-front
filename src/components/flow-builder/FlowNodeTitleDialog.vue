@@ -239,10 +239,10 @@ const confirm = () => {
     radial-gradient(circle at 18% 0%, rgba(var(--mode-glow-rgb), 0.2), transparent 16rem),
     linear-gradient(145deg, rgba(13, 28, 24, 0.98), rgba(4, 10, 10, 0.98));
   padding: clamp(1.2rem, 3.2vw, 1.65rem);
-  color: #f7fbf8;
+  color: rgb(var(--theme-text-rgb));
   box-shadow:
-    0 30px 100px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 30px 100px rgba(var(--theme-shadow-rgb), 0.5),
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.08);
 }
 
 .flow-node-title-close {
@@ -254,10 +254,10 @@ const confirm = () => {
   width: 2.35rem;
   height: 2.35rem;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.68);
+  background: rgba(var(--theme-text-rgb), 0.06);
+  color: rgba(var(--theme-text-rgb), 0.68);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -268,7 +268,7 @@ const confirm = () => {
 .flow-node-title-close:hover {
   border-color: rgba(var(--mode-glow-rgb), 0.42);
   background: rgba(var(--mode-glow-rgb), 0.12);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
 }
 
 .flow-node-title-close:active {
@@ -298,7 +298,7 @@ const confirm = () => {
 
 .flow-node-title-header h2 {
   margin-top: 0.4rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(1.55rem, 4vw, 2.15rem);
   font-weight: 790;
   line-height: 1.05;
@@ -313,7 +313,7 @@ const confirm = () => {
 
 .flow-node-title-field > span,
 .flow-node-title-section-heading {
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(var(--theme-text-rgb), 0.58);
   font-size: 0.74rem;
   font-weight: 780;
 }
@@ -326,10 +326,10 @@ const confirm = () => {
 
 .flow-node-suggestion {
   min-height: 2.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  background: rgba(var(--theme-text-rgb), 0.06);
+  color: rgba(var(--theme-text-rgb), 0.78);
   padding: 0.58rem 0.78rem;
   font-weight: 730;
   text-align: left;
@@ -344,7 +344,7 @@ const confirm = () => {
 .flow-node-suggestion.is-selected {
   border-color: rgba(var(--mode-glow-rgb), 0.48);
   background: rgba(var(--mode-glow-rgb), 0.14);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
 }
 
 .flow-node-suggestion:active {
@@ -354,10 +354,10 @@ const confirm = () => {
 :deep(.flow-node-custom-title) {
   width: 100%;
   min-height: 2.95rem;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.12) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #f7fbf8 !important;
+  background: rgba(var(--theme-text-rgb), 0.06) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :deep(.flow-node-custom-title:hover),
@@ -379,14 +379,14 @@ const confirm = () => {
 }
 
 .flow-node-title-cancel {
-  border-color: rgba(255, 255, 255, 0.13) !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  color: rgba(255, 255, 255, 0.76) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.13) !important;
+  background: rgba(var(--theme-text-rgb), 0.07) !important;
+  color: rgba(var(--theme-text-rgb), 0.76) !important;
 }
 
 .flow-node-title-cancel:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
+  background: rgba(var(--theme-text-rgb), 0.12) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 @media (min-width: 560px) {

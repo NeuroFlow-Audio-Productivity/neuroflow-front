@@ -19,7 +19,7 @@ const barStyle = (index: number) => ({
 </script>
 
 <template>
-  <main class="auth-page dark min-h-screen overflow-hidden text-[#f7fbf8]">
+  <main class="auth-page min-h-screen overflow-hidden text-[rgb(var(--theme-text-rgb))]">
     <section class="relative isolate min-h-screen px-4 py-4 sm:px-6 lg:px-8">
       <div aria-hidden="true" class="auth-vignette absolute inset-0 -z-10" />
 
@@ -73,14 +73,14 @@ const barStyle = (index: number) => ({
 .auth-vignette {
   background:
     radial-gradient(circle at 16% 82%, rgba(var(--mode-glow-rgb), 0.2), transparent 25%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(6, 16, 14, 0.96) 92%);
+    linear-gradient(180deg, rgba(var(--theme-shadow-rgb), 0.08), rgba(6, 16, 14, 0.96) 92%);
 }
 
 .auth-card {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 28px 90px rgba(0, 0, 0, 0.36);
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.08),
+    0 0 0 1px rgba(var(--theme-text-rgb), 0.02),
+    0 28px 90px rgba(var(--theme-shadow-rgb), 0.36);
 }
 
 .auth-wave-bar {

@@ -203,7 +203,9 @@ watch(
 </script>
 
 <template>
-  <main class="mode-form-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    class="mode-form-page min-h-screen px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section class="mx-auto max-w-5xl py-8 sm:py-10">
@@ -295,11 +297,7 @@ watch(
               </div>
 
               <label class="mode-system-field" for="mode-is-system">
-                <input
-                  id="mode-is-system"
-                  v-model="form.is_system"
-                  type="checkbox"
-                />
+                <input id="mode-is-system" v-model="form.is_system" type="checkbox" />
                 <span>
                   <strong>{{ t('modeResource.fields.isSystem') }}</strong>
                   <small>{{ t('modeResource.fields.isSystemHint') }}</small>
@@ -380,13 +378,13 @@ watch(
 }
 
 .mode-form {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background:
     linear-gradient(105deg, rgba(var(--resource-mode-rgb), 0.16), transparent 36%),
-    rgba(7, 16, 14, 0.86);
+    rgba(var(--theme-surface-rgb), 0.86);
   padding: 1.25rem;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.28);
   backdrop-filter: blur(24px);
 }
 
@@ -401,9 +399,9 @@ watch(
   min-width: 3rem;
   height: 2.65rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.16);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--theme-text-rgb), 0.08);
   padding: 0.2rem;
 }
 
@@ -425,9 +423,9 @@ watch(
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(var(--theme-text-rgb), 0.055);
   padding: 0.85rem;
 }
 
@@ -445,21 +443,21 @@ watch(
 }
 
 .mode-system-field strong {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.9rem;
   line-height: 1.2;
 }
 
 .mode-system-field small {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(var(--theme-text-rgb), 0.56);
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
 :deep(.mode-textarea) {
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  background: rgba(255, 255, 255, 0.075) !important;
-  color: #f7fbf8 !important;
+  border-color: rgba(var(--theme-text-rgb), 0.16) !important;
+  background: rgba(var(--theme-text-rgb), 0.075) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   box-shadow: none !important;
   resize: vertical;
 }
@@ -481,7 +479,7 @@ watch(
   border-radius: 8px;
   background:
     linear-gradient(118deg, rgba(var(--resource-mode-rgb), 0.24), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 54%), #050706;
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.04), transparent 54%), #050706;
   padding: 1.1rem;
   isolation: isolate;
 }
@@ -499,8 +497,8 @@ watch(
   background: repeating-linear-gradient(
     112deg,
     transparent 0 1rem,
-    rgba(255, 255, 255, 0.065) 1.05rem 1.16rem,
-    rgba(0, 0, 0, 0.62) 1.22rem 2.2rem
+    rgba(var(--theme-text-rgb), 0.065) 1.05rem 1.16rem,
+    rgba(var(--theme-shadow-rgb), 0.62) 1.22rem 2.2rem
   );
   opacity: 0.72;
   transform: skewY(-8deg);
@@ -557,7 +555,7 @@ watch(
   width: 0.33rem;
   height: var(--bar-height, 4.5rem);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 12%);
+  background: color-mix(in srgb, var(--resource-mode-color), rgb(var(--theme-text-rgb)) 12%);
   box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb), 0.56);
   transform: scaleY(0.5);
   transform-origin: center;
@@ -588,7 +586,7 @@ watch(
   border-radius: 999px;
   background: rgba(var(--resource-mode-rgb), 0.12);
   padding: 0.35rem 0.75rem;
-  color: color-mix(in srgb, var(--resource-mode-color), #ffffff 28%);
+  color: color-mix(in srgb, var(--resource-mode-color), rgb(var(--theme-text-rgb)) 28%);
   font-size: 0.82rem;
   font-weight: 800;
 }

@@ -125,7 +125,7 @@ watch(
 
 <template>
   <main
-    class="audio-show-page dark min-h-screen overflow-hidden px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8"
+    class="audio-show-page min-h-screen overflow-hidden px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
     :style="pageStyle"
   >
     <AppNavbar />
@@ -160,10 +160,12 @@ watch(
           <div class="audio-stage-copy">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="min-w-0">
-                <p class="text-sm font-semibold uppercase text-[var(--resource-mode-color)]">
+                <p class="text-sm font-semibold uppercase text-[var(--mode-accent)]">
                   {{ t('audioResource.show.eyebrow') }}
                 </p>
-                <h1 class="mt-4 break-words text-5xl font-semibold leading-none text-white sm:text-6xl">
+                <h1
+                  class="mt-4 break-words text-5xl font-semibold leading-none text-white sm:text-6xl"
+                >
                   {{ audio.name }}
                 </h1>
               </div>
@@ -200,7 +202,9 @@ watch(
               </div>
               <div>
                 <dt>{{ t('audioResource.fields.mode') }}</dt>
-                <dd>{{ modeName }}</dd>
+                <dd>
+                  <span class="audio-mode-badge">{{ modeName }}</span>
+                </dd>
               </div>
               <div>
                 <dt>{{ t('audioResource.fields.createdAt') }}</dt>
@@ -227,26 +231,26 @@ watch(
 }
 
 .audio-back-link {
-  color: var(--resource-mode-color);
+  color: var(--mode-accent);
   transition: color 160ms ease;
 }
 
 .audio-back-link:hover {
-  color: color-mix(in srgb, var(--resource-mode-color), #ffffff 34%);
+  color: color-mix(in srgb, var(--mode-accent), rgb(var(--theme-text-rgb)) 34%);
 }
 
 .audio-loading-stage,
 .audio-stage {
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
-  background: #050706;
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.42);
+  background: rgba(var(--theme-surface-rgb), 0.94);
+  box-shadow: 0 30px 120px rgba(var(--theme-shadow-rgb), 0.42);
 }
 
 .audio-loading-stage {
   padding: 4rem 1.25rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
 }
 
 .audio-stage {
@@ -266,12 +270,12 @@ watch(
   inset: -16%;
   z-index: -3;
   background:
-    linear-gradient(116deg, rgba(var(--resource-mode-rgb), 0.24), transparent 36%),
+    linear-gradient(116deg, rgba(var(--mode-glow-rgb), 0.18), transparent 36%),
     repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.02) 0 1rem,
-      rgba(var(--resource-mode-rgb), 0.12) 1.04rem 1.1rem,
-      rgba(0, 0, 0, 0.55) 1.14rem 2.25rem
+      rgba(var(--theme-text-rgb), 0.02) 0 1rem,
+      rgba(var(--mode-glow-rgb), 0.1) 1.04rem 1.1rem,
+      rgba(var(--theme-shadow-rgb), 0.55) 1.14rem 2.25rem
     );
   opacity: 0.78;
   transform: skewY(-7deg) scale(1.05);
@@ -294,7 +298,7 @@ watch(
   border-radius: 999px 999px 0 0;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--resource-mode-color), #ffffff 14%),
+    color-mix(in srgb, var(--mode-accent), rgb(var(--theme-text-rgb)) 14%),
     transparent
   );
   transform-origin: bottom;
@@ -329,9 +333,9 @@ watch(
   max-width: 54rem;
   margin-top: 1rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(3, 6, 5, 0.68);
+  background: rgba(var(--theme-surface-raised-rgb), 0.72);
   backdrop-filter: blur(18px);
 }
 
@@ -341,20 +345,31 @@ watch(
 }
 
 .audio-detail-grid div + div {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--theme-text-rgb), 0.1);
 }
 
 .audio-detail-grid dt {
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(var(--theme-text-rgb), 0.48);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
+.audio-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.32);
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.13);
+  padding: 0.3rem 0.55rem;
+  color: var(--resource-mode-color);
+  line-height: 1;
+}
+
 .audio-detail-grid dd {
   margin: 0.45rem 0 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1rem;
   font-weight: 700;
 }
@@ -373,11 +388,11 @@ watch(
   }
 
   .audio-detail-grid div:nth-child(2n) {
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(var(--theme-text-rgb), 0.1);
   }
 
   .audio-detail-grid div:nth-child(n + 3) {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(var(--theme-text-rgb), 0.1);
   }
 }
 

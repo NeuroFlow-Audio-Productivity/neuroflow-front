@@ -318,7 +318,11 @@ watch(
                 <a v-if="usesNativeHref(item.route)" class="mobile-profile-link" :href="item.route">
                   {{ profileItemLabel(item.name, item.route) }}
                 </a>
-                <RouterLink v-else class="mobile-profile-link" :to="normalizedItemRoute(item.route)">
+                <RouterLink
+                  v-else
+                  class="mobile-profile-link"
+                  :to="normalizedItemRoute(item.route)"
+                >
                   {{ profileItemLabel(item.name, item.route) }}
                 </RouterLink>
               </template>
@@ -405,7 +409,7 @@ watch(
   overflow: hidden;
   border-radius: 999px;
   padding: 0.5rem 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--theme-text-rgb), 0.7);
   text-overflow: ellipsis;
   white-space: nowrap;
   transition:
@@ -415,8 +419,8 @@ watch(
 
 .navbar-link:hover,
 .router-link-active.navbar-link {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: rgba(var(--theme-text-rgb), 0.1);
+  color: rgb(var(--theme-text-rgb));
 }
 
 .logo-mark {
@@ -440,11 +444,11 @@ watch(
   top: calc(100% + 0.55rem);
   right: 0;
   width: min(17rem, calc(100vw - 2rem));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.96);
+  background: rgba(var(--theme-surface-rgb), 0.96);
   padding: 0.75rem;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 18px 50px rgba(var(--theme-shadow-rgb), 0.28);
   backdrop-filter: blur(18px);
 }
 
@@ -457,7 +461,7 @@ watch(
   border-radius: 8px;
   background: transparent;
   padding: 0.55rem 0.75rem;
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(var(--theme-text-rgb), 0.76);
   font-size: 0.875rem;
   font-weight: 700;
   transition:
@@ -467,8 +471,8 @@ watch(
 
 .mobile-profile-link:hover,
 .router-link-active.mobile-profile-link {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgba(var(--theme-text-rgb), 0.08);
+  color: rgb(var(--theme-text-rgb));
 }
 
 @media (min-width: 640px) {

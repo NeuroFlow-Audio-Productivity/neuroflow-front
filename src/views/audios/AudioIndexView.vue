@@ -34,9 +34,7 @@ const deletingAudioId = ref<string | number | null>(null)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
-const sortedAudios = computed(() =>
-  [...audios.value].sort((a, b) => a.name.localeCompare(b.name)),
-)
+const sortedAudios = computed(() => [...audios.value].sort((a, b) => a.name.localeCompare(b.name)))
 
 const totalAudios = computed(() => pagination.value?.total ?? sortedAudios.value.length)
 const assignedAudios = computed(() => audios.value.filter((audio) => audio.mode || audio.mode_id))
@@ -155,7 +153,9 @@ watch(selectedModeId, () => {
 </script>
 
 <template>
-  <main class="audio-page dark min-h-screen overflow-hidden px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    class="audio-page min-h-screen overflow-hidden px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section class="mx-auto max-w-7xl py-8 sm:py-10">
@@ -337,13 +337,14 @@ watch(selectedModeId, () => {
 .audio-hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background:
     linear-gradient(120deg, rgba(141, 242, 223, 0.14), transparent 45%),
-    linear-gradient(290deg, rgba(255, 186, 73, 0.12), transparent 38%), rgba(7, 16, 14, 0.76);
+    linear-gradient(290deg, rgba(255, 186, 73, 0.12), transparent 38%),
+    rgba(var(--theme-surface-rgb), 0.76);
   padding: 1.25rem;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.24);
   backdrop-filter: blur(22px);
 }
 
@@ -357,7 +358,7 @@ watch(selectedModeId, () => {
   inset: -35%;
   background: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04) 0 0.05rem,
+    rgba(var(--theme-text-rgb), 0.04) 0 0.05rem,
     transparent 0.05rem 1.2rem
   );
   opacity: 0.42;
@@ -389,10 +390,10 @@ watch(selectedModeId, () => {
 
 .audio-stat-panel,
 .audio-empty-panel {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.78);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+  background: rgba(var(--theme-surface-rgb), 0.78);
+  box-shadow: 0 18px 60px rgba(var(--theme-shadow-rgb), 0.2);
   backdrop-filter: blur(18px);
 }
 
@@ -403,7 +404,7 @@ watch(selectedModeId, () => {
 
 .audio-stat-value {
   display: block;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.1;
@@ -412,7 +413,7 @@ watch(selectedModeId, () => {
 .audio-stat-label {
   display: block;
   margin-top: 0.55rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -423,19 +424,20 @@ watch(selectedModeId, () => {
 .audio-empty-panel {
   padding: 3rem 1.25rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.875rem;
 }
 
 .audio-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(120deg, rgba(var(--resource-mode-rgb), 0.14), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 65%), #050706;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.3);
+    linear-gradient(120deg, rgba(var(--mode-glow-rgb), 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.045), transparent 65%),
+    rgba(var(--theme-surface-rgb), 0.94);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.24);
 }
 
 .audio-card-main {
@@ -465,7 +467,7 @@ watch(selectedModeId, () => {
   max-width: 0.28rem;
   height: 36%;
   border-radius: 999px;
-  background: rgba(var(--resource-mode-rgb), 0.72);
+  background: rgba(var(--mode-glow-rgb), 0.72);
   transform: scaleY(0.72);
   transform-origin: center;
   animation: audioWave calc(var(--resource-mode-wave-duration) * 1.25) ease-in-out infinite;
@@ -491,11 +493,15 @@ watch(selectedModeId, () => {
   width: 5.8rem;
   height: 5.8rem;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 999px;
   background:
-    repeating-radial-gradient(circle, transparent 0 0.38rem, rgba(255, 255, 255, 0.08) 0.42rem 0.48rem),
-    rgba(0, 0, 0, 0.28);
+    repeating-radial-gradient(
+      circle,
+      transparent 0 0.38rem,
+      rgba(var(--theme-border-rgb), 0.08) 0.42rem 0.48rem
+    ),
+    rgba(var(--theme-shadow-rgb), 0.28);
   opacity: 0.65;
 }
 
@@ -503,19 +509,19 @@ watch(selectedModeId, () => {
   width: 1rem;
   height: 1rem;
   border-radius: 999px;
-  background: var(--resource-mode-color);
+  background: var(--mode-accent);
 }
 
 .audio-mode-tag {
   border-color: rgba(var(--resource-mode-rgb), 0.32) !important;
   background: rgba(var(--resource-mode-rgb), 0.14) !important;
-  color: color-mix(in srgb, var(--resource-mode-color), #ffffff 28%) !important;
+  color: color-mix(in srgb, var(--resource-mode-color), rgb(var(--theme-text-rgb)) 28%) !important;
 }
 
 .audio-card-id {
   position: relative;
   z-index: 10;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(var(--theme-text-rgb), 0.42);
   font-size: 0.82rem;
   font-weight: 800;
 }
@@ -529,7 +535,7 @@ watch(selectedModeId, () => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--theme-border-rgb), 0.12);
   padding: 0.9rem 1rem;
 }
 

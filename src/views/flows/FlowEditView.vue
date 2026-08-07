@@ -60,7 +60,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="flow-edit-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    class="flow-edit-page min-h-screen px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section class="mx-auto max-w-5xl py-8 sm:py-10">

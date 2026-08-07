@@ -310,7 +310,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="audio-form-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    class="audio-form-page min-h-screen px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section class="mx-auto max-w-6xl py-8 sm:py-10">
@@ -447,7 +449,7 @@ onBeforeUnmount(() => {
                 <h2 class="mt-6 break-words text-3xl font-semibold leading-tight text-white">
                   {{ form.name || t('audioResource.fields.name') }}
                 </h2>
-                <p class="mt-3 text-sm font-semibold text-[var(--resource-mode-color)]">
+                <p class="audio-preview-mode-badge mt-3 text-sm font-semibold">
                   {{ previewModeName }}
                 </p>
               </div>
@@ -505,13 +507,13 @@ onBeforeUnmount(() => {
 }
 
 .audio-form {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background:
-    linear-gradient(105deg, rgba(var(--resource-mode-rgb), 0.16), transparent 36%),
-    rgba(7, 16, 14, 0.86);
+    linear-gradient(105deg, rgba(var(--mode-glow-rgb), 0.11), transparent 36%),
+    rgba(var(--theme-surface-rgb), 0.86);
   padding: 1.25rem;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.28);
   backdrop-filter: blur(24px);
 }
 
@@ -522,9 +524,9 @@ onBeforeUnmount(() => {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  border: 1px dashed rgba(var(--resource-mode-rgb), 0.42);
+  border: 1px dashed rgba(var(--theme-border-rgb), 0.26);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(var(--theme-text-rgb), 0.055);
   padding: 1rem;
   text-align: left;
   transition:
@@ -535,8 +537,8 @@ onBeforeUnmount(() => {
 
 .audio-file-drop:hover,
 .audio-file-drop:focus-visible {
-  border-color: var(--resource-mode-color);
-  background: rgba(var(--resource-mode-rgb), 0.12);
+  border-color: var(--mode-accent);
+  background: rgba(var(--mode-glow-rgb), 0.1);
   outline: none;
   transform: translateY(-1px);
 }
@@ -546,10 +548,10 @@ onBeforeUnmount(() => {
   width: 3.25rem;
   height: 3.25rem;
   place-items: center;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.34);
+  border: 1px solid rgba(var(--mode-glow-rgb), 0.3);
   border-radius: 8px;
-  background: rgba(var(--resource-mode-rgb), 0.12);
-  color: var(--resource-mode-color);
+  background: rgba(var(--mode-glow-rgb), 0.11);
+  color: var(--mode-accent);
   font-size: 1.25rem;
 }
 
@@ -560,11 +562,12 @@ onBeforeUnmount(() => {
   overflow: hidden;
   flex-direction: column;
   justify-content: space-between;
-  border: 1px solid rgba(var(--resource-mode-rgb), 0.3);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(118deg, rgba(var(--resource-mode-rgb), 0.24), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 54%), #050706;
+    linear-gradient(118deg, rgba(var(--mode-glow-rgb), 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.04), transparent 54%),
+    rgba(var(--theme-surface-rgb), 0.94);
   padding: 1.1rem;
   isolation: isolate;
 }
@@ -582,8 +585,8 @@ onBeforeUnmount(() => {
   background: repeating-linear-gradient(
     112deg,
     transparent 0 1rem,
-    rgba(255, 255, 255, 0.06) 1.05rem 1.14rem,
-    rgba(0, 0, 0, 0.56) 1.18rem 2.2rem
+    rgba(var(--theme-text-rgb), 0.06) 1.05rem 1.14rem,
+    rgba(var(--theme-shadow-rgb), 0.56) 1.18rem 2.2rem
   );
   opacity: 0.68;
   transform: skewY(-8deg);
@@ -596,11 +599,15 @@ onBeforeUnmount(() => {
   width: 7rem;
   height: 7rem;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.14);
   border-radius: 999px;
   background:
-    repeating-radial-gradient(circle, transparent 0 0.46rem, rgba(255, 255, 255, 0.08) 0.5rem 0.56rem),
-    rgba(0, 0, 0, 0.3);
+    repeating-radial-gradient(
+      circle,
+      transparent 0 0.46rem,
+      rgba(var(--theme-text-rgb), 0.08) 0.5rem 0.56rem
+    ),
+    rgba(var(--theme-shadow-rgb), 0.3);
   opacity: 0.62;
 }
 
@@ -608,7 +615,7 @@ onBeforeUnmount(() => {
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 999px;
-  background: var(--resource-mode-color);
+  background: var(--mode-accent);
 }
 
 .audio-preview-wave {
@@ -626,8 +633,8 @@ onBeforeUnmount(() => {
   flex: 1;
   height: 58%;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 12%);
-  box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb), 0.45);
+  background: color-mix(in srgb, var(--mode-accent), rgb(var(--theme-text-rgb)) 12%);
+  box-shadow: 0 0 1rem rgba(var(--mode-glow-rgb), 0.36);
   transform: scaleY(0.46);
   transform-origin: center;
   animation: previewWave var(--resource-mode-wave-duration) ease-in-out infinite;
@@ -639,6 +646,18 @@ onBeforeUnmount(() => {
 
 .audio-preview-wave span:nth-child(3n) {
   animation-delay: -0.58s;
+}
+
+.audio-preview-mode-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid rgba(var(--resource-mode-rgb), 0.32);
+  border-radius: 999px;
+  background: rgba(var(--resource-mode-rgb), 0.13);
+  padding: 0.36rem 0.62rem;
+  color: var(--resource-mode-color);
+  line-height: 1;
 }
 
 .audio-preview-player {

@@ -204,7 +204,7 @@ function flowVisualIdentity(flow: Flow, mode: Mode | null): FlowVisualIdentity {
     experienceKeyFromMode(mode) ??
     experienceKeyFromText(normalizedModeName(mode)) ??
     'focus'
-  const fallbackAccent = mode?.color || '#6ee7d8'
+  const fallbackAccent = mode?.color || 'var(--mode-accent)'
 
   if (modeKey === 'relax') {
     return {
@@ -315,7 +315,7 @@ function journeyNodeVisual(kind: JourneyNodeKind) {
   return {
     roleLabel: t('coreTimer.flow.nodeRoles.focus'),
     icon: 'pi pi-circle-fill',
-    accent: '#6ee7d8',
+    accent: 'var(--mode-accent)',
     energy: 86,
   }
 }
@@ -410,8 +410,12 @@ function applySignatureNodeStyles(
         '--signature-breath': signatureBreathScale(node.kind),
         '--signature-speed': signatureOrbitSpeed(node.kind, totalMinutes, node.minutes),
         '--signature-delay': Math.min(index * 170, 1200) + 'ms',
-        '--particle-left': Math.min(92, Math.max(8, 50 + Math.cos(radians + 0.65) * (radius + 9))).toFixed(2) + '%',
-        '--particle-top': Math.min(88, Math.max(12, 50 + Math.sin(radians + 0.65) * (radius * 0.72 + 5))).toFixed(2) + '%',
+        '--particle-left':
+          Math.min(92, Math.max(8, 50 + Math.cos(radians + 0.65) * (radius + 9))).toFixed(2) + '%',
+        '--particle-top':
+          Math.min(88, Math.max(12, 50 + Math.sin(radians + 0.65) * (radius * 0.72 + 5))).toFixed(
+            2,
+          ) + '%',
       },
     }
   })
@@ -793,7 +797,10 @@ function isFlowSummaryLoading(flowId: number) {
                     <span class="core-signature-node-orb" aria-hidden="true" />
                     <span class="core-signature-tooltip">
                       <strong>{{ node.title }}</strong>
-                      <small>{{ node.modeName }} / {{ t("coreTimer.minutes", { count: node.minutes }) }}</small>
+                      <small
+                        >{{ node.modeName }} /
+                        {{ t('coreTimer.minutes', { count: node.minutes }) }}</small
+                      >
                     </span>
                   </button>
                 </div>
@@ -846,15 +853,16 @@ function isFlowSummaryLoading(flowId: number) {
 :global(.core-flow-picker-dialog) {
   width: min(92rem, calc(100vw - 1.5rem));
   overflow: hidden;
-  border: 1px solid rgba(110, 231, 216, 0.22);
+  border: 1px solid rgba(var(--mode-glow-rgb), 0.22);
   border-radius: 18px;
   background:
-    linear-gradient(145deg, rgba(110, 231, 216, 0.12), transparent 40%), rgba(5, 9, 11, 0.96) !important;
-  color: #f7fbf8 !important;
+    linear-gradient(145deg, rgba(var(--mode-glow-rgb), 0.12), transparent 40%),
+    rgba(var(--theme-surface-rgb), 0.96) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   box-shadow:
-    0 2rem 7rem rgba(0, 0, 0, 0.66),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 2rem 7rem rgba(var(--theme-shadow-rgb), 0.66),
+    0 0 0 1px rgba(var(--theme-text-rgb), 0.04),
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.08);
   backdrop-filter: blur(28px);
 }
 
@@ -871,7 +879,7 @@ function isFlowSummaryLoading(flowId: number) {
   overflow-x: hidden;
   overflow-y: auto;
   padding: 1rem;
-  scrollbar-color: rgba(110, 231, 216, 0.42) transparent;
+  scrollbar-color: rgba(var(--mode-glow-rgb), 0.42) transparent;
 }
 
 .core-flow-picker::before {
@@ -879,7 +887,7 @@ function isFlowSummaryLoading(flowId: number) {
   inset: -30% -20% auto;
   height: 22rem;
   background:
-    radial-gradient(circle, rgba(110, 231, 216, 0.16), transparent 62%),
+    radial-gradient(circle, rgba(var(--mode-glow-rgb), 0.16), transparent 62%),
     radial-gradient(circle at 80% 20%, rgba(183, 140, 255, 0.13), transparent 42%);
   content: '';
   filter: blur(10px);
@@ -899,7 +907,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-flow-picker-header p,
 .core-section-heading p {
   margin: 0;
-  color: #6ee7d8;
+  color: var(--mode-accent);
   font-size: 0.72rem;
   font-weight: 820;
   line-height: 1.2;
@@ -908,7 +916,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-flow-picker-header h2 {
   margin: 0.3rem 0 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(1.8rem, 4vw, 3.35rem);
   font-weight: 760;
   letter-spacing: 0;
@@ -927,10 +935,10 @@ function isFlowSummaryLoading(flowId: number) {
   min-height: 2.35rem;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(var(--theme-text-rgb), 0.045);
+  color: rgba(var(--theme-text-rgb), 0.72);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0 0.85rem;
@@ -942,9 +950,9 @@ function isFlowSummaryLoading(flowId: number) {
 }
 
 .core-picker-reset:hover {
-  border-color: rgba(110, 231, 216, 0.34);
-  background: rgba(110, 231, 216, 0.08);
-  color: #d9fff8;
+  border-color: rgba(var(--mode-glow-rgb), 0.34);
+  background: rgba(var(--mode-glow-rgb), 0.08);
+  color: var(--mode-soft);
   transform: translateY(-1px);
 }
 
@@ -958,10 +966,10 @@ function isFlowSummaryLoading(flowId: number) {
   height: 2.65rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(var(--theme-text-rgb), 0.08);
+  color: rgba(var(--theme-text-rgb), 0.72);
   transition:
     border-color 180ms ease,
     background 180ms ease,
@@ -969,9 +977,9 @@ function isFlowSummaryLoading(flowId: number) {
 }
 
 .core-flow-picker-close:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  border-color: rgba(var(--theme-text-rgb), 0.24);
+  background: rgba(var(--theme-text-rgb), 0.12);
+  color: rgb(var(--theme-text-rgb));
 }
 
 .core-flow-picker-body {
@@ -992,16 +1000,16 @@ function isFlowSummaryLoading(flowId: number) {
   display: grid;
   min-height: 12.5rem;
   overflow: hidden;
-  border: 1px solid rgba(var(--flow-card-rgb), 0.24);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 84% 18%, rgba(var(--flow-card-rgb), 0.26), transparent 30%),
-    linear-gradient(145deg, rgba(var(--flow-card-rgb), 0.13), rgba(255, 255, 255, 0.045)),
-    rgba(5, 10, 12, 0.82);
-  color: #ffffff;
+    radial-gradient(circle at 84% 18%, rgba(var(--mode-glow-rgb), 0.16), transparent 30%),
+    linear-gradient(145deg, rgba(var(--mode-glow-rgb), 0.09), rgba(var(--theme-text-rgb), 0.035)),
+    rgba(var(--theme-surface-rgb), 0.86);
+  color: rgb(var(--theme-text-rgb));
   padding: 1rem;
   text-align: left;
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
+  box-shadow: 0 1rem 3rem rgba(var(--theme-shadow-rgb), 0.22);
   transition:
     border-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -1012,15 +1020,15 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-journey-card:hover,
 .core-journey-card--selected {
-  border-color: rgba(var(--flow-card-rgb), 0.58);
+  border-color: rgba(var(--mode-glow-rgb), 0.46);
   box-shadow:
-    0 1.6rem 4.5rem rgba(0, 0, 0, 0.34),
-    0 0 2.5rem rgba(var(--flow-card-rgb), 0.18);
+    0 1.6rem 4.5rem rgba(var(--theme-shadow-rgb), 0.28),
+    0 0 2.5rem rgba(var(--mode-glow-rgb), 0.14);
   transform: translateY(-2px) scale(1.012);
 }
 
 .core-journey-card:focus-visible {
-  outline: 2px solid rgba(var(--flow-card-rgb), 0.88);
+  outline: 2px solid rgba(var(--mode-glow-rgb), 0.82);
   outline-offset: 3px;
 }
 
@@ -1099,7 +1107,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-journey-copy strong {
   display: block;
   max-width: 18rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(1.15rem, 2vw, 1.65rem);
   font-weight: 760;
   line-height: 1.05;
@@ -1110,7 +1118,7 @@ function isFlowSummaryLoading(flowId: number) {
   display: block;
   max-width: 21rem;
   margin-top: 0.65rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.88rem;
   line-height: 1.45;
 }
@@ -1158,7 +1166,7 @@ function isFlowSummaryLoading(flowId: number) {
   border: 1px solid rgba(var(--flow-card-rgb), 0.22);
   border-radius: 999px;
   background: rgba(var(--flow-card-rgb), 0.11);
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(var(--theme-text-rgb), 0.78);
   font-size: 0.72rem;
   font-weight: 760;
   line-height: 1;
@@ -1175,7 +1183,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-journey-card:hover .core-journey-duration,
 .core-journey-card--selected .core-journey-duration {
   background: rgba(var(--flow-card-rgb), 0.2);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   transform: translateY(-1px) scale(1.04);
 }
 
@@ -1220,7 +1228,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-flow-preview--focus .core-flow-preview-ambient::before {
   background-image:
     radial-gradient(circle, rgba(var(--flow-card-rgb), 0.34) 0 1px, transparent 1px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px);
+    radial-gradient(circle, rgba(var(--theme-text-rgb), 0.18) 0 1px, transparent 1px);
   background-position:
     0 0,
     2rem 1.5rem;
@@ -1288,7 +1296,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-flow-preview-heading h3 {
   max-width: 34rem;
   margin: 0.35rem 0 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(1.65rem, 4vw, 3.1rem);
   font-weight: 780;
   line-height: 0.98;
@@ -1298,7 +1306,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-flow-preview-heading p {
   max-width: 42rem;
   margin: 0.75rem 0 0;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(var(--theme-text-rgb), 0.68);
   font-size: 0.98rem;
   line-height: 1.55;
 }
@@ -1311,9 +1319,9 @@ function isFlowSummaryLoading(flowId: number) {
 .core-journey-map,
 .core-energy-panel,
 .core-forecast {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(var(--theme-text-rgb), 0.045);
   padding: 0.95rem;
 }
 
@@ -1326,7 +1334,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-section-heading strong {
   min-width: 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.9rem;
   font-weight: 760;
   line-height: 1.2;
@@ -1373,7 +1381,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-map-terminal {
   min-height: 2.15rem;
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(var(--theme-text-rgb), 0.74);
   font-size: 0.76rem;
   font-weight: 780;
   text-transform: uppercase;
@@ -1385,19 +1393,19 @@ function isFlowSummaryLoading(flowId: number) {
   height: 0.8rem;
   justify-self: center;
   border-radius: 999px;
-  background: #ffffff;
+  background: rgb(var(--theme-text-rgb));
   box-shadow:
-    0 0 0 0.32rem rgba(255, 255, 255, 0.08),
-    0 0 1.1rem rgba(255, 255, 255, 0.5);
+    0 0 0 0.32rem rgba(var(--theme-text-rgb), 0.08),
+    0 0 1.1rem rgba(var(--theme-text-rgb), 0.5);
 }
 
 .core-map-node {
   min-height: 4.4rem;
-  border: 1px solid rgba(var(--node-rgb), 0.2);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
   background:
-    linear-gradient(90deg, rgba(var(--node-rgb), 0.12), rgba(255, 255, 255, 0.025)),
-    rgba(3, 7, 10, 0.36);
+    linear-gradient(90deg, rgba(var(--mode-glow-rgb), 0.08), rgba(var(--theme-text-rgb), 0.025)),
+    rgba(var(--theme-surface-raised-rgb), 0.54);
   padding: 0.65rem 0.7rem 0.65rem 0;
   animation: core-node-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--node-delay);
@@ -1440,7 +1448,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-node-copy small {
   display: block;
-  color: rgba(255, 255, 255, 0.52);
+  color: rgba(var(--theme-text-rgb), 0.52);
   font-size: 0.68rem;
   font-weight: 780;
   text-transform: uppercase;
@@ -1449,7 +1457,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-node-copy strong {
   display: block;
   margin-top: 0.16rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.92rem;
   font-weight: 760;
   line-height: 1.18;
@@ -1457,10 +1465,10 @@ function isFlowSummaryLoading(flowId: number) {
 }
 
 .core-node-duration {
-  border: 1px solid rgba(var(--node-rgb), 0.24);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 999px;
-  background: rgba(var(--node-rgb), 0.1);
-  color: rgba(255, 255, 255, 0.74);
+  background: rgba(var(--theme-text-rgb), 0.06);
+  color: rgba(var(--theme-text-rgb), 0.74);
   font-size: 0.74rem;
   font-weight: 780;
   padding: 0.38rem 0.54rem;
@@ -1482,8 +1490,8 @@ function isFlowSummaryLoading(flowId: number) {
     radial-gradient(circle at 50% 50%, rgba(var(--flow-card-rgb), 0.2), transparent 7rem),
     radial-gradient(circle at 28% 24%, rgba(183, 140, 255, 0.14), transparent 11rem),
     radial-gradient(circle at 74% 72%, rgba(120, 167, 255, 0.13), transparent 12rem),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
-    rgba(0, 0, 0, 0.18);
+    linear-gradient(145deg, rgba(var(--theme-text-rgb), 0.055), rgba(var(--theme-text-rgb), 0.018)),
+    rgba(var(--theme-shadow-rgb), 0.18);
   isolation: isolate;
 }
 
@@ -1492,7 +1500,7 @@ function isFlowSummaryLoading(flowId: number) {
   position: absolute;
   inset: 12%;
   border-radius: 48% 52% 44% 56%;
-  content: "";
+  content: '';
   pointer-events: none;
 }
 
@@ -1504,7 +1512,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-cognitive-signature::after {
   inset: 23%;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.06);
   transform: rotate(28deg);
   animation: core-signature-drift 18s linear infinite;
 }
@@ -1512,15 +1520,14 @@ function isFlowSummaryLoading(flowId: number) {
 .core-signature-aurora {
   position: absolute;
   inset: -18%;
-  background:
-    conic-gradient(
-      from 124deg,
-      transparent,
-      rgba(var(--flow-card-rgb), 0.16),
-      rgba(183, 140, 255, 0.1),
-      rgba(120, 167, 255, 0.12),
-      transparent
-    );
+  background: conic-gradient(
+    from 124deg,
+    transparent,
+    rgba(var(--flow-card-rgb), 0.16),
+    rgba(183, 140, 255, 0.1),
+    rgba(120, 167, 255, 0.12),
+    transparent
+  );
   filter: blur(2.1rem);
   opacity: 0.7;
   animation: core-signature-drift 28s linear infinite reverse;
@@ -1545,7 +1552,7 @@ function isFlowSummaryLoading(flowId: number) {
 .core-signature-ring--inner {
   width: 42%;
   height: 29%;
-  border-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(var(--theme-text-rgb), 0.07);
   transform: translate(-50%, -50%) rotate(24deg);
 }
 
@@ -1555,7 +1562,12 @@ function isFlowSummaryLoading(flowId: number) {
   top: 50%;
   width: var(--signature-radius);
   height: 1px;
-  background: linear-gradient(90deg, rgba(var(--node-rgb), 0), rgba(var(--node-rgb), 0.5), rgba(var(--node-rgb), 0));
+  background: linear-gradient(
+    90deg,
+    rgba(var(--node-rgb), 0),
+    rgba(var(--node-rgb), 0.5),
+    rgba(var(--node-rgb), 0)
+  );
   box-shadow: 0 0 0.9rem rgba(var(--node-rgb), 0.28);
   opacity: 0.52;
   transform: rotate(var(--signature-angle)) scaleX(0);
@@ -1589,7 +1601,13 @@ function isFlowSummaryLoading(flowId: number) {
   place-items: center;
   border-radius: 999px;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.92) 0 9%, rgba(var(--flow-card-rgb), 0.9) 10% 32%, rgba(var(--flow-card-rgb), 0.18) 33% 66%, transparent 68%),
+    radial-gradient(
+      circle,
+      rgba(var(--theme-text-rgb), 0.92) 0 9%,
+      rgba(var(--flow-card-rgb), 0.9) 10% 32%,
+      rgba(var(--flow-card-rgb), 0.18) 33% 66%,
+      transparent 68%
+    ),
     rgba(var(--flow-card-rgb), 0.06);
   box-shadow:
     0 0 2.5rem rgba(var(--flow-card-rgb), 0.5),
@@ -1602,8 +1620,8 @@ function isFlowSummaryLoading(flowId: number) {
   width: 36%;
   aspect-ratio: 1;
   border-radius: inherit;
-  background: #ffffff;
-  box-shadow: 0 0 1.4rem rgba(255, 255, 255, 0.72);
+  background: rgb(var(--theme-text-rgb));
+  box-shadow: 0 0 1.4rem rgba(var(--theme-text-rgb), 0.72);
 }
 
 .core-signature-node {
@@ -1617,7 +1635,7 @@ function isFlowSummaryLoading(flowId: number) {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   padding: 0;
   transform: translate(-50%, -50%);
   animation: core-signature-float var(--signature-speed) ease-in-out infinite;
@@ -1633,15 +1651,20 @@ function isFlowSummaryLoading(flowId: number) {
 .core-signature-node-orb {
   width: 74%;
   aspect-ratio: 1;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.34);
   border-radius: inherit;
   background:
-    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.18) 16%, transparent 28%),
+    radial-gradient(
+      circle at 36% 30%,
+      rgba(var(--theme-text-rgb), 0.95),
+      rgba(var(--theme-text-rgb), 0.18) 16%,
+      transparent 28%
+    ),
     radial-gradient(circle, var(--node-accent), rgba(var(--node-rgb), 0.28) 58%, transparent 70%);
   box-shadow:
     0 0 calc(1.6rem * var(--signature-glow)) rgba(var(--node-rgb), 0.88),
     0 0 calc(4.4rem * var(--signature-glow)) rgba(var(--node-rgb), 0.28),
-    inset 0 0 1rem rgba(255, 255, 255, 0.15);
+    inset 0 0 1rem rgba(var(--theme-text-rgb), 0.15);
   animation: core-signature-orb 4.8s ease-in-out infinite;
 }
 
@@ -1664,9 +1687,9 @@ function isFlowSummaryLoading(flowId: number) {
   min-width: min(12rem, 64vw);
   border: 1px solid rgba(var(--node-rgb), 0.24);
   border-radius: 8px;
-  background: rgba(5, 9, 12, 0.86);
+  background: rgba(var(--theme-surface-rgb), 0.92);
   box-shadow:
-    0 1rem 2.5rem rgba(0, 0, 0, 0.32),
+    0 1rem 2.5rem rgba(var(--theme-shadow-rgb), 0.32),
     0 0 1.8rem rgba(var(--node-rgb), 0.18);
   opacity: 0;
   padding: 0.58rem 0.68rem;
@@ -1686,7 +1709,7 @@ function isFlowSummaryLoading(flowId: number) {
 }
 
 .core-signature-tooltip strong {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.82rem;
   font-weight: 780;
   line-height: 1.12;
@@ -1694,7 +1717,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-signature-tooltip small {
   margin-top: 0.22rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.68rem;
   font-weight: 720;
 }
@@ -1704,7 +1727,6 @@ function isFlowSummaryLoading(flowId: number) {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
 }
-
 
 .core-flow-metrics {
   display: grid;
@@ -1717,8 +1739,8 @@ function isFlowSummaryLoading(flowId: number) {
   border: 1px solid rgba(var(--flow-card-rgb), 0.2);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(var(--flow-card-rgb), 0.1), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.035);
+    linear-gradient(135deg, rgba(var(--flow-card-rgb), 0.1), rgba(var(--theme-text-rgb), 0.03)),
+    rgba(var(--theme-text-rgb), 0.035);
   padding: 0.75rem;
   animation: core-node-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -1729,7 +1751,7 @@ function isFlowSummaryLoading(flowId: number) {
 }
 
 .core-flow-metric small {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.66rem;
   font-weight: 820;
   line-height: 1.2;
@@ -1738,7 +1760,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-flow-metric strong {
   margin-top: 0.34rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.1rem;
   font-weight: 780;
   line-height: 1.1;
@@ -1768,7 +1790,7 @@ function isFlowSummaryLoading(flowId: number) {
   min-width: 0;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(var(--theme-text-rgb), 0.74);
   font-size: 0.84rem;
   font-weight: 680;
   line-height: 1.25;
@@ -1787,7 +1809,7 @@ function isFlowSummaryLoading(flowId: number) {
 
 .core-flow-preview-empty,
 .core-flow-picker-state {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(var(--theme-text-rgb), 0.56);
   font-size: 0.9rem;
 }
 
@@ -1820,13 +1842,13 @@ function isFlowSummaryLoading(flowId: number) {
   background: linear-gradient(
     90deg,
     var(--flow-card-accent),
-    color-mix(in srgb, var(--flow-card-accent), #ffffff 22%)
+    color-mix(in srgb, var(--flow-card-accent), rgb(var(--theme-text-rgb)) 22%)
   ) !important;
   color: var(--flow-card-ink) !important;
   font-weight: 860 !important;
   box-shadow:
     0 0 1.6rem rgba(var(--flow-card-rgb), 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.32);
   transition:
     filter 180ms ease,
     transform 180ms ease,
@@ -1838,7 +1860,7 @@ function isFlowSummaryLoading(flowId: number) {
   transform: translateY(-1px);
   box-shadow:
     0 0 2.25rem rgba(var(--flow-card-rgb), 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.36);
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.36);
 }
 
 @keyframes core-flow-pulse {
@@ -2091,7 +2113,7 @@ function isFlowSummaryLoading(flowId: number) {
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0.35rem 0.55rem 1rem 0.35rem;
-    scrollbar-color: rgba(110, 231, 216, 0.34) transparent;
+    scrollbar-color: rgba(var(--mode-glow-rgb), 0.34) transparent;
   }
 
   .core-journey-card--selected {

@@ -148,11 +148,11 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--theme-text-rgb), 0.08);
   padding: 0 0.78rem 0 0.95rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
@@ -178,15 +178,15 @@ onBeforeUnmount(() => {
   height: 8.25rem;
   overflow-y: scroll;
   overscroll-behavior: contain;
-  scrollbar-color: var(--mode-accent) rgba(255, 255, 255, 0.08);
+  scrollbar-color: var(--mode-accent) rgba(var(--theme-text-rgb), 0.08);
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.96);
+  background: rgba(var(--theme-surface-rgb), 0.96);
   padding: 0.35rem;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 18px 50px rgba(var(--theme-shadow-rgb), 0.28);
   backdrop-filter: blur(18px);
 }
 
@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
 }
 
 .language-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--theme-text-rgb), 0.08);
   border-radius: 999px;
 }
 
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   background: transparent;
   padding: 0.52rem 0.72rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--theme-text-rgb), 0.72);
   font-size: 0.75rem;
   font-weight: 700;
   text-align: left;
@@ -222,8 +222,8 @@ onBeforeUnmount(() => {
 }
 
 .language-option:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgba(var(--theme-text-rgb), 0.08);
+  color: rgb(var(--theme-text-rgb));
 }
 
 .language-option--active {

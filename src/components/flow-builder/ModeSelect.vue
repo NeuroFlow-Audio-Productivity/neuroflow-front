@@ -87,15 +87,15 @@ const updateValue = (value: number | null) => {
 <style scoped>
 .flow-builder-select {
   width: 100%;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.12) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #f7fbf8 !important;
+  background: rgba(var(--theme-text-rgb), 0.06) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :deep(.p-select-label),
 :deep(.p-select-dropdown) {
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :deep(.p-select-label) {
@@ -104,13 +104,13 @@ const updateValue = (value: number | null) => {
 
 :deep(.p-select-overlay),
 :deep(.p-select-list) {
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.12) !important;
   background: #101a18 !important;
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :deep(.p-select-option) {
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :deep(.p-select-option.p-focus),
@@ -138,25 +138,25 @@ const updateValue = (value: number | null) => {
 }
 
 :global(.flow-builder-select-overlay) {
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12) !important;
   border-radius: 8px !important;
   background: #101a18 !important;
-  color: #f7fbf8 !important;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.42) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
+  box-shadow: 0 22px 70px rgba(var(--theme-shadow-rgb), 0.42) !important;
 }
 
 :global(.flow-builder-select-list) {
   background: #101a18 !important;
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :global(.flow-builder-select-option) {
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 :global(.flow-builder-select-option.p-focus),
 :global(.flow-builder-select-option:hover) {
   background: rgba(var(--mode-glow-rgb), 0.12) !important;
-  color: #ffffff !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 </style>

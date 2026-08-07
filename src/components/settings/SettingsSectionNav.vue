@@ -28,11 +28,11 @@ const { t } = useI18n()
   min-height: 3.15rem;
   align-items: center;
   gap: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(var(--theme-text-rgb), 0.045);
   padding: 0.85rem 1rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--theme-text-rgb), 0.72);
   font-size: 0.925rem;
   font-weight: 700;
   transition:

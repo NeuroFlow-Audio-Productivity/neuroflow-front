@@ -51,6 +51,14 @@ export const visualPaletteConfigs = [
     ink: '#09231f',
     glowRgb: '110, 231, 216',
     companionRgb: '185, 167, 255',
+    page: '#06100e',
+    pageAlt: '#081512',
+    surfaceRgb: '7, 16, 14',
+    surfaceRaisedRgb: '15, 29, 26',
+    textRgb: '247, 251, 248',
+    borderRgb: '226, 255, 247',
+    shadowRgb: '0, 0, 0',
+    tone: 'dark',
     icon: 'pi pi-bolt',
   },
   {
@@ -60,6 +68,14 @@ export const visualPaletteConfigs = [
     ink: '#2f1c08',
     glowRgb: '246, 193, 119',
     companionRgb: '110, 231, 216',
+    page: '#100d08',
+    pageAlt: '#19140b',
+    surfaceRgb: '22, 18, 10',
+    surfaceRaisedRgb: '36, 29, 17',
+    textRgb: '255, 249, 239',
+    borderRgb: '255, 232, 197',
+    shadowRgb: '13, 9, 3',
+    tone: 'dark',
     icon: 'pi pi-sparkles',
   },
   {
@@ -69,6 +85,14 @@ export const visualPaletteConfigs = [
     ink: '#17102f',
     glowRgb: '185, 167, 255',
     companionRgb: '110, 231, 216',
+    page: '#090813',
+    pageAlt: '#111021',
+    surfaceRgb: '15, 14, 28',
+    surfaceRaisedRgb: '27, 24, 47',
+    textRgb: '249, 247, 255',
+    borderRgb: '231, 225, 255',
+    shadowRgb: '3, 2, 10',
+    tone: 'dark',
     icon: 'pi pi-moon',
   },
   {
@@ -78,6 +102,14 @@ export const visualPaletteConfigs = [
     ink: '#061a2f',
     glowRgb: '90, 184, 255',
     companionRgb: '118, 94, 255',
+    page: '#050a13',
+    pageAlt: '#071424',
+    surfaceRgb: '7, 14, 27',
+    surfaceRaisedRgb: '13, 27, 47',
+    textRgb: '244, 249, 255',
+    borderRgb: '211, 234, 255',
+    shadowRgb: '1, 4, 10',
+    tone: 'dark',
     icon: 'pi pi-globe',
   },
   {
@@ -87,6 +119,14 @@ export const visualPaletteConfigs = [
     ink: '#101820',
     glowRgb: '168, 179, 189',
     companionRgb: '80, 94, 108',
+    page: '#090b0e',
+    pageAlt: '#12161b',
+    surfaceRgb: '16, 20, 25',
+    surfaceRaisedRgb: '27, 33, 40',
+    textRgb: '245, 247, 249',
+    borderRgb: '214, 222, 229',
+    shadowRgb: '0, 0, 0',
+    tone: 'dark',
     icon: 'pi pi-circle',
   },
   {
@@ -96,6 +136,14 @@ export const visualPaletteConfigs = [
     ink: '#073238',
     glowRgb: '116, 216, 228',
     companionRgb: '186, 229, 240',
+    page: '#edf5f4',
+    pageAlt: '#f8fbfb',
+    surfaceRgb: '255, 255, 255',
+    surfaceRaisedRgb: '235, 245, 246',
+    textRgb: '18, 39, 42',
+    borderRgb: '30, 82, 87',
+    shadowRgb: '42, 76, 80',
+    tone: 'light',
     icon: 'pi pi-asterisk',
   },
 ] as const
@@ -159,6 +207,13 @@ export const useVisualThemeStore = defineStore('visualTheme', {
         '--mode-ink': palette.ink,
         '--mode-glow-rgb': palette.glowRgb,
         '--mode-companion-rgb': palette.companionRgb,
+        '--theme-page': palette.page,
+        '--theme-page-alt': palette.pageAlt,
+        '--theme-surface-rgb': palette.surfaceRgb,
+        '--theme-surface-raised-rgb': palette.surfaceRaisedRgb,
+        '--theme-text-rgb': palette.textRgb,
+        '--theme-border-rgb': palette.borderRgb,
+        '--theme-shadow-rgb': palette.shadowRgb,
       }
     },
   },
@@ -192,7 +247,9 @@ export const useVisualThemeStore = defineStore('visualTheme', {
 
       document.documentElement.dataset.visualMode = this.selectedMode
       document.documentElement.dataset.visualPalette = this.selectedPalette
+      document.documentElement.dataset.themeTone = this.activePalette.tone
       document.documentElement.dataset.fastMode = String(this.fastModeEnabled)
+      document.documentElement.classList.toggle('dark', this.activePalette.tone === 'dark')
     },
   },
 })

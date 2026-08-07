@@ -114,7 +114,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="modes-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main class="modes-page min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
     <AppNavbar />
 
     <section class="mx-auto max-w-7xl py-8 sm:py-10">
@@ -263,17 +263,17 @@ onMounted(() => {
 
 .mode-stat-panel {
   min-height: 6.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.72);
+  background: rgba(var(--theme-surface-rgb), 0.76);
   padding: 1rem;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 18px 60px rgba(var(--theme-shadow-rgb), 0.18);
   backdrop-filter: blur(18px);
 }
 
 .mode-stat-value {
   display: block;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.1;
@@ -283,7 +283,7 @@ onMounted(() => {
 .mode-stat-label {
   display: block;
   margin-top: 0.55rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -296,7 +296,7 @@ onMounted(() => {
   min-height: 1.65rem;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--theme-text-rgb), 0.08);
 }
 
 .mode-spectrum span {

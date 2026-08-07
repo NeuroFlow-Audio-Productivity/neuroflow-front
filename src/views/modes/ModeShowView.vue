@@ -119,7 +119,7 @@ watch(
 
 <template>
   <main
-    class="mode-show-page dark min-h-screen overflow-hidden px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8"
+    class="mode-show-page min-h-screen overflow-hidden px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
     :style="pageStyle"
   >
     <AppNavbar />
@@ -245,7 +245,7 @@ watch(
 }
 
 .mode-back-link:hover {
-  color: color-mix(in srgb, var(--resource-mode-color), #ffffff 34%);
+  color: color-mix(in srgb, var(--resource-mode-color), rgb(var(--theme-text-rgb)) 34%);
 }
 
 .mode-loading-stage,
@@ -253,13 +253,13 @@ watch(
   border: 1px solid rgba(var(--resource-mode-rgb), 0.28);
   border-radius: 8px;
   background: #050706;
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 30px 120px rgba(var(--theme-shadow-rgb), 0.42);
 }
 
 .mode-loading-stage {
   padding: 4rem 1.25rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
 }
 
 .mode-stage {
@@ -286,9 +286,9 @@ watch(
     linear-gradient(292deg, rgba(var(--resource-mode-rgb), 0.12), transparent 42%),
     repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.018) 0 0.95rem,
+      rgba(var(--theme-text-rgb), 0.018) 0 0.95rem,
       rgba(var(--resource-mode-rgb), 0.12) 0.98rem 1.06rem,
-      rgba(0, 0, 0, 0.56) 1.1rem 2.25rem
+      rgba(var(--theme-shadow-rgb), 0.56) 1.1rem 2.25rem
     );
   filter: contrast(1.1);
   opacity: 0.76;
@@ -303,7 +303,7 @@ watch(
   background: repeating-linear-gradient(
     0deg,
     transparent 0 2.2rem,
-    rgba(255, 255, 255, 0.075) 2.25rem 2.3rem,
+    rgba(var(--theme-text-rgb), 0.075) 2.25rem 2.3rem,
     transparent 2.35rem 4.6rem
   );
   opacity: 0.5;
@@ -325,7 +325,7 @@ watch(
   display: grid;
   max-width: 45rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background: rgba(3, 6, 5, 0.68);
   backdrop-filter: blur(18px);
@@ -337,11 +337,11 @@ watch(
 }
 
 .mode-detail-strip div + div {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--theme-text-rgb), 0.1);
 }
 
 .mode-detail-strip dt {
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(var(--theme-text-rgb), 0.48);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -355,7 +355,7 @@ watch(
   align-items: center;
   gap: 0.55rem;
   margin: 0.55rem 0 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.95rem;
   font-weight: 700;
   overflow-wrap: anywhere;
@@ -375,11 +375,15 @@ watch(
   border: 1px solid rgba(var(--resource-mode-rgb), 0.42);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(var(--resource-mode-rgb), 0.95), rgba(255, 255, 255, 0.14)),
+    linear-gradient(
+      135deg,
+      rgba(var(--resource-mode-rgb), 0.95),
+      rgba(var(--theme-text-rgb), 0.14)
+    ),
     var(--resource-mode-color);
   box-shadow:
     0 0 2.4rem rgba(var(--resource-mode-rgb), 0.45),
-    inset 0 0 2.2rem rgba(255, 255, 255, 0.14);
+    inset 0 0 2.2rem rgba(var(--theme-text-rgb), 0.14);
 }
 
 .mode-color-preview::before {
@@ -388,7 +392,7 @@ watch(
   background: repeating-linear-gradient(
     115deg,
     transparent 0 0.7rem,
-    rgba(255, 255, 255, 0.18) 0.72rem 0.8rem,
+    rgba(var(--theme-text-rgb), 0.18) 0.72rem 0.8rem,
     transparent 0.82rem 1.4rem
   );
   content: '';
@@ -401,7 +405,7 @@ watch(
   height: 1.15rem;
   border-radius: 999px;
   background: var(--resource-mode-color);
-  box-shadow: 0 0 1.6rem rgba(0, 0, 0, 0.28);
+  box-shadow: 0 0 1.6rem rgba(var(--theme-shadow-rgb), 0.28);
 }
 
 .mode-color-ramp {
@@ -426,14 +430,14 @@ watch(
     90deg,
     rgba(var(--resource-mode-rgb), 0.28),
     var(--resource-mode-color),
-    rgba(255, 255, 255, 0.42)
+    rgba(var(--theme-text-rgb), 0.42)
   );
 }
 
 .mode-color-ramp span:nth-child(3) {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.28),
+    rgba(var(--theme-text-rgb), 0.28),
     rgba(var(--resource-mode-rgb), 0.7)
   );
 }
@@ -446,7 +450,7 @@ watch(
   border-radius: 999px;
   background: rgba(var(--resource-mode-rgb), 0.12);
   padding: 0.3rem 0.7rem;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 800;
@@ -475,7 +479,7 @@ watch(
     linear-gradient(108deg, rgba(var(--resource-mode-rgb), 0.18), transparent 48%),
     rgba(3, 6, 5, 0.7);
   box-shadow:
-    0 2rem 4.4rem rgba(0, 0, 0, 0.34),
+    0 2rem 4.4rem rgba(var(--theme-shadow-rgb), 0.34),
     inset 0 0 4rem rgba(var(--resource-mode-rgb), 0.12);
   transform: translateZ(7rem);
   animation: wavePanelFloat 5.5s ease-in-out infinite alternate;
@@ -498,7 +502,7 @@ watch(
   left: 8%;
   top: 50%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(var(--theme-text-rgb), 0.16);
 }
 
 .mode-wave-bars {
@@ -515,7 +519,7 @@ watch(
   width: 0.42rem;
   height: var(--bar-height, 5.2rem);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--resource-mode-color), #ffffff 10%);
+  background: color-mix(in srgb, var(--resource-mode-color), rgb(var(--theme-text-rgb)) 10%);
   box-shadow: 0 0 1.6rem rgba(var(--resource-mode-rgb), 0.62);
   transform: scaleY(0.44);
   transform-origin: center;
@@ -584,9 +588,9 @@ watch(
   z-index: 3;
   height: 0.55rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.28);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--theme-text-rgb), 0.12);
 }
 
 .mode-signal-track span {
@@ -675,7 +679,7 @@ watch(
 
   .mode-detail-strip div + div {
     border-top: 0;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(var(--theme-text-rgb), 0.1);
   }
 }
 

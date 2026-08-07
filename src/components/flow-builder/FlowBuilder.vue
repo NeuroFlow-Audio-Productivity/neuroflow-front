@@ -697,14 +697,14 @@ onMounted(() => {
 .flow-builder-shell {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background:
     radial-gradient(circle at 8% 0%, rgba(var(--mode-glow-rgb), 0.18), transparent 27rem),
     radial-gradient(circle at 94% 18%, rgba(var(--mode-companion-rgb), 0.12), transparent 30rem),
-    rgba(7, 16, 14, 0.84);
+    rgba(var(--theme-surface-rgb), 0.84);
   padding: clamp(1rem, 3vw, 1.35rem);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.28);
   backdrop-filter: blur(24px);
 }
 
@@ -734,10 +734,10 @@ onMounted(() => {
   display: inline-flex;
   min-height: 1.7rem;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(255, 255, 255, 0.68);
+  background: rgba(var(--theme-text-rgb), 0.055);
+  color: rgba(var(--theme-text-rgb), 0.68);
   font-size: 0.76rem;
   font-weight: 760;
   padding: 0.22rem 0.6rem;
@@ -750,7 +750,7 @@ onMounted(() => {
 .flow-save-state.is-saving {
   border-color: rgba(var(--mode-glow-rgb), 0.36);
   background: rgba(var(--mode-glow-rgb), 0.12);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
 }
 
 .flow-name-editor {
@@ -763,7 +763,7 @@ onMounted(() => {
   border: 1px solid transparent !important;
   border-radius: 8px !important;
   background: transparent !important;
-  color: #ffffff !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   font-size: clamp(2.8rem, 7vw, 5.2rem) !important;
   font-weight: 780 !important;
   letter-spacing: 0 !important;
@@ -776,13 +776,13 @@ onMounted(() => {
 :deep(.flow-name-editor-input:hover),
 :deep(.flow-name-editor-input:focus) {
   border-color: rgba(var(--mode-glow-rgb), 0.34) !important;
-  background: rgba(255, 255, 255, 0.035) !important;
+  background: rgba(var(--theme-text-rgb), 0.035) !important;
   padding: 0.15rem 0.35rem !important;
 }
 
 .flow-builder-meta {
   margin: 1rem 0 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(var(--theme-text-rgb), 0.78);
   font-size: clamp(0.98rem, 2vw, 1.12rem);
   font-weight: 680;
   line-height: 1.45;
@@ -791,7 +791,7 @@ onMounted(() => {
 .flow-builder-intent {
   max-width: 44rem;
   margin: 0.6rem 0 0;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(var(--theme-text-rgb), 0.58);
   font-size: 0.98rem;
   line-height: 1.7;
 }
@@ -817,10 +817,10 @@ onMounted(() => {
 .flow-preview-panel,
 .flow-stats-panel,
 .flow-add-panel {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(var(--theme-text-rgb), 0.045);
+  box-shadow: inset 0 1px 0 rgba(var(--theme-text-rgb), 0.05);
 }
 
 .flow-preview-panel {
@@ -832,14 +832,14 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(var(--theme-text-rgb), 0.58);
   font-size: 0.78rem;
   font-weight: 760;
   text-transform: uppercase;
 }
 
 .flow-panel-heading strong {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
 }
 
 .flow-preview-track,
@@ -873,7 +873,7 @@ onMounted(() => {
 .flow-preview-empty span {
   flex: 1;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.075);
+  background: rgba(var(--theme-text-rgb), 0.075);
 }
 
 .flow-preview-legend {
@@ -881,7 +881,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 0.45rem 0.85rem;
   margin-top: 0.85rem;
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(var(--theme-text-rgb), 0.56);
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -898,19 +898,19 @@ onMounted(() => {
   gap: 0.35rem;
   min-height: 5.4rem;
   align-content: center;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(var(--theme-text-rgb), 0.035);
   padding: 0.95rem;
 }
 
 .flow-stat-item span {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.74rem;
   font-weight: 760;
   text-transform: uppercase;
 }
 
 .flow-stat-item strong {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.2rem;
   font-weight: 760;
   line-height: 1.05;
@@ -925,14 +925,14 @@ onMounted(() => {
 
 .flow-add-panel h2 {
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1rem;
   font-weight: 780;
 }
 
 .flow-add-panel p {
   margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(var(--theme-text-rgb), 0.56);
   line-height: 1.6;
 }
 
@@ -949,7 +949,7 @@ onMounted(() => {
   border: 1px solid rgba(var(--option-rgb), 0.18);
   border-radius: 8px;
   background: rgba(var(--option-rgb), 0.07);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   padding: 0.85rem;
   text-align: left;
   transition:
@@ -993,22 +993,22 @@ onMounted(() => {
 
 .flow-add-option small {
   margin-top: 0.18rem;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(var(--theme-text-rgb), 0.58);
   font-size: 0.8rem;
 }
 
 .flow-builder-loading,
 .flow-builder-empty {
   margin-top: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(var(--theme-text-rgb), 0.045);
   padding: clamp(1.5rem, 5vw, 3rem);
   text-align: center;
 }
 
 .flow-builder-loading {
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.95rem;
 }
 
@@ -1028,7 +1028,11 @@ onMounted(() => {
 .flow-empty-visual span {
   height: 0.68rem;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(var(--mode-glow-rgb), 0.42), rgba(255, 255, 255, 0.06));
+  background: linear-gradient(
+    90deg,
+    rgba(var(--mode-glow-rgb), 0.42),
+    rgba(var(--theme-text-rgb), 0.06)
+  );
 }
 
 .flow-empty-visual span:nth-child(2) {
@@ -1036,18 +1040,18 @@ onMounted(() => {
   background: linear-gradient(
     90deg,
     rgba(var(--mode-companion-rgb), 0.34),
-    rgba(255, 255, 255, 0.05)
+    rgba(var(--theme-text-rgb), 0.05)
   );
 }
 
 .flow-empty-visual span:nth-child(3) {
   width: 78%;
-  background: linear-gradient(90deg, rgba(130, 120, 255, 0.34), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(90deg, rgba(130, 120, 255, 0.34), rgba(var(--theme-text-rgb), 0.05));
 }
 
 .flow-builder-empty h2 {
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.35rem;
   font-weight: 760;
 }
@@ -1055,7 +1059,7 @@ onMounted(() => {
 .flow-builder-empty p {
   max-width: 28rem;
   margin: 0 0 0.35rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   line-height: 1.6;
 }
 

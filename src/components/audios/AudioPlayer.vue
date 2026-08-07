@@ -213,7 +213,6 @@ watch(
         </label>
         <span class="nf-audio-time">{{ formatTime(duration) }}</span>
       </div>
-
     </div>
 
     <div class="nf-audio-actions">
@@ -262,12 +261,12 @@ watch(
   border-radius: 8px;
   background:
     linear-gradient(110deg, rgba(var(--resource-mode-rgb, 110, 231, 216), 0.18), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035)),
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.07), rgba(var(--theme-text-rgb), 0.035)),
     rgba(5, 10, 9, 0.82);
   padding: 0.75rem;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 16px 46px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.08),
+    0 16px 46px rgba(var(--theme-shadow-rgb), 0.22);
 }
 
 .nf-audio-player::before {
@@ -280,7 +279,7 @@ watch(
   background: repeating-radial-gradient(
     circle,
     transparent 0 0.54rem,
-    rgba(255, 255, 255, 0.06) 0.58rem 0.62rem
+    rgba(var(--theme-text-rgb), 0.06) 0.58rem 0.62rem
   );
   content: '';
   opacity: 0.72;
@@ -352,13 +351,13 @@ watch(
 }
 
 .nf-audio-title {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.86rem;
   font-weight: 800;
 }
 
 .nf-audio-subtitle {
-  color: rgba(255, 255, 255, 0.52);
+  color: rgba(var(--theme-text-rgb), 0.52);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -372,7 +371,7 @@ watch(
 
 .nf-audio-time {
   min-width: 2.65rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--theme-text-rgb), 0.72);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
@@ -403,29 +402,27 @@ watch(
 .nf-audio-volume input::-webkit-slider-runnable-track {
   height: 0.42rem;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      var(--resource-mode-color, var(--mode-accent)) var(--audio-progress, 0%),
-      rgba(255, 255, 255, 0.18) var(--audio-progress, 0%)
-    );
+  background: linear-gradient(
+    90deg,
+    var(--resource-mode-color, var(--mode-accent)) var(--audio-progress, 0%),
+    rgba(var(--theme-text-rgb), 0.18) var(--audio-progress, 0%)
+  );
 }
 
 .nf-audio-volume input::-webkit-slider-runnable-track {
   height: 0.32rem;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(var(--resource-mode-rgb, 110, 231, 216), 0.78) var(--audio-volume, 100%),
-      rgba(255, 255, 255, 0.16) var(--audio-volume, 100%)
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(var(--resource-mode-rgb, 110, 231, 216), 0.78) var(--audio-volume, 100%),
+    rgba(var(--theme-text-rgb), 0.16) var(--audio-volume, 100%)
+  );
 }
 
 .nf-audio-scrub input::-moz-range-track,
 .nf-audio-volume input::-moz-range-track {
   height: 0.42rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(var(--theme-text-rgb), 0.18);
 }
 
 .nf-audio-scrub input::-moz-range-progress {
@@ -450,7 +447,7 @@ watch(
   height: 1rem;
   margin-top: -0.29rem;
   appearance: none;
-  border: 2px solid #ffffff;
+  border: 2px solid rgb(var(--theme-text-rgb));
   border-radius: 999px;
   background: var(--resource-mode-color, var(--mode-accent));
   box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb, 110, 231, 216), 0.48);
@@ -466,7 +463,7 @@ watch(
 .nf-audio-volume input::-moz-range-thumb {
   width: 0.85rem;
   height: 0.85rem;
-  border: 2px solid #ffffff;
+  border: 2px solid rgb(var(--theme-text-rgb));
   border-radius: 999px;
   background: var(--resource-mode-color, var(--mode-accent));
   box-shadow: 0 0 1rem rgba(var(--resource-mode-rgb, 110, 231, 216), 0.48);
@@ -487,7 +484,11 @@ watch(
   height: 2.2rem;
   border-radius: 8px;
   background: rgba(var(--resource-mode-rgb, 110, 231, 216), 0.14);
-  color: color-mix(in srgb, var(--resource-mode-color, var(--mode-accent)), #ffffff 26%);
+  color: color-mix(
+    in srgb,
+    var(--resource-mode-color, var(--mode-accent)),
+    rgb(var(--theme-text-rgb)) 26%
+  );
 }
 
 .nf-audio-error {
@@ -508,5 +509,4 @@ watch(
     grid-column: auto;
   }
 }
-
 </style>

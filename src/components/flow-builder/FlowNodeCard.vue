@@ -278,7 +278,7 @@ const updateAlarm = (audioId: number | null) => {
   box-shadow:
     0 0 0 0.35rem rgba(var(--node-rgb), 0.055),
     0 0 1.4rem rgba(var(--node-rgb), 0.18);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 0.7rem;
   font-weight: 860;
   transition:
@@ -292,7 +292,11 @@ const updateAlarm = (audioId: number | null) => {
   top: 3.4rem;
   bottom: 0;
   width: 1px;
-  background: linear-gradient(180deg, rgba(var(--node-rgb), 0.42), rgba(255, 255, 255, 0.07));
+  background: linear-gradient(
+    180deg,
+    rgba(var(--node-rgb), 0.42),
+    rgba(var(--theme-border-rgb), 0.08)
+  );
 }
 
 .flow-node-row.is-last .flow-node-line {
@@ -303,13 +307,13 @@ const updateAlarm = (audioId: number | null) => {
   position: relative;
   overflow: hidden;
   margin-bottom: 0.9rem;
-  border: 1px solid rgba(var(--node-rgb), 0.18);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(var(--node-rgb), 0.14), transparent 54%),
-    rgba(255, 255, 255, 0.052);
+    linear-gradient(135deg, rgba(var(--mode-glow-rgb), 0.09), transparent 54%),
+    rgba(var(--theme-surface-raised-rgb), 0.72);
   padding: clamp(1rem, 2.2vw, 1.2rem);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 18px 60px rgba(var(--theme-shadow-rgb), 0.18);
   backdrop-filter: blur(18px);
   transition:
     border-color 180ms ease,
@@ -328,11 +332,12 @@ const updateAlarm = (audioId: number | null) => {
 
 .flow-node-row:hover .flow-node-card,
 .flow-node-row.is-dragging .flow-node-card {
-  border-color: rgba(var(--node-rgb), 0.42);
+  border-color: rgba(var(--mode-glow-rgb), 0.34);
   background:
-    linear-gradient(135deg, rgba(var(--node-rgb), 0.2), transparent 58%), rgba(255, 255, 255, 0.07);
+    linear-gradient(135deg, rgba(var(--mode-glow-rgb), 0.13), transparent 58%),
+    rgba(var(--theme-surface-raised-rgb), 0.82);
   box-shadow:
-    0 28px 90px rgba(0, 0, 0, 0.28),
+    0 28px 90px rgba(var(--theme-shadow-rgb), 0.25),
     0 0 42px rgba(var(--node-rgb), 0.09);
 }
 
@@ -366,10 +371,10 @@ const updateAlarm = (audioId: number | null) => {
   width: 2.55rem;
   height: 2.55rem;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.64);
+  background: rgba(var(--theme-text-rgb), 0.06);
+  color: rgba(var(--theme-text-rgb), 0.64);
   cursor: grab;
   transition:
     transform 160ms ease,
@@ -381,7 +386,7 @@ const updateAlarm = (audioId: number | null) => {
 .flow-node-handle:hover {
   border-color: rgba(var(--node-rgb), 0.42);
   background: rgba(var(--node-rgb), 0.12);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   transform: translateY(-1px);
 }
 
@@ -407,7 +412,7 @@ const updateAlarm = (audioId: number | null) => {
 
 .flow-node-title-group h2 {
   margin: 0.36rem 0 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(1.12rem, 2vw, 1.35rem);
   font-weight: 800;
   line-height: 1.12;
@@ -416,7 +421,7 @@ const updateAlarm = (audioId: number | null) => {
 
 .flow-node-title-group p {
   margin: 0.32rem 0 0;
-  color: rgba(255, 255, 255, 0.54);
+  color: rgba(var(--theme-text-rgb), 0.54);
   font-size: 0.86rem;
   line-height: 1.5;
 }
@@ -425,21 +430,21 @@ const updateAlarm = (audioId: number | null) => {
   display: grid;
   min-width: 4.2rem;
   justify-items: center;
-  border: 1px solid rgba(var(--node-rgb), 0.22);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(var(--node-rgb), 0.09);
+  background: rgba(var(--theme-text-rgb), 0.055);
   padding: 0.5rem 0.65rem;
 }
 
 .flow-node-duration-pill strong {
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.25rem;
   font-weight: 820;
   line-height: 1;
 }
 
 .flow-node-duration-pill span {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--theme-text-rgb), 0.55);
   font-size: 0.72rem;
   font-weight: 760;
 }
@@ -457,7 +462,7 @@ const updateAlarm = (audioId: number | null) => {
 }
 
 .flow-node-field > span {
-  color: rgba(255, 255, 255, 0.54);
+  color: rgba(var(--theme-text-rgb), 0.54);
   font-size: 0.74rem;
   font-weight: 780;
   letter-spacing: 0;
@@ -470,19 +475,19 @@ const updateAlarm = (audioId: number | null) => {
   justify-content: space-between;
   gap: 0.75rem;
   margin-top: 0.9rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--theme-border-rgb), 0.1);
   padding-top: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.82rem;
 }
 
 .flow-node-footer strong {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(var(--theme-text-rgb), 0.78);
   font-weight: 760;
 }
 
 .flow-node-delete {
-  color: rgba(255, 255, 255, 0.62) !important;
+  color: rgba(var(--theme-text-rgb), 0.62) !important;
 }
 
 :deep(.flow-title-input),
@@ -494,10 +499,10 @@ const updateAlarm = (audioId: number | null) => {
 :deep(.flow-title-input),
 :deep(.flow-time-input .p-inputnumber-input) {
   min-height: 2.95rem;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.12) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #f7fbf8 !important;
+  background: rgba(var(--theme-text-rgb), 0.06) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -515,17 +520,17 @@ const updateAlarm = (audioId: number | null) => {
 @keyframes node-saved {
   0% {
     box-shadow:
-      0 18px 60px rgba(0, 0, 0, 0.18),
+      0 18px 60px rgba(var(--theme-shadow-rgb), 0.18),
       0 0 0 rgba(var(--node-rgb), 0);
   }
   38% {
     box-shadow:
-      0 22px 72px rgba(0, 0, 0, 0.22),
+      0 22px 72px rgba(var(--theme-shadow-rgb), 0.22),
       0 0 0 4px rgba(var(--node-rgb), 0.13);
   }
   100% {
     box-shadow:
-      0 18px 60px rgba(0, 0, 0, 0.18),
+      0 18px 60px rgba(var(--theme-shadow-rgb), 0.18),
       0 0 0 rgba(var(--node-rgb), 0);
   }
 }

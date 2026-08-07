@@ -12,7 +12,7 @@ const handleCreated = async (flow: Flow) => {
 </script>
 
 <template>
-  <main class="flow-create-page dark min-h-screen text-[#f7fbf8]">
+  <main class="flow-create-page min-h-screen text-[rgb(var(--theme-text-rgb))]">
     <FlowCreationGuide compact @created="handleCreated" />
   </main>
 </template>

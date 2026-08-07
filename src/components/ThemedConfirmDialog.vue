@@ -65,13 +65,13 @@ import ConfirmDialog from 'primevue/confirmdialog'
   position: relative;
   width: min(calc(100vw - 2rem), 27rem);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.14);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.98);
+  background: rgba(var(--theme-surface-rgb), 0.98);
   color: #f7fbf8;
   box-shadow:
-    0 1.5rem 4rem rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    0 1.5rem 4rem rgba(var(--theme-shadow-rgb), 0.46),
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.045);
 }
 
 .theme-confirm-card::before {
@@ -113,7 +113,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 
 .theme-confirm-copy h2 {
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.15rem;
   font-weight: 720;
   letter-spacing: 0;
@@ -122,7 +122,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 
 .theme-confirm-copy p {
   margin: 0.38rem 0 0;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(var(--theme-text-rgb), 0.58);
   font-size: 0.9rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
@@ -132,7 +132,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--theme-text-rgb), 0.08);
   padding: 0.85rem 1.3rem 1rem;
 }
 
@@ -152,15 +152,15 @@ import ConfirmDialog from 'primevue/confirmdialog'
 }
 
 .theme-confirm-cancel {
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(var(--theme-border-rgb), 0.14) !important;
   background: transparent !important;
-  color: rgba(255, 255, 255, 0.68) !important;
+  color: rgba(var(--theme-text-rgb), 0.68) !important;
 }
 
 .theme-confirm-cancel:hover {
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  background: rgba(255, 255, 255, 0.055) !important;
-  color: #ffffff !important;
+  border-color: rgba(var(--theme-text-rgb), 0.2) !important;
+  background: rgba(var(--theme-text-rgb), 0.055) !important;
+  color: rgb(var(--theme-text-rgb)) !important;
 }
 
 .theme-confirm-accept {

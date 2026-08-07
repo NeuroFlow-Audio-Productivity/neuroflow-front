@@ -150,15 +150,15 @@ onMounted(() => {
   const draw = (time: number) => {
     const width = canvas.clientWidth
     const height = canvas.clientHeight
-    const mode = activeMode.value
+    const palette = visualTheme.activePalette
     const pulse = time / 1000
 
     context.clearRect(0, 0, width, height)
 
     const base = context.createLinearGradient(0, 0, width, height)
-    base.addColorStop(0, '#06100e')
-    base.addColorStop(0.44, '#0b1714')
-    base.addColorStop(1, '#130d22')
+    base.addColorStop(0, palette.page)
+    base.addColorStop(0.44, palette.pageAlt)
+    base.addColorStop(1, palette.page)
     context.fillStyle = base
     context.fillRect(0, 0, width, height)
 
@@ -170,14 +170,14 @@ onMounted(() => {
       height * 0.34,
       Math.max(width, height) * 0.62,
     )
-    glow.addColorStop(0, `${mode.accent}66`)
-    glow.addColorStop(0.34, `${mode.accent}24`)
-    glow.addColorStop(1, 'rgba(6, 16, 14, 0)')
+    glow.addColorStop(0, palette.accent + '66')
+    glow.addColorStop(0.34, palette.accent + '24')
+    glow.addColorStop(1, 'rgba(' + palette.surfaceRgb + ', 0)')
     context.fillStyle = glow
     context.fillRect(0, 0, width, height)
 
     context.lineWidth = 1
-    context.strokeStyle = 'rgba(255,255,255,0.1)'
+    context.strokeStyle = 'rgba(' + palette.textRgb + ', 0.1)'
     for (let ring = 0; ring < 5; ring += 1) {
       const radius = Math.max(width, height) * (0.16 + ring * 0.105)
       const drift = Math.sin(pulse * 0.28 + ring) * 12
@@ -207,7 +207,8 @@ onMounted(() => {
         if (x === -20) context.moveTo(x, nextY)
         else context.lineTo(x, nextY)
       }
-      context.strokeStyle = lane === 2 ? `${mode.accent}b8` : 'rgba(255,255,255,0.12)'
+      context.strokeStyle =
+        lane === 2 ? palette.accent + 'b8' : 'rgba(' + palette.textRgb + ', 0.12)'
       context.lineWidth = lane === 2 ? 2 : 1
       context.stroke()
     }
@@ -218,7 +219,8 @@ onMounted(() => {
       const x = ((Math.sin(seed) * 0.5 + 0.5) * width + Math.sin(pulse * 0.15 + seed) * 18) % width
       const y = (Math.cos(seed * 0.74) * 0.5 + 0.5) * height + Math.cos(pulse * 0.22 + seed) * 14
       const size = 1 + (particle % 4) * 0.4
-      context.fillStyle = particle % 7 === 0 ? `${mode.soft}b0` : 'rgba(255,255,255,0.26)'
+      context.fillStyle =
+        particle % 7 === 0 ? palette.soft + 'b0' : 'rgba(' + palette.textRgb + ', 0.26)'
       context.beginPath()
       context.arc(x, y, size, 0, Math.PI * 2)
       context.fill()
@@ -240,7 +242,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="neuro-page dark min-h-screen overflow-hidden text-[#f7fbf8]" :style="pageStyle">
+  <main class="neuro-page min-h-screen overflow-hidden text-[#f7fbf8]" :style="pageStyle">
     <section class="relative isolate overflow-clip px-4 pb-20 pt-4 sm:px-6 lg:px-8">
       <canvas ref="canvasRef" aria-hidden="true" class="absolute inset-0 -z-20 h-full w-full" />
       <div aria-hidden="true" class="hero-vignette absolute inset-0 -z-10" />
@@ -290,7 +292,7 @@ onBeforeUnmount(() => {
           </div>
 
           <aside
-            class="player-shell hidden min-w-0 rounded-[8px] border border-white/12 bg-[#07100e]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl md:block"
+            class="player-shell hidden min-w-0 rounded-[8px] border border-white/12 bg-[var(--theme-page)]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl md:block"
             :aria-label="t('player.preview')"
           >
             <div class="flex items-center justify-between gap-4">
@@ -509,7 +511,7 @@ onBeforeUnmount(() => {
       transparent 34rem
     ),
     radial-gradient(circle at 0% 48%, rgba(var(--mode-glow-rgb), 0.08), transparent 34rem),
-    linear-gradient(180deg, #06100e 0%, #081512 46%, #06100e 100%);
+    linear-gradient(180deg, var(--theme-page) 0%, var(--theme-page-alt) 46%, var(--theme-page) 100%);
 }
 
 .hero-vignette {
@@ -519,7 +521,11 @@ onBeforeUnmount(() => {
       color-mix(in srgb, var(--mode-accent), transparent 76%),
       transparent 25%
     ),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(6, 16, 14, 0.96) 92%);
+    linear-gradient(
+      180deg,
+      rgba(var(--theme-shadow-rgb), 0.08),
+      rgba(var(--theme-surface-rgb), 0.96) 92%
+    );
 }
 
 .hero-vignette::after {
@@ -529,9 +535,9 @@ onBeforeUnmount(() => {
   height: 390px;
   background: linear-gradient(
     180deg,
-    rgba(6, 16, 14, 0),
-    rgba(6, 16, 14, 0.92) 48%,
-    rgba(6, 16, 14, 0) 100%
+    rgba(var(--theme-surface-rgb), 0),
+    rgba(var(--theme-surface-rgb), 0.92) 48%,
+    rgba(var(--theme-surface-rgb), 0) 100%
   );
 }
 
@@ -551,11 +557,11 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 82% 48%, rgba(var(--mode-companion-rgb), 0.11), transparent 32%),
     linear-gradient(
       180deg,
-      rgba(6, 16, 14, 0) 0%,
-      rgba(6, 16, 14, 0) 36%,
-      rgba(9, 26, 23, 0.48) 54%,
-      rgba(10, 24, 21, 0.78) 68%,
-      rgba(6, 16, 14, 0) 100%
+      rgba(var(--theme-surface-rgb), 0) 0%,
+      rgba(var(--theme-surface-rgb), 0) 36%,
+      rgba(var(--theme-surface-raised-rgb), 0.48) 54%,
+      rgba(var(--theme-surface-raised-rgb), 0.78) 68%,
+      rgba(var(--theme-surface-rgb), 0) 100%
     );
 }
 
@@ -569,17 +575,17 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 84% 55%, rgba(var(--mode-glow-rgb), 0.09), transparent 30%),
     linear-gradient(
       180deg,
-      rgba(6, 16, 14, 0) 0%,
-      rgba(11, 23, 20, 0.82) 46%,
-      rgba(6, 16, 14, 0) 100%
+      rgba(var(--theme-surface-rgb), 0) 0%,
+      rgba(var(--theme-surface-raised-rgb), 0.82) 46%,
+      rgba(var(--theme-surface-rgb), 0) 100%
     );
 }
 
 .player-shell {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 28px 90px rgba(0, 0, 0, 0.36);
+    inset 0 1px 0 rgba(var(--theme-text-rgb), 0.08),
+    0 0 0 1px rgba(var(--theme-text-rgb), 0.02),
+    0 28px 90px rgba(var(--theme-shadow-rgb), 0.36);
 }
 
 .mode-card {
@@ -638,17 +644,17 @@ onBeforeUnmount(() => {
     ),
     linear-gradient(
       135deg,
-      #07100e 0%,
-      color-mix(in srgb, var(--mode-accent), #07100e 68%) 52%,
-      color-mix(in srgb, rgb(var(--mode-companion-rgb)), #07100e 72%) 100%
+      var(--theme-page) 0%,
+      color-mix(in srgb, var(--mode-accent), var(--theme-page) 68%) 52%,
+      color-mix(in srgb, rgb(var(--mode-companion-rgb)), var(--theme-page) 72%) 100%
     );
 }
 
 .mode-switch :deep(.p-togglebutton) {
   flex: 1 1 0;
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(var(--theme-text-rgb), 0.08);
+  background: rgba(var(--theme-text-rgb), 0.06);
+  color: rgba(var(--theme-text-rgb), 0.7);
 }
 
 .mode-switch :deep(.p-togglebutton-checked) {
@@ -669,7 +675,7 @@ onBeforeUnmount(() => {
   height: 0.5rem;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--theme-text-rgb), 0.08);
 }
 
 .neuro-progress :deep(.p-progressbar-value) {

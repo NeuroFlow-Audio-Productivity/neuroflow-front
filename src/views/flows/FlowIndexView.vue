@@ -189,7 +189,7 @@ onMounted(() => {
 <template>
   <main
     v-if="!isLoading && sortedFlows.length === 0"
-    class="flows-page flows-page--onboarding dark min-h-screen text-[#f7fbf8]"
+    class="flows-page flows-page--onboarding min-h-screen text-[rgb(var(--theme-text-rgb))]"
   >
     <section class="flows-onboarding-shell">
       <div
@@ -203,7 +203,10 @@ onMounted(() => {
     </section>
   </main>
 
-  <main v-else class="flows-page dark min-h-screen px-4 py-4 text-[#f7fbf8] sm:px-6 lg:px-8">
+  <main
+    v-else
+    class="flows-page min-h-screen px-4 py-4 text-[rgb(var(--theme-text-rgb))] sm:px-6 lg:px-8"
+  >
     <AppNavbar />
 
     <section
@@ -341,17 +344,17 @@ onMounted(() => {
 
 .flow-stat-panel {
   min-height: 6.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
-  background: rgba(7, 16, 14, 0.72);
+  background: rgba(var(--theme-surface-rgb), 0.72);
   padding: 1rem;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 18px 60px rgba(var(--theme-shadow-rgb), 0.2);
   backdrop-filter: blur(18px);
 }
 
 .flow-stat-value {
   display: block;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.1;
@@ -361,7 +364,7 @@ onMounted(() => {
 .flow-stat-label {
   display: block;
   margin-top: 0.55rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--theme-text-rgb), 0.5);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -393,19 +396,20 @@ onMounted(() => {
   display: grid;
   min-height: 20rem;
   overflow: hidden;
-  border: 1px solid rgba(var(--flow-accent-rgb), 0.34);
+  border: 1px solid rgba(var(--theme-border-rgb), 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(112deg, rgba(var(--flow-accent-rgb), 0.2), transparent 40%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 56%), rgba(7, 16, 14, 0.9);
+    linear-gradient(112deg, rgba(var(--mode-glow-rgb), 0.11), transparent 40%),
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.04), transparent 56%),
+    rgba(var(--theme-surface-rgb), 0.9);
   padding: 1rem;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.24);
   backdrop-filter: blur(20px);
   cursor: pointer;
 }
 
 .flow-card:focus-visible {
-  outline: 2px solid rgba(var(--flow-accent-rgb), 0.76);
+  outline: 2px solid rgba(var(--mode-glow-rgb), 0.76);
   outline-offset: 3px;
 }
 
@@ -416,10 +420,10 @@ onMounted(() => {
     repeating-linear-gradient(
       116deg,
       transparent 0 1rem,
-      rgba(255, 255, 255, 0.055) 1.05rem 1.12rem,
+      rgba(var(--theme-text-rgb), 0.055) 1.05rem 1.12rem,
       transparent 1.18rem 2.2rem
     ),
-    radial-gradient(circle at 82% 16%, rgba(var(--flow-accent-rgb), 0.32), transparent 11rem);
+    radial-gradient(circle at 82% 16%, rgba(var(--mode-glow-rgb), 0.2), transparent 11rem);
   content: '';
   opacity: 0.54;
   pointer-events: none;
@@ -468,7 +472,7 @@ onMounted(() => {
   border-radius: 999px;
   background: rgba(var(--flow-accent-rgb), 0.12);
   padding: 0.35rem 0.65rem;
-  color: color-mix(in srgb, var(--flow-accent), #ffffff 18%);
+  color: color-mix(in srgb, var(--flow-accent), rgb(var(--theme-text-rgb)) 18%);
   font-size: 0.75rem;
   font-weight: 800;
   line-height: 1.1;
@@ -484,7 +488,7 @@ onMounted(() => {
   border: 1px solid transparent !important;
   border-radius: 8px !important;
   background: transparent !important;
-  color: #ffffff !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   font-size: 2.15rem !important;
   font-weight: 760 !important;
   letter-spacing: 0 !important;
@@ -497,7 +501,7 @@ onMounted(() => {
 :deep(.flow-card-name-input:hover),
 :deep(.flow-card-name-input:focus) {
   border-color: rgba(var(--flow-accent-rgb), 0.36) !important;
-  background: rgba(255, 255, 255, 0.045) !important;
+  background: rgba(var(--theme-text-rgb), 0.045) !important;
 }
 
 :deep(.flow-card-name-input:disabled) {
@@ -507,7 +511,7 @@ onMounted(() => {
 .flow-card p {
   margin: 0.9rem 0 0;
   max-width: 24rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.92rem;
   line-height: 1.6;
 }
@@ -520,7 +524,7 @@ onMounted(() => {
 }
 
 .flow-card-meta span {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(var(--theme-text-rgb), 0.42);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -529,7 +533,7 @@ onMounted(() => {
 }
 
 .flow-card-meta strong {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(var(--theme-text-rgb), 0.78);
   font-size: 0.9rem;
   line-height: 1.25;
 }
@@ -539,7 +543,7 @@ onMounted(() => {
   justify-content: flex-end;
   min-height: 3.2rem;
   margin: 0.85rem -0.25rem -0.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-top: 1px solid rgba(var(--theme-border-rgb), 0.11);
   padding-top: 0.55rem;
 }
 

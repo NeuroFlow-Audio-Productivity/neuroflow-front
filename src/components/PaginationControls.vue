@@ -97,10 +97,7 @@ const goToPage = (page: number) => {
         @click="goToPage(page)"
       />
 
-      <span
-        v-if="lastVisiblePage && lastVisiblePage < meta.lastPage - 1"
-        class="pagination-gap"
-      >
+      <span v-if="lastVisiblePage && lastVisiblePage < meta.lastPage - 1" class="pagination-gap">
         ...
       </span>
       <Button
@@ -133,19 +130,19 @@ const goToPage = (page: number) => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12);
   border-radius: 8px;
   background:
     linear-gradient(110deg, rgba(var(--mode-glow-rgb), 0.12), transparent 38%),
-    rgba(7, 16, 14, 0.82);
+    rgba(var(--theme-surface-rgb), 0.82);
   padding: 0.75rem;
-  box-shadow: 0 18px 58px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 18px 58px rgba(var(--theme-shadow-rgb), 0.22);
   backdrop-filter: blur(18px);
 }
 
 .pagination-summary {
   margin: 0;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(var(--theme-text-rgb), 0.62);
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.3;
@@ -164,9 +161,9 @@ const goToPage = (page: number) => {
   width: 2.35rem;
   height: 2.35rem;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  background: rgba(255, 255, 255, 0.055) !important;
-  color: rgba(255, 255, 255, 0.74) !important;
+  border: 1px solid rgba(var(--theme-text-rgb), 0.12) !important;
+  background: rgba(var(--theme-text-rgb), 0.055) !important;
+  color: rgba(var(--theme-text-rgb), 0.74) !important;
   font-weight: 800 !important;
 }
 
@@ -188,7 +185,7 @@ const goToPage = (page: number) => {
   display: inline-flex;
   min-width: 1.4rem;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(var(--theme-text-rgb), 0.42);
   font-size: 0.9rem;
   font-weight: 800;
 }

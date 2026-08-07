@@ -466,8 +466,13 @@ const submit = async () => {
   overflow: hidden;
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(4, 11, 12, 0.94), rgba(5, 15, 14, 0.9) 46%, rgba(4, 10, 13, 0.96)),
-    #040b0c;
+    linear-gradient(
+      180deg,
+      rgba(var(--theme-surface-rgb), 0.94),
+      rgba(var(--theme-surface-raised-rgb), 0.9) 46%,
+      rgba(var(--theme-surface-rgb), 0.96)
+    ),
+    var(--theme-page);
   padding: clamp(1.5rem, 5vw, 4.5rem) 1rem;
   isolation: isolate;
   transition:
@@ -502,8 +507,13 @@ const submit = async () => {
   --line-boost: -0.006;
   --ring-alpha: 0.78;
   background:
-    linear-gradient(180deg, rgba(2, 6, 12, 0.97), rgba(3, 10, 19, 0.95) 46%, rgba(2, 5, 12, 0.98)),
-    #02060c;
+    linear-gradient(
+      180deg,
+      rgba(var(--theme-surface-rgb), 0.97),
+      rgba(var(--theme-surface-raised-rgb), 0.92) 46%,
+      rgba(var(--theme-surface-rgb), 0.98)
+    ),
+    var(--theme-page);
 }
 
 .flow-guide--compact {
@@ -523,9 +533,9 @@ const submit = async () => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 48%, rgba(96, 232, 218, 0.08), transparent 34rem),
-    radial-gradient(ellipse at 50% 105%, rgba(73, 103, 177, 0.12), transparent 42rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 42%);
+    radial-gradient(ellipse at 50% 48%, rgba(var(--mode-glow-rgb), 0.08), transparent 34rem),
+    radial-gradient(ellipse at 50% 105%, rgba(var(--mode-companion-rgb), 0.12), transparent 42rem),
+    linear-gradient(180deg, rgba(var(--theme-text-rgb), 0.018), transparent 42%);
   content: '';
   filter: blur(var(--scene-softness));
   opacity: 0.85;
@@ -551,8 +561,8 @@ const submit = async () => {
   left: -20rem;
   background: radial-gradient(
     circle,
-    rgba(88, 255, 219, 0.52),
-    rgba(42, 173, 180, 0.18) 44%,
+    rgba(var(--mode-glow-rgb), 0.52),
+    rgba(var(--mode-glow-rgb), 0.18) 44%,
     transparent 72%
   );
   opacity: var(--aurora-teal-opacity);
@@ -564,8 +574,8 @@ const submit = async () => {
   bottom: -24rem;
   background: radial-gradient(
     circle,
-    rgba(87, 139, 255, 0.5),
-    rgba(22, 72, 118, 0.2) 48%,
+    rgba(var(--mode-companion-rgb), 0.5),
+    rgba(var(--mode-companion-rgb), 0.2) 48%,
     transparent 74%
   );
   opacity: var(--aurora-blue-opacity);
@@ -579,8 +589,8 @@ const submit = async () => {
   height: 44rem;
   background: radial-gradient(
     circle,
-    rgba(180, 140, 255, 0.36),
-    rgba(86, 68, 140, 0.14) 46%,
+    rgba(var(--mode-companion-rgb), 0.36),
+    rgba(var(--mode-companion-rgb), 0.14) 46%,
     transparent 76%
   );
   opacity: var(--aurora-purple-opacity);
@@ -597,7 +607,7 @@ const submit = async () => {
   background: radial-gradient(
     ellipse,
     rgba(var(--flow-accent-rgb), 0.34),
-    rgba(86, 136, 203, 0.12) 38%,
+    rgba(var(--mode-companion-rgb), 0.12) 38%,
     transparent 72%
   );
   filter: blur(6.5rem);
@@ -621,7 +631,12 @@ const submit = async () => {
   top: -8%;
   bottom: -8%;
   width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.52) 46%, transparent);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(var(--theme-text-rgb), 0.52) 46%,
+    transparent
+  );
   opacity: var(--line-base);
   transform: translate3d(0, 0, 0);
   animation: flow-neural-breathe var(--line-duration) ease-in-out var(--line-delay) infinite;
@@ -639,7 +654,7 @@ const submit = async () => {
   position: absolute;
   top: 48%;
   left: 50%;
-  border: 1px solid rgba(255, 255, 255, calc(var(--ring-opacity) * var(--ring-alpha)));
+  border: 1px solid rgba(var(--theme-text-rgb), calc(var(--ring-opacity) * var(--ring-alpha)));
   border-radius: 999px;
   background:
     radial-gradient(
@@ -650,7 +665,7 @@ const submit = async () => {
     ),
     linear-gradient(
       115deg,
-      rgba(255, 255, 255, 0.028),
+      rgba(var(--theme-text-rgb), 0.028),
       transparent 34%,
       rgba(var(--flow-accent-rgb), 0.024) 64%,
       transparent
@@ -673,7 +688,7 @@ const submit = async () => {
   background: radial-gradient(
     circle,
     rgba(var(--flow-accent-rgb), 0.18),
-    rgba(83, 146, 190, 0.07) 42%,
+    rgba(var(--mode-companion-rgb), 0.07) 42%,
     transparent 72%
   );
   filter: blur(4rem);
@@ -690,10 +705,26 @@ const submit = async () => {
   position: absolute;
   inset: -18%;
   background-image:
-    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.18) 0 0.06rem, transparent 0.07rem),
-    radial-gradient(circle at 72% 38%, rgba(255, 255, 255, 0.12) 0 0.05rem, transparent 0.06rem),
-    radial-gradient(circle at 42% 78%, rgba(255, 255, 255, 0.13) 0 0.05rem, transparent 0.06rem),
-    radial-gradient(circle at 86% 68%, rgba(255, 255, 255, 0.12) 0 0.045rem, transparent 0.055rem);
+    radial-gradient(
+      circle at 18% 22%,
+      rgba(var(--theme-text-rgb), 0.18) 0 0.06rem,
+      transparent 0.07rem
+    ),
+    radial-gradient(
+      circle at 72% 38%,
+      rgba(var(--theme-text-rgb), 0.12) 0 0.05rem,
+      transparent 0.06rem
+    ),
+    radial-gradient(
+      circle at 42% 78%,
+      rgba(var(--theme-text-rgb), 0.13) 0 0.05rem,
+      transparent 0.06rem
+    ),
+    radial-gradient(
+      circle at 86% 68%,
+      rgba(var(--theme-text-rgb), 0.12) 0 0.045rem,
+      transparent 0.055rem
+    );
   background-size:
     7rem 7rem,
     9rem 9rem,
@@ -724,7 +755,7 @@ const submit = async () => {
 
 .flow-scene h2 {
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
   font-size: clamp(2.15rem, 5vw, 4.8rem);
   font-weight: 760;
   letter-spacing: 0;
@@ -747,15 +778,15 @@ const submit = async () => {
   min-height: clamp(9rem, 21vw, 12.5rem);
   place-items: center;
   gap: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 8px;
   background:
     linear-gradient(145deg, rgba(var(--flow-accent-rgb), 0.14), transparent 72%),
-    rgba(255, 255, 255, 0.052);
-  color: #ffffff;
+    rgba(var(--theme-text-rgb), 0.052);
+  color: rgb(var(--theme-text-rgb));
   padding: 1.25rem;
   text-align: center;
-  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 18px 70px rgba(var(--theme-shadow-rgb), 0.2);
   backdrop-filter: blur(20px);
   transition:
     border-color 180ms ease,
@@ -768,8 +799,8 @@ const submit = async () => {
   border-color: color-mix(in srgb, var(--flow-accent), transparent 44%);
   background:
     linear-gradient(145deg, rgba(var(--flow-accent-rgb), 0.22), transparent 70%),
-    rgba(255, 255, 255, 0.07);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+    rgba(var(--theme-text-rgb), 0.07);
+  box-shadow: 0 24px 90px rgba(var(--theme-shadow-rgb), 0.28);
   transform: translateY(-0.28rem);
 }
 
@@ -804,7 +835,7 @@ const submit = async () => {
   border-radius: 999px;
   background: rgba(var(--flow-accent-rgb), 0.1);
   padding: 0.45rem 0.82rem;
-  color: color-mix(in srgb, var(--flow-accent), #ffffff 24%);
+  color: color-mix(in srgb, var(--flow-accent), rgb(var(--theme-text-rgb)) 24%);
   font-size: 0.9rem;
   transition:
     border-color 160ms ease,
@@ -815,7 +846,7 @@ const submit = async () => {
 .flow-selected-category:hover {
   border-color: color-mix(in srgb, var(--flow-accent), transparent 34%);
   background: rgba(var(--flow-accent-rgb), 0.16);
-  color: #ffffff;
+  color: rgb(var(--theme-text-rgb));
 }
 
 .flow-selected-category strong {
@@ -843,16 +874,16 @@ const submit = async () => {
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--theme-text-rgb), 0.1);
   border-radius: 999px;
   background:
     linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.11), transparent 76%),
-    rgba(255, 255, 255, 0.06);
+    rgba(var(--theme-text-rgb), 0.06);
   padding: 0.85rem 1.18rem;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--theme-text-rgb), 0.82);
   font-size: clamp(0.98rem, 2vw, 1.12rem);
   line-height: 1.1;
-  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 14px 48px rgba(var(--theme-shadow-rgb), 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -875,8 +906,8 @@ const submit = async () => {
   border-color: color-mix(in srgb, var(--flow-accent), transparent 42%);
   background:
     linear-gradient(135deg, rgba(var(--flow-accent-rgb), 0.22), transparent 76%),
-    rgba(255, 255, 255, 0.084);
-  color: #ffffff;
+    rgba(var(--theme-text-rgb), 0.084);
+  color: rgb(var(--theme-text-rgb));
   transform: translateY(-0.15rem);
 }
 
@@ -889,14 +920,14 @@ const submit = async () => {
 
 :deep(.flow-name-input) {
   min-height: 3.55rem;
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(var(--theme-text-rgb), 0.14) !important;
   border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.078) !important;
+  background: rgba(var(--theme-text-rgb), 0.078) !important;
   padding-right: 1.2rem !important;
   padding-left: 1.2rem !important;
-  color: #f7fbf8 !important;
+  color: rgb(var(--theme-text-rgb)) !important;
   text-align: center;
-  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.16) !important;
+  box-shadow: 0 18px 70px rgba(var(--theme-shadow-rgb), 0.16) !important;
 }
 
 :deep(.flow-name-input:hover) {
@@ -907,11 +938,11 @@ const submit = async () => {
   border-color: var(--flow-accent) !important;
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--flow-accent), transparent 44%),
-    0 18px 70px rgba(0, 0, 0, 0.16) !important;
+    0 18px 70px rgba(var(--theme-shadow-rgb), 0.16) !important;
 }
 
 :deep(.flow-name-input::placeholder) {
-  color: rgba(255, 255, 255, 0.46) !important;
+  color: rgba(var(--theme-text-rgb), 0.46) !important;
 }
 
 .flow-create-button {
@@ -1050,11 +1081,11 @@ const submit = async () => {
   .flow-custom-entry {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(var(--theme-text-rgb), 0.1);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.055);
+    background: rgba(var(--theme-text-rgb), 0.055);
     padding: 0.35rem;
-    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 18px 70px rgba(var(--theme-shadow-rgb), 0.16);
     backdrop-filter: blur(20px);
   }
 
