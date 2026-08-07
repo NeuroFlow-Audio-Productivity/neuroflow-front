@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 const THEME_KEY = 'neuroflow-visual-mode'
 const PALETTE_KEY = 'neuroflow-color-palette'
+const FAST_MODE_KEY = 'neuroflow-fast-mode'
 
 export const visualModeConfigs = [
   {
@@ -79,6 +80,24 @@ export const visualPaletteConfigs = [
     companionRgb: '118, 94, 255',
     icon: 'pi pi-globe',
   },
+  {
+    key: 'nocturne',
+    accent: '#a8b3bd',
+    soft: '#f2f5f7',
+    ink: '#101820',
+    glowRgb: '168, 179, 189',
+    companionRgb: '80, 94, 108',
+    icon: 'pi pi-circle',
+  },
+  {
+    key: 'cleanLab',
+    accent: '#74d8e4',
+    soft: '#f5feff',
+    ink: '#073238',
+    glowRgb: '116, 216, 228',
+    companionRgb: '186, 229, 240',
+    icon: 'pi pi-asterisk',
+  },
 ] as const
 
 export type VisualPaletteConfig = (typeof visualPaletteConfigs)[number]
@@ -109,6 +128,8 @@ const readVisualPalette = (): VisualPaletteKey => {
   return 'focus'
 }
 
+const readFastMode = () => storage()?.getItem(FAST_MODE_KEY) === 'true'
+
 const modeByKey = (key: VisualModeKey) =>
   visualModeConfigs.find((mode) => mode.key === key) ?? visualModeConfigs[0]
 
@@ -119,6 +140,7 @@ export const useVisualThemeStore = defineStore('visualTheme', {
   state: () => ({
     selectedMode: readVisualMode(),
     selectedPalette: readVisualPalette(),
+    fastModeEnabled: readFastMode(),
   }),
 
   getters: {
@@ -156,6 +178,11 @@ export const useVisualThemeStore = defineStore('visualTheme', {
       storage()?.setItem(PALETTE_KEY, palette)
     },
 
+    setFastMode(enabled: boolean) {
+      this.fastModeEnabled = enabled
+      storage()?.setItem(FAST_MODE_KEY, String(enabled))
+    },
+
     applyDocumentTheme() {
       if (typeof document === 'undefined') return
 
@@ -165,6 +192,7 @@ export const useVisualThemeStore = defineStore('visualTheme', {
 
       document.documentElement.dataset.visualMode = this.selectedMode
       document.documentElement.dataset.visualPalette = this.selectedPalette
+      document.documentElement.dataset.fastMode = String(this.fastModeEnabled)
     },
   },
 })

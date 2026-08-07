@@ -12,14 +12,15 @@ import ConfirmDialog from 'primevue/confirmdialog'
   >
     <template #container="{ message, acceptCallback, rejectCallback }">
       <section class="theme-confirm-card">
-        <div class="theme-confirm-icon" aria-hidden="true">
-          <i :class="message.icon || 'pi pi-exclamation-triangle'" />
-        </div>
+        <div class="theme-confirm-body">
+          <div class="theme-confirm-icon" aria-hidden="true">
+            <i :class="message.icon || 'pi pi-exclamation-triangle'" />
+          </div>
 
-        <div class="theme-confirm-copy">
-          <p class="theme-confirm-kicker">NeuroFlow</p>
-          <h2>{{ message.header }}</h2>
-          <p>{{ message.message }}</p>
+          <div class="theme-confirm-copy">
+            <h2>{{ message.header }}</h2>
+            <p>{{ message.message }}</p>
+          </div>
         </div>
 
         <div class="theme-confirm-actions">
@@ -27,13 +28,13 @@ import ConfirmDialog from 'primevue/confirmdialog'
             :label="message.rejectLabel"
             icon="pi pi-times"
             class="theme-confirm-cancel"
+            autofocus
             @click="rejectCallback"
           />
           <Button
             :label="message.acceptLabel"
             icon="pi pi-trash"
             class="theme-confirm-accept"
-            autofocus
             @click="acceptCallback"
           />
         </div>
@@ -44,13 +45,16 @@ import ConfirmDialog from 'primevue/confirmdialog'
 
 <style scoped>
 :global(.theme-confirm-mask) {
-  background:
-    radial-gradient(circle at 50% 34%, rgba(var(--mode-glow-rgb), 0.14), transparent 28rem),
-    rgba(1, 5, 5, 0.72) !important;
-  backdrop-filter: blur(10px);
+  background: rgba(1, 7, 7, 0.76) !important;
+  backdrop-filter: blur(7px);
+}
+
+:global(html[data-fast-mode='true'] .theme-confirm-mask) {
+  backdrop-filter: none;
 }
 
 :deep(.p-dialog) {
+  margin: 1rem;
   border: 0 !important;
   border-radius: 8px !important;
   background: transparent !important;
@@ -59,128 +63,133 @@ import ConfirmDialog from 'primevue/confirmdialog'
 
 .theme-confirm-card {
   position: relative;
-  width: min(calc(100vw - 2rem), 30rem);
+  width: min(calc(100vw - 2rem), 27rem);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--mode-accent), transparent 62%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  background:
-    radial-gradient(circle at 18% 10%, rgba(var(--mode-glow-rgb), 0.22), transparent 14rem),
-    radial-gradient(circle at 90% 92%, rgba(var(--mode-companion-rgb), 0.16), transparent 15rem),
-    linear-gradient(145deg, rgba(12, 25, 22, 0.98), rgba(3, 8, 8, 0.98));
-  padding: 1.2rem;
+  background: rgba(7, 16, 14, 0.98);
   color: #f7fbf8;
   box-shadow:
-    0 28px 90px rgba(0, 0, 0, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 1.5rem 4rem rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
 .theme-confirm-card::before {
   position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0 0.9rem,
-    rgba(255, 255, 255, 0.035) 0.95rem 1rem
-  );
+  top: 0;
+  right: 3rem;
+  left: 3rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mode-accent), transparent);
   content: '';
-  opacity: 0.42;
+  opacity: 0.7;
   pointer-events: none;
 }
 
-.theme-confirm-icon,
-.theme-confirm-copy,
-.theme-confirm-actions {
-  position: relative;
-  z-index: 1;
+.theme-confirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.3rem 1.3rem 1.15rem;
 }
 
 .theme-confirm-icon {
   display: grid;
-  width: 3rem;
-  height: 3rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(248, 113, 113, 0.42);
-  border-radius: 999px;
-  background:
-    linear-gradient(135deg, rgba(248, 113, 113, 0.24), rgba(var(--mode-glow-rgb), 0.12)),
-    rgba(255, 255, 255, 0.065);
-  color: #fecaca;
-  box-shadow: 0 0 2rem rgba(248, 113, 113, 0.2);
-  font-size: 1.2rem;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.08);
+  color: #fca5a5;
+  font-size: 0.9rem;
 }
 
 .theme-confirm-copy {
-  margin-top: 1rem;
-}
-
-.theme-confirm-kicker {
-  margin: 0;
-  color: var(--mode-accent);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.1;
-  text-transform: uppercase;
+  min-width: 0;
+  padding-top: 0.05rem;
 }
 
 .theme-confirm-copy h2 {
-  margin: 0.45rem 0 0;
+  margin: 0;
   color: #ffffff;
-  font-size: 1.55rem;
-  font-weight: 750;
+  font-size: 1.15rem;
+  font-weight: 720;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.3;
 }
 
-.theme-confirm-copy p:last-child {
-  margin: 0.7rem 0 0;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.95rem;
-  line-height: 1.6;
+.theme-confirm-copy p {
+  margin: 0.38rem 0 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .theme-confirm-actions {
   display: flex;
-  flex-direction: column-reverse;
-  gap: 0.65rem;
-  margin-top: 1.25rem;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1.3rem 1rem;
 }
 
 .theme-confirm-cancel,
 .theme-confirm-accept {
+  min-height: 2.55rem;
   justify-content: center !important;
+  border-radius: 7px !important;
+  padding-inline: 0.9rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 680 !important;
+  box-shadow: none !important;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease !important;
 }
 
 .theme-confirm-cancel {
-  border-color: rgba(255, 255, 255, 0.13) !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  color: rgba(255, 255, 255, 0.76) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.68) !important;
 }
 
 .theme-confirm-cancel:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
   color: #ffffff !important;
 }
 
 .theme-confirm-accept {
-  border-color: transparent !important;
-  background: linear-gradient(135deg, #fecaca, #f87171) !important;
-  color: #3b0707 !important;
-  box-shadow: 0 0.85rem 2rem rgba(248, 113, 113, 0.24) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  color: #fca5a5 !important;
 }
 
 .theme-confirm-accept:hover {
-  filter: brightness(1.06);
+  border-color: rgba(248, 113, 113, 0.42) !important;
+  background: rgba(248, 113, 113, 0.17) !important;
+  color: #fecaca !important;
 }
 
-@media (min-width: 520px) {
-  .theme-confirm-card {
-    padding: 1.35rem;
+.theme-confirm-cancel:focus-visible,
+.theme-confirm-accept:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mode-accent), transparent 28%) !important;
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .theme-confirm-body {
+    padding: 1.1rem 1.05rem 1rem;
   }
 
   .theme-confirm-actions {
-    flex-direction: row;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0.8rem 1.05rem 1rem;
   }
 }
 </style>

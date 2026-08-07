@@ -17,8 +17,34 @@ import {
 } from '@/services/flowPresets'
 import { translateValidationErrors, validationSummary } from '@/services/validationTranslator'
 import { useAuthStore } from '@/stores/auth'
+import { useVisualThemeStore } from '@/stores/visualTheme'
 import type { ValidationErrors } from '@/types/auth'
 import type { Flow } from '@/types/flow'
+
+type NavigatorWithPerformanceHints = Navigator & {
+  deviceMemory?: number
+  connection?: { saveData?: boolean }
+}
+
+const shouldReduceVisualEffects = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+
+  const deviceNavigator = navigator as NavigatorWithPerformanceHints
+  const hasLimitedMemory =
+    typeof deviceNavigator.deviceMemory === 'number' && deviceNavigator.deviceMemory <= 4
+  const hasLimitedCpu =
+    typeof deviceNavigator.hardwareConcurrency === 'number' &&
+    deviceNavigator.hardwareConcurrency > 0 &&
+    deviceNavigator.hardwareConcurrency <= 4
+
+  return (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    window.matchMedia('(pointer: coarse)').matches ||
+    deviceNavigator.connection?.saveData === true ||
+    hasLimitedMemory ||
+    hasLimitedCpu
+  )
+}
 
 const props = withDefaults(
   defineProps<{
@@ -35,6 +61,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const auth = useAuthStore()
+const visualTheme = useVisualThemeStore()
 
 const selectedCategoryKey = ref<FlowCategoryKey | null>(null)
 const selectedSuggestionKey = ref<string | null>(null)
@@ -46,12 +73,21 @@ const hoveredCategoryKey = ref<FlowCategoryKey | null>(null)
 const cursorX = ref(50)
 const cursorY = ref(50)
 const cursorOpacity = ref(0)
+const automaticallyReducedEffects = ref(shouldReduceVisualEffects())
+const reducedEffects = computed(
+  () => visualTheme.fastModeEnabled || automaticallyReducedEffects.value,
+)
 
 const cursorTarget = {
   x: 50,
   y: 50,
 }
 let cursorFrame: number | null = null
+let reducedMotionQuery: MediaQueryList | null = null
+
+const syncReducedEffects = () => {
+  automaticallyReducedEffects.value = shouldReduceVisualEffects()
+}
 
 const selectedCategory = computed(() => flowCategoryByKey(selectedCategoryKey.value))
 const guideStyle = computed(() =>
@@ -166,6 +202,8 @@ const startCursorEase = () => {
 }
 
 const handlePointerMove = (event: PointerEvent) => {
+  if (reducedEffects.value) return
+
   const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()
 
   cursorTarget.x = ((event.clientX - bounds.left) / bounds.width) * 100
@@ -189,9 +227,14 @@ const clearHoveredCategory = () => {
 onMounted(() => {
   cursorX.value = 50
   cursorY.value = 50
+  reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  syncReducedEffects()
+  reducedMotionQuery.addEventListener('change', syncReducedEffects)
 })
 
 onBeforeUnmount(() => {
+  reducedMotionQuery?.removeEventListener('change', syncReducedEffects)
+
   if (cursorFrame !== null) {
     window.cancelAnimationFrame(cursorFrame)
   }
@@ -278,7 +321,10 @@ const submit = async () => {
 <template>
   <section
     class="flow-guide"
-    :class="{ 'flow-guide--compact': props.compact }"
+    :class="{
+      'flow-guide--compact': props.compact,
+      'flow-guide--reduced-effects': reducedEffects,
+    }"
     :data-mood="activeMood"
     :style="ambientStyle"
     @pointermove="handlePointerMove"
@@ -1027,6 +1073,53 @@ const submit = async () => {
   .flow-create-button {
     min-width: 10rem;
   }
+}
+
+.flow-guide--reduced-effects {
+  transition: none;
+}
+
+.flow-guide--reduced-effects .flow-aurora,
+.flow-guide--reduced-effects .flow-center-glow,
+.flow-guide--reduced-effects .flow-neural-line,
+.flow-guide--reduced-effects .flow-ring,
+.flow-guide--reduced-effects .flow-noise {
+  animation: none;
+  will-change: auto;
+}
+
+.flow-guide--reduced-effects .flow-aurora {
+  filter: blur(3.5rem);
+  mix-blend-mode: normal;
+}
+
+.flow-guide--reduced-effects .flow-aurora--purple,
+.flow-guide--reduced-effects .flow-cursor-fog,
+.flow-guide--reduced-effects .flow-noise,
+.flow-guide--reduced-effects .flow-neural-line:nth-child(3n + 2),
+.flow-guide--reduced-effects .flow-neural-line:nth-child(3n + 3) {
+  display: none;
+}
+
+.flow-guide--reduced-effects .flow-center-glow {
+  filter: blur(3rem);
+  mix-blend-mode: normal;
+}
+
+.flow-guide--reduced-effects .flow-category-card,
+.flow-guide--reduced-effects .flow-custom-entry {
+  backdrop-filter: none;
+}
+
+.flow-guide--reduced-effects .flow-guide-scene-enter-active,
+.flow-guide--reduced-effects .flow-guide-scene-leave-active {
+  transition: none;
+}
+
+.flow-guide--reduced-effects .flow-guide-scene-enter-from,
+.flow-guide--reduced-effects .flow-guide-scene-leave-to {
+  filter: none;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ToggleSwitch from 'primevue/toggleswitch'
 
 import AppNavbar from '@/components/AppNavbar.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
@@ -18,6 +19,11 @@ const visualTheme = useVisualThemeStore()
 const selectedPalette = computed<VisualPaletteKey>({
   get: () => visualTheme.selectedPalette,
   set: (palette) => visualTheme.setPalette(palette),
+})
+
+const fastModeEnabled = computed({
+  get: () => visualTheme.fastModeEnabled,
+  set: (enabled: boolean) => visualTheme.setFastMode(enabled),
 })
 
 const customizationPalettes = computed(() =>
@@ -65,7 +71,7 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
         </div>
 
         <div class="mt-5">
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <button
               v-for="palette in customizationPalettes"
               :key="palette.key"
@@ -100,6 +106,33 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
         </div>
 
         <div class="customization-setting-row mt-6">
+          <div>
+            <p id="fast-mode-title" class="text-sm font-semibold text-white">
+              {{ t('users.settings.fastModeTitle') }}
+            </p>
+            <p id="fast-mode-description" class="mt-1 text-sm leading-6 text-white/58">
+              {{ t('users.settings.fastModeSubtitle') }}
+            </p>
+          </div>
+          <div class="fast-mode-control">
+            <span aria-live="polite">
+              {{
+                t(
+                  fastModeEnabled
+                    ? 'users.settings.fastModeEnabled'
+                    : 'users.settings.fastModeAutomatic',
+                )
+              }}
+            </span>
+            <ToggleSwitch
+              v-model="fastModeEnabled"
+              input-id="fast-mode-toggle"
+              aria-labelledby="fast-mode-title fast-mode-description"
+            />
+          </div>
+        </div>
+
+        <div class="customization-setting-row mt-5">
           <div>
             <p class="text-sm font-semibold text-white">{{ t('users.settings.languageTitle') }}</p>
             <p class="mt-1 text-sm leading-6 text-white/58">
@@ -172,10 +205,32 @@ const customizationPaletteStyle = (palette: VisualPaletteConfig) => ({
   padding-top: 1.25rem;
 }
 
+.fast-mode-control {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fast-mode-control > span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+:deep(.fast-mode-control .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider) {
+  background: var(--mode-accent);
+}
+
 @media (max-width: 520px) {
   .customization-setting-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .fast-mode-control {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>

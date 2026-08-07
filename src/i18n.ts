@@ -584,6 +584,11 @@ const userMessages = {
       colorPalette: 'Color palette',
       languageTitle: 'Language',
       languageSubtitle: 'Choose the language used across the app.',
+      fastModeTitle: 'Fast mode',
+      fastModeSubtitle:
+        'Manually reduce ambient animations and visual effects. NeuroFlow also adapts automatically on lower-powered devices.',
+      fastModeEnabled: 'Fast',
+      fastModeAutomatic: 'Automatic',
     },
     create: {
       eyebrow: 'Admin',
@@ -654,6 +659,11 @@ const userMessages = {
       colorPalette: 'カラーパレット',
       languageTitle: '言語',
       languageSubtitle: 'アプリ全体で使う言語を選択します。',
+      fastModeTitle: '高速モード',
+      fastModeSubtitle:
+        'アニメーションと視覚効果を手動で抑えます。低性能の端末では自動的にも調整されます。',
+      fastModeEnabled: '高速',
+      fastModeAutomatic: '自動',
     },
     create: {
       eyebrow: '管理者',
@@ -724,6 +734,11 @@ const userMessages = {
       colorPalette: 'Paleta de cores',
       languageTitle: 'Idioma',
       languageSubtitle: 'Escolha o idioma usado em todo o aplicativo.',
+      fastModeTitle: 'Modo rápido',
+      fastModeSubtitle:
+        'Reduza manualmente animações ambientes e efeitos visuais. O NeuroFlow também se adapta automaticamente em dispositivos menos potentes.',
+      fastModeEnabled: 'Rápido',
+      fastModeAutomatic: 'Automático',
     },
     create: {
       eyebrow: 'Admin',
@@ -794,6 +809,11 @@ const userMessages = {
       colorPalette: 'Paleta de color',
       languageTitle: 'Idioma',
       languageSubtitle: 'Elige el idioma usado en toda la aplicación.',
+      fastModeTitle: 'Modo rápido',
+      fastModeSubtitle:
+        'Reduce manualmente las animaciones ambientales y los efectos visuales. NeuroFlow también se adapta automáticamente en dispositivos menos potentes.',
+      fastModeEnabled: 'Rápido',
+      fastModeAutomatic: 'Automático',
     },
     create: {
       eyebrow: 'Admin',
@@ -3276,6 +3296,12 @@ export const messages = {
       deepSpace: {
         label: 'Deep space',
       },
+      nocturne: {
+        label: 'Nocturne',
+      },
+      cleanLab: {
+        label: 'Clean Lab',
+      },
     },
     modes: {
       focus: {
@@ -3404,6 +3430,12 @@ export const messages = {
       },
       deepSpace: {
         label: '深宇宙',
+      },
+      nocturne: {
+        label: 'Nocturne',
+      },
+      cleanLab: {
+        label: 'Clean Lab',
       },
     },
     modes: {
@@ -3534,6 +3566,12 @@ export const messages = {
       deepSpace: {
         label: 'Espaço profundo',
       },
+      nocturne: {
+        label: 'Nocturne',
+      },
+      cleanLab: {
+        label: 'Clean Lab',
+      },
     },
     modes: {
       focus: {
@@ -3662,6 +3700,12 @@ export const messages = {
       },
       deepSpace: {
         label: 'Espacio profundo',
+      },
+      nocturne: {
+        label: 'Nocturne',
+      },
+      cleanLab: {
+        label: 'Clean Lab',
       },
     },
     modes: {
