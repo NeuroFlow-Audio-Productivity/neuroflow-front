@@ -2088,8 +2088,9 @@ function isFlowSummaryLoading(flowId: number) {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     max-height: calc(100vh - 10rem);
-    overflow: auto;
-    padding-right: 0.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0.35rem 0.55rem 1rem 0.35rem;
     scrollbar-color: rgba(110, 231, 216, 0.34) transparent;
   }
 
